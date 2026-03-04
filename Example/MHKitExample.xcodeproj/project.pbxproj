@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B10000000000000000000001 /* MHDeepLinking in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000005 /* MHDeepLinking */; };
+		B10000000000000000000002 /* MHNotificationPlans in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000006 /* MHNotificationPlans */; };
+		B10000000000000000000003 /* MHMutationFlow in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000007 /* MHMutationFlow */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		ADC37BA02F5869FF000178F8 /* MHKitExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MHKitExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +29,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B10000000000000000000001 /* MHDeepLinking in Frameworks */,
+				B10000000000000000000002 /* MHNotificationPlans in Frameworks */,
+				B10000000000000000000003 /* MHMutationFlow in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +74,9 @@
 			);
 			name = MHKitExample;
 			packageProductDependencies = (
+				B10000000000000000000005 /* MHDeepLinking */,
+				B10000000000000000000006 /* MHNotificationPlans */,
+				B10000000000000000000007 /* MHMutationFlow */,
 			);
 			productName = MHKitExample;
 			productReference = ADC37BA02F5869FF000178F8 /* MHKitExample.app */;
@@ -94,6 +106,9 @@
 			);
 			mainGroup = ADC37B972F5869FF000178F8;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = ADC37BA12F5869FF000178F8 /* Products */;
 			projectDirPath = "";
@@ -123,6 +138,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B10000000000000000000005 /* MHDeepLinking */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
+			productName = MHDeepLinking;
+		};
+		B10000000000000000000006 /* MHNotificationPlans */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
+			productName = MHNotificationPlans;
+		};
+		B10000000000000000000007 /* MHMutationFlow */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
+			productName = MHMutationFlow;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		ADC37BAB2F586A00000178F8 /* Debug */ = {
@@ -264,10 +304,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.muhiro12.MHKitExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -308,10 +348,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.muhiro12.MHKitExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
