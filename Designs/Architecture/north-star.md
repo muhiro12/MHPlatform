@@ -58,6 +58,7 @@ Incomes and Cookle. It is intentionally small, Apple-native, and module-flat.
 ## Naming Convention (Canonical)
 
 Canonical naming for outcomes, events, planners, and handoff storage terms is
-defined in [`CONTRACTS.md`](CONTRACTS.md#naming-convention-decision). This run
+defined in
+[`integration-contracts.md`](integration-contracts.md#naming-convention-decision). This run
 adopts an Outcome-first policy at documentation level with no source-breaking
 renames.

@@ -23,7 +23,7 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 ### `MHDeepLinking`
 
 Integration contract:
-[`MHDeepLinking`](CONTRACTS.md#mhdeeplinking)
+[`MHDeepLinking`](integration-contracts.md#mhdeeplinking)
 
 - Owns URL grammar primitives:
   `MHDeepLinkConfiguration`, `MHDeepLinkDescriptor`, `MHDeepLinkCodec`
@@ -34,7 +34,7 @@ Integration contract:
 ### `MHNotificationPlans`
 
 Integration contract:
-[`MHNotificationPlans`](CONTRACTS.md#mhnotificationplans)
+[`MHNotificationPlans`](integration-contracts.md#mhnotificationplans)
 
 - Owns deterministic schedule planning:
   `MHReminderPlanner`, `MHSuggestionPlanner`
@@ -45,7 +45,7 @@ Integration contract:
 ### `MHNotificationPayloads`
 
 Integration contract:
-[`MHNotificationPayloads`](CONTRACTS.md#mhnotificationpayloads)
+[`MHNotificationPayloads`](integration-contracts.md#mhnotificationpayloads)
 
 - Owns routing-focused notification payload primitives:
   `MHNotificationPayload`, `MHNotificationRouteTargets`, `MHNotificationPayloadCodec`
@@ -58,7 +58,7 @@ Integration contract:
 ### `MHMutationFlow`
 
 Integration contract:
-[`MHMutationFlow`](CONTRACTS.md#mhmutationflow)
+[`MHMutationFlow`](integration-contracts.md#mhmutationflow)
 
 - Owns mutation retry, cancellation, and post-success side-effect orchestration
 - Exposes observable execution events through `MHMutationEvent`
@@ -67,7 +67,7 @@ Integration contract:
 ### `MHRouteExecution`
 
 Integration contract:
-[`MHRouteExecution`](CONTRACTS.md#mhrouteexecution)
+[`MHRouteExecution`](integration-contracts.md#mhrouteexecution)
 
 - Owns route execution orchestration primitives:
   `MHRouteExecutor`, `MHRouteCoordinator`, `MHRouteResolution`
@@ -77,7 +77,7 @@ Integration contract:
 ### `MHPersistenceMaintenance`
 
 Integration contract:
-[`MHPersistenceMaintenance`](CONTRACTS.md#mhpersistencemaintenance)
+[`MHPersistenceMaintenance`](integration-contracts.md#mhpersistencemaintenance)
 
 - Owns store-file migration and legacy cleanup primitives:
   `MHStoreMigrationPlan`, `MHStoreMigrator`, `MHStoreMigrationResult`,
@@ -90,7 +90,7 @@ Integration contract:
 ### `MHPreferences`
 
 Integration contract:
-[`MHPreferences`](CONTRACTS.md#mhpreferences)
+[`MHPreferences`](integration-contracts.md#mhpreferences)
 
 - Owns typed preference keys and `UserDefaults` read/write primitives
 - Owns `AppStorage` bridge initializers for primitive preference keys
@@ -100,7 +100,7 @@ Integration contract:
 ### `MHReviewPolicy`
 
 Integration contract:
-[`MHReviewPolicy`](CONTRACTS.md#mhreviewpolicy)
+[`MHReviewPolicy`](integration-contracts.md#mhreviewpolicy)
 
 - Owns review-request policy primitives:
   `MHReviewPolicy`, `MHReviewRequestOutcome`

@@ -8,17 +8,17 @@ Minimum supported platforms:
 
 ## Documentation Map
 
-- [North Star](Docs/NORTH_STAR.md)
-- [Integration Contracts](Docs/CONTRACTS.md)
-- [Integration Cookbook](Docs/COOKBOOK.md)
-- [Architecture](Docs/Architecture.md)
+- [North Star](Designs/Architecture/north-star.md)
+- [Integration Contracts](Designs/Architecture/integration-contracts.md)
+- [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
+- [Architecture](Designs/Architecture/architecture.md)
 
 ## MHDeepLinking
 
 `MHDeepLinking` handles route URL building, parsing, and pending-route handoff without owning app-specific route enums.
 
 Integration contract:
-[`MHDeepLinking`](Docs/CONTRACTS.md#mhdeeplinking)
+[`MHDeepLinking`](Designs/Architecture/integration-contracts.md#mhdeeplinking)
 
 ```swift
 import MHDeepLinking
@@ -39,7 +39,7 @@ let codec = MHDeepLinkCodec<MyRoute>(
 `MHNotificationPlans` builds deterministic reminder and suggestion schedules without depending on `UserNotifications`.
 
 Integration contract:
-[`MHNotificationPlans`](Docs/CONTRACTS.md#mhnotificationplans)
+[`MHNotificationPlans`](Designs/Architecture/integration-contracts.md#mhnotificationplans)
 
 ```swift
 import MHNotificationPlans
@@ -59,7 +59,7 @@ let policy = MHReminderPolicy(
 `MHNotificationPayloads` provides routing-focused payload/action/userInfo models, response route resolution, and `UNUserNotificationCenter` orchestration helpers.
 
 Integration contract:
-[`MHNotificationPayloads`](Docs/CONTRACTS.md#mhnotificationpayloads)
+[`MHNotificationPayloads`](Designs/Architecture/integration-contracts.md#mhnotificationpayloads)
 
 ```swift
 import MHNotificationPayloads
@@ -91,7 +91,7 @@ let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
 `MHMutationFlow` runs a mutation with retry, cancellation, and ordered post-success side effects.
 
 Integration contract:
-[`MHMutationFlow`](Docs/CONTRACTS.md#mhmutationflow)
+[`MHMutationFlow`](Designs/Architecture/integration-contracts.md#mhmutationflow)
 
 ```swift
 import MHMutationFlow
@@ -108,7 +108,7 @@ let outcome = await MHMutationRunner.run(
 `MHRouteExecution` coordinates route handling with readiness checks and a latest-wins pending route queue.
 
 Integration contract:
-[`MHRouteExecution`](Docs/CONTRACTS.md#mhrouteexecution)
+[`MHRouteExecution`](Designs/Architecture/integration-contracts.md#mhrouteexecution)
 
 ```swift
 import MHRouteExecution
@@ -134,7 +134,7 @@ let resolution = try await coordinator.handle(.settings)
 `MHPersistenceMaintenance` provides store-file migration helpers and ordered destructive reset orchestration.
 
 Integration contract:
-[`MHPersistenceMaintenance`](Docs/CONTRACTS.md#mhpersistencemaintenance)
+[`MHPersistenceMaintenance`](Designs/Architecture/integration-contracts.md#mhpersistencemaintenance)
 
 ```swift
 import MHPersistenceMaintenance
@@ -159,7 +159,7 @@ let resetOutcome = await MHDestructiveResetService.run(
 `MHPreferences` provides typed preference keys with `UserDefaults` and `AppStorage` bridges.
 
 Integration contract:
-[`MHPreferences`](Docs/CONTRACTS.md#mhpreferences)
+[`MHPreferences`](Designs/Architecture/integration-contracts.md#mhpreferences)
 
 ```swift
 import MHPreferences
@@ -175,7 +175,7 @@ store.set(false, for: key)
 `MHReviewPolicy` provides review-request lottery policy and a high-level requester with platform-aware fallback behavior.
 
 Integration contract:
-[`MHReviewPolicy`](Docs/CONTRACTS.md#mhreviewpolicy)
+[`MHReviewPolicy`](Designs/Architecture/integration-contracts.md#mhreviewpolicy)
 
 ```swift
 import MHReviewPolicy
