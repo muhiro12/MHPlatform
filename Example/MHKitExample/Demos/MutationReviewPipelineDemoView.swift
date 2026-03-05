@@ -3,6 +3,12 @@ import MHReviewPolicy
 import SwiftUI
 
 struct MutationReviewPipelineDemoView: View {
+    private enum Constants {
+        static let retryMaximumAttempts = 2
+        static let reviewLotteryMaxExclusive = 10
+        static let forcedReviewLotteryHit = 0
+    }
+
     enum Scenario: String, CaseIterable, Identifiable {
         case success
         case failure
@@ -20,33 +26,43 @@ struct MutationReviewPipelineDemoView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Scenario") {
-                    Picker("Mutation", selection: $scenario) {
-                        ForEach(Scenario.allCases) { scenario in
-                            Text(scenario.rawValue).tag(scenario)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    Button(isRunning ? "Running..." : "Run Pipeline") {
-                        runPipeline()
-                    }
-                    .disabled(isRunning)
-                }
-
-                Section("Mutation Outcome") {
-                    Text(mutationSummary)
-                        .font(.caption.monospaced())
-                        .textSelection(.enabled)
-                }
-
-                Section("Review Policy Outcome") {
-                    Text(reviewSummary)
-                        .font(.caption.monospaced())
-                        .textSelection(.enabled)
-                }
+                scenarioSection
+                mutationOutcomeSection
+                reviewOutcomeSection
             }
             .navigationTitle("Mutation + Review")
+        }
+    }
+
+    private var scenarioSection: some View {
+        Section("Scenario") {
+            Picker("Mutation", selection: $scenario) {
+                ForEach(Scenario.allCases) { scenario in
+                    Text(scenario.rawValue).tag(scenario)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Button(isRunning ? "Running..." : "Run Pipeline") {
+                runPipeline()
+            }
+            .disabled(isRunning)
+        }
+    }
+
+    private var mutationOutcomeSection: some View {
+        Section("Mutation Outcome") {
+            Text(mutationSummary)
+                .font(.caption.monospaced())
+                .textSelection(.enabled)
+        }
+    }
+
+    private var reviewOutcomeSection: some View {
+        Section("Review Policy Outcome") {
+            Text(reviewSummary)
+                .font(.caption.monospaced())
+                .textSelection(.enabled)
         }
     }
 
@@ -70,17 +86,17 @@ struct MutationReviewPipelineDemoView: View {
     private func runMutationScenario(_ scenario: Scenario) async -> MHMutationOutcome<String> {
         let mutation = MHMutation<String>(
             name: "saveDraft"
-        )            {
-                if scenario == .failure {
-                    throw PipelineError.mutationFailed
-                }
-                return "saved"
+        ) {
+            if scenario == .failure {
+                throw PipelineError.mutationFailed
             }
+            return "saved"
+        }
 
         return await MHMutationRunner.run(
             mutation: mutation,
             retryPolicy: .init(
-                maximumAttempts: 2,
+                maximumAttempts: Constants.retryMaximumAttempts,
                 backoff: .immediate
             ),
             afterSuccess: [
@@ -100,14 +116,14 @@ struct MutationReviewPipelineDemoView: View {
         }
 
         let policy = MHReviewPolicy(
-            lotteryMaxExclusive: 10,
+            lotteryMaxExclusive: Constants.reviewLotteryMaxExclusive,
             requestDelay: .zero
         )
 
         let outcome = await MHReviewRequester.requestIfNeeded(
             policy: policy,
             randomValueProvider: { _ in
-                0
+                Constants.forcedReviewLotteryHit
             },
             sleep: { _ in
                 // Intentionally empty.
@@ -120,11 +136,23 @@ struct MutationReviewPipelineDemoView: View {
     private func describeMutationOutcome(_ outcome: MHMutationOutcome<String>) -> String {
         switch outcome {
         case let .succeeded(value, attempts, completedSteps):
-            return "succeeded(value=\(value), attempts=\(attempts), completed=\(completedSteps))"
+            return [
+                "succeeded(value=\(value)",
+                "attempts=\(attempts)",
+                "completed=\(completedSteps))"
+            ].joined(separator: ", ")
         case let .failed(failure, attempts, completedSteps, isRecoverable):
-            return "failed(failure=\(failure), attempts=\(attempts), completed=\(completedSteps), recoverable=\(isRecoverable))"
+            return [
+                "failed(failure=\(failure)",
+                "attempts=\(attempts)",
+                "completed=\(completedSteps)",
+                "recoverable=\(isRecoverable))"
+            ].joined(separator: ", ")
         case let .cancelled(attempts, completedSteps):
-            return "cancelled(attempts=\(attempts), completed=\(completedSteps))"
+            return [
+                "cancelled(attempts=\(attempts)",
+                "completed=\(completedSteps))"
+            ].joined(separator: ", ")
         }
     }
 }

@@ -109,14 +109,14 @@ struct MutationFlowDemoView: View {
 
         let mutation = MHMutation<String>(
             name: "saveDraft"
-        )            {
-                let attempt = await attempts.nextAttempt()
-                if scenario.failFirstAttempt,
-                   attempt == Constants.firstAttempt {
-                    throw MutationDemoError.operationFailed
-                }
-                return "Saved sample draft"
+        ) {
+            let attempt = await attempts.nextAttempt()
+            if scenario.failFirstAttempt,
+               attempt == Constants.firstAttempt {
+                throw MutationDemoError.operationFailed
             }
+            return "Saved sample draft"
+        }
 
         let runHandle = MHMutationRunner.start(
             mutation: mutation,
@@ -167,14 +167,19 @@ struct MutationFlowDemoView: View {
 
     private func eventTitle(_ event: MHMutationEvent<String>) -> String {
         switch event {
-        case .started(let mutation, let attempt):
+        case let .started(mutation, attempt):
             return "started(\(mutation), attempt=\(attempt))"
         case .progress(let progress):
             return progressTitle(progress)
-        case .succeeded(_, let attempts, let completedSteps):
+        case let .succeeded(_, attempts, completedSteps):
             return "succeeded(attempts=\(attempts), completed=\(completedSteps))"
         case let .failed(errorDescription, attempts, completedSteps, isRecoverable):
-            return "failed(attempts=\(attempts), recoverable=\(isRecoverable), completed=\(completedSteps), error=\(errorDescription))"
+            return [
+                "failed(attempts=\(attempts)",
+                "recoverable=\(isRecoverable)",
+                "completed=\(completedSteps)",
+                "error=\(errorDescription))"
+            ].joined(separator: ", ")
         case let .cancelled(attempts, completedSteps):
             return "cancelled(attempts=\(attempts), completed=\(completedSteps))"
         }
@@ -194,11 +199,21 @@ struct MutationFlowDemoView: View {
     private func summarize(_ outcome: MHMutationOutcome<String>) -> String {
         switch outcome {
         case let .succeeded(value, attempts, completedSteps):
-            return "Succeeded after \(attempts) attempt(s): \(value) | steps \(completedSteps.joined(separator: ", "))"
+            return [
+                "Succeeded after \(attempts) attempt(s): \(value)",
+                "steps \(completedSteps.joined(separator: ", "))"
+            ].joined(separator: " | ")
         case let .failed(failure, attempts, completedSteps, isRecoverable):
-            return "Failed after \(attempts) attempt(s): \(failure) | recoverable=\(isRecoverable) | completed \(completedSteps.joined(separator: ", "))"
+            return [
+                "Failed after \(attempts) attempt(s): \(failure)",
+                "recoverable=\(isRecoverable)",
+                "completed \(completedSteps.joined(separator: ", "))"
+            ].joined(separator: " | ")
         case let .cancelled(attempts, completedSteps):
-            return "Cancelled after \(attempts) attempt(s) | completed \(completedSteps.joined(separator: ", "))"
+            return [
+                "Cancelled after \(attempts) attempt(s)",
+                "completed \(completedSteps.joined(separator: ", "))"
+            ].joined(separator: " | ")
         }
     }
 }

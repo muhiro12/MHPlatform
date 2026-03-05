@@ -156,9 +156,9 @@ struct MHStoreMigratorTests {
                     currentStoreURL: storeURLs.currentStoreURL
                 ),
                 fileManager: fileManager
-            )                { _, _ in
-                    throw ValidationError.failed
-                }
+            ) { _, _ in
+                throw ValidationError.failed
+            }
             Issue.record("Expected validation failure.")
         } catch {
             #expect(error is ValidationError)

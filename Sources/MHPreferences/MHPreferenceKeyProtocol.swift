@@ -14,6 +14,7 @@ public protocol MHPreferenceKeyProtocol {
 }
 
 public extension MHPreferenceKeyProtocol {
+    /// Fully-qualified key used for persistent storage.
     var storageKey: String {
         "\(namespace).\(name)"
     }

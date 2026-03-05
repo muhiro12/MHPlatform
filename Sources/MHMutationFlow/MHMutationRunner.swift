@@ -5,7 +5,7 @@ public enum MHMutationRunner {
     /// Sleep abstraction for deterministic retry testing.
     public typealias Sleep = @Sendable (Duration) async throws -> Void
 
-    private enum StepExecutionResult {
+    enum StepExecutionResult {
         case succeeded(completedSteps: [String])
         case failed(
                 stepName: String,
@@ -13,6 +13,20 @@ public enum MHMutationRunner {
                 completedSteps: [String]
              )
         case cancelled(completedSteps: [String])
+    }
+
+    enum AttemptDecision<Value: Sendable> {
+        case finish(MHMutationOutcome<Value>)
+        case retry(nextAttempt: Int)
+    }
+
+    struct RunContext<Value: Sendable> {
+        let mutation: MHMutation<Value>
+        let retryPolicy: MHMutationRetryPolicy
+        let cancellationHandle: MHCancellationHandle?
+        let afterSuccess: [MHMutationStep]
+        let sleep: Sleep
+        let emit: @Sendable (MHMutationEvent<Value>) -> Void
     }
 
     /// Starts a mutation run and returns a handle with event stream and terminal outcome.
@@ -29,21 +43,24 @@ public enum MHMutationRunner {
         }
     ) -> MHMutationRun<Value> {
         let stream = AsyncStream<MHMutationEvent<Value>>.makeStream()
+        let emit: @Sendable (MHMutationEvent<Value>) -> Void = { event in
+            stream.continuation.yield(event)
+        }
+
+        let context = RunContext(
+            mutation: mutation,
+            retryPolicy: retryPolicy,
+            cancellationHandle: cancellationHandle,
+            afterSuccess: afterSuccess,
+            sleep: sleep,
+            emit: emit
+        )
 
         let outcomeTask = Task<MHMutationOutcome<Value>, Never> {
             defer {
                 stream.continuation.finish()
             }
-
-            return await run(
-                mutation: mutation,
-                retryPolicy: retryPolicy,
-                cancellationHandle: cancellationHandle,
-                afterSuccess: afterSuccess,
-                sleep: sleep
-            )                { event in
-                    stream.continuation.yield(event)
-                }
+            return await run(context: context)
         }
 
         return .init(
@@ -77,252 +94,54 @@ public enum MHMutationRunner {
     }
 }
 
-private extension MHMutationRunner {
+extension MHMutationRunner {
     static func run<Value: Sendable>(
-        mutation: MHMutation<Value>,
-        retryPolicy: MHMutationRetryPolicy,
-        cancellationHandle: MHCancellationHandle?,
-        afterSuccess: [MHMutationStep],
-        sleep: @escaping Sleep,
-        emit: @escaping @Sendable (MHMutationEvent<Value>) -> Void
+        context: RunContext<Value>
     ) async -> MHMutationOutcome<Value> {
-        if isCancelled(cancellationHandle) {
-            let outcome = MHMutationOutcome<Value>.cancelled(
-                attempts: .zero,
-                completedSteps: []
+        if isCancelled(context.cancellationHandle) {
+            return cancelledOutcome(
+                attempts: 0,
+                completedSteps: [],
+                emit: context.emit
             )
-            emitCancelled(outcome: outcome, emit: emit)
-            return outcome
         }
 
         var attempt = 1
 
-        while attempt <= retryPolicy.maximumAttempts {
-            if isCancelled(cancellationHandle) {
-                let outcome = MHMutationOutcome<Value>.cancelled(
+        while attempt <= context.retryPolicy.maximumAttempts {
+            if isCancelled(context.cancellationHandle) {
+                return cancelledOutcome(
                     attempts: attempt - 1,
-                    completedSteps: []
+                    completedSteps: [],
+                    emit: context.emit
                 )
-                emitCancelled(outcome: outcome, emit: emit)
-                return outcome
             }
 
-            emit(
+            context.emit(
                 .started(
-                    mutation: mutation.name,
+                    mutation: context.mutation.name,
                     attempt: attempt
                 )
             )
 
-            do {
-                let value = try await mutation.operation()
-                let stepResult = await runSteps(
-                    steps: afterSuccess,
-                    cancellationHandle: cancellationHandle,
-                    emit: emit
-                )
+            let decision = await runAttempt(
+                attempt: attempt,
+                context: context
+            )
 
-                switch stepResult {
-                case .succeeded(let completedSteps):
-                    if isCancelled(cancellationHandle) {
-                        let outcome = MHMutationOutcome<Value>.cancelled(
-                            attempts: attempt,
-                            completedSteps: completedSteps
-                        )
-                        emitCancelled(outcome: outcome, emit: emit)
-                        return outcome
-                    }
-
-                    let outcome = MHMutationOutcome<Value>.succeeded(
-                        value: value,
-                        attempts: attempt,
-                        completedSteps: completedSteps
-                    )
-                    emit(
-                        .succeeded(
-                            value: value,
-                            attempts: attempt,
-                            completedSteps: completedSteps
-                        )
-                    )
-                    return outcome
-
-                case let .failed(stepName, errorDescription, completedSteps):
-                    let outcome = MHMutationOutcome<Value>.failed(
-                        failure: .step(
-                            name: stepName,
-                            errorDescription: errorDescription
-                        ),
-                        attempts: attempt,
-                        completedSteps: completedSteps,
-                        isRecoverable: false
-                    )
-                    emit(
-                        .failed(
-                            errorDescription: errorDescription,
-                            attempts: attempt,
-                            completedSteps: completedSteps,
-                            isRecoverable: false
-                        )
-                    )
-                    return outcome
-
-                case .cancelled(let completedSteps):
-                    let outcome = MHMutationOutcome<Value>.cancelled(
-                        attempts: attempt,
-                        completedSteps: completedSteps
-                    )
-                    emitCancelled(outcome: outcome, emit: emit)
-                    return outcome
-                }
-            } catch is CancellationError {
-                let outcome = MHMutationOutcome<Value>.cancelled(
-                    attempts: attempt,
-                    completedSteps: []
-                )
-                emitCancelled(outcome: outcome, emit: emit)
+            switch decision {
+            case let .finish(outcome):
                 return outcome
-            } catch {
-                let errorDescription = String(describing: error)
-                let canRetry = attempt < retryPolicy.maximumAttempts
-                emit(
-                    .failed(
-                        errorDescription: errorDescription,
-                        attempts: attempt,
-                        completedSteps: [],
-                        isRecoverable: canRetry
-                    )
-                )
-
-                guard canRetry else {
-                    return .failed(
-                        failure: .operation(errorDescription: errorDescription),
-                        attempts: attempt,
-                        completedSteps: [],
-                        isRecoverable: false
-                    )
-                }
-
-                let delay = retryPolicy.backoff.delay(forRetry: attempt)
-                emit(
-                    .progress(
-                        .retryScheduled(
-                            nextAttempt: attempt + 1,
-                            delay: delay
-                        )
-                    )
-                )
-
-                let canContinue = await waitForRetry(
-                    delay: delay,
-                    cancellationHandle: cancellationHandle,
-                    sleep: sleep
-                )
-
-                guard canContinue else {
-                    let outcome = MHMutationOutcome<Value>.cancelled(
-                        attempts: attempt,
-                        completedSteps: []
-                    )
-                    emitCancelled(outcome: outcome, emit: emit)
-                    return outcome
-                }
-
-                attempt += 1
+            case let .retry(nextAttempt):
+                attempt = nextAttempt
             }
         }
 
         return .failed(
             failure: .operation(errorDescription: "Unreachable mutation state."),
-            attempts: retryPolicy.maximumAttempts,
+            attempts: context.retryPolicy.maximumAttempts,
             completedSteps: [],
             isRecoverable: false
         )
-    }
-
-    private static func runSteps<Value: Sendable>(
-        steps: [MHMutationStep],
-        cancellationHandle: MHCancellationHandle?,
-        emit: @Sendable (MHMutationEvent<Value>) -> Void
-    ) async -> StepExecutionResult {
-        var completedSteps = [String]()
-
-        for step in steps {
-            if isCancelled(cancellationHandle) {
-                return .cancelled(completedSteps: completedSteps)
-            }
-
-            emit(
-                .progress(
-                    .stepStarted(
-                        name: step.name,
-                        completedSteps: completedSteps.count,
-                        totalSteps: steps.count
-                    )
-                )
-            )
-
-            do {
-                try await step.action()
-                completedSteps.append(step.name)
-                emit(
-                    .progress(
-                        .stepSucceeded(
-                            name: step.name,
-                            completedSteps: completedSteps.count,
-                            totalSteps: steps.count
-                        )
-                    )
-                )
-            } catch is CancellationError {
-                return .cancelled(completedSteps: completedSteps)
-            } catch {
-                return .failed(
-                    stepName: step.name,
-                    errorDescription: String(describing: error),
-                    completedSteps: completedSteps
-                )
-            }
-        }
-
-        return .succeeded(completedSteps: completedSteps)
-    }
-
-    static func waitForRetry(
-        delay: Duration,
-        cancellationHandle: MHCancellationHandle?,
-        sleep: Sleep
-    ) async -> Bool {
-        if delay == .zero {
-            return isCancelled(cancellationHandle) == false
-        }
-
-        do {
-            try await sleep(delay)
-        } catch {
-            return false
-        }
-
-        return isCancelled(cancellationHandle) == false
-    }
-
-    static func emitCancelled<Value: Sendable>(
-        outcome: MHMutationOutcome<Value>,
-        emit: @Sendable (MHMutationEvent<Value>) -> Void
-    ) {
-        guard case let .cancelled(attempts, completedSteps) = outcome else {
-            return
-        }
-
-        emit(
-            .cancelled(
-                attempts: attempts,
-                completedSteps: completedSteps
-            )
-        )
-    }
-
-    static func isCancelled(_ cancellationHandle: MHCancellationHandle?) -> Bool {
-        Task.isCancelled || cancellationHandle?.isCancelled == true
     }
 }

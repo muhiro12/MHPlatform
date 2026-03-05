@@ -37,9 +37,9 @@ struct MHMutationFlowTests {
     func succeeds_without_retry() async {
         let mutation = MHMutation<String>(
             name: "saveDraft"
-        )            {
-                "saved"
-            }
+        ) {
+            "saved"
+        }
 
         let outcome = await MHMutationRunner.run(
             mutation: mutation,
@@ -67,13 +67,13 @@ struct MHMutationFlowTests {
 
         let mutation = MHMutation<String>(
             name: "saveDraft"
-        )            {
-                let attempt = await state.nextAttempt()
-                if attempt == 1 {
-                    throw MutationTestError.operationFailed
-                }
-                return "saved"
+        ) {
+            let attempt = await state.nextAttempt()
+            if attempt == 1 {
+                throw MutationTestError.operationFailed
             }
+            return "saved"
+        }
 
         let outcome = await MHMutationRunner.run(
             mutation: mutation,
@@ -85,9 +85,9 @@ struct MHMutationFlowTests {
                     maximumDelay: .milliseconds(40)
                 )
             )
-        )            { duration in
-                await durationRecorder.append(duration)
-            }
+        ) { duration in
+            await durationRecorder.append(duration)
+        }
 
         switch outcome {
         case let .succeeded(value, attempts, completedSteps):
@@ -106,9 +106,9 @@ struct MHMutationFlowTests {
     func fails_after_retry_exhaustion() async {
         let mutation = MHMutation<String>(
             name: "saveDraft"
-        )            {
-                throw MutationTestError.operationFailed
-            }
+        ) {
+            throw MutationTestError.operationFailed
+        }
 
         let outcome = await MHMutationRunner.run(
             mutation: mutation,
@@ -141,9 +141,9 @@ struct MHMutationFlowTests {
 
         let mutation = MHMutation<String>(
             name: "saveDraft"
-        )            {
-                "saved"
-            }
+        ) {
+            "saved"
+        }
 
         let outcome = await MHMutationRunner.run(
             mutation: mutation,
@@ -165,9 +165,9 @@ struct MHMutationFlowTests {
 
         let mutation = MHMutation<String>(
             name: "saveDraft"
-        )            {
-                "saved"
-            }
+        ) {
+            "saved"
+        }
 
         let outcome = await MHMutationRunner.run(
             mutation: mutation,
@@ -195,9 +195,9 @@ struct MHMutationFlowTests {
     func emits_ordered_event_stream() async {
         let mutation = MHMutation<String>(
             name: "saveDraft"
-        )            {
-                "saved"
-            }
+        ) {
+            "saved"
+        }
 
         let runHandle = MHMutationRunner.start(
             mutation: mutation,
@@ -238,10 +238,10 @@ struct MHMutationFlowTests {
 
         let mutation = MHMutation<String>(
             name: "saveDraft"
-        )            {
-                _ = await state.nextAttempt()
-                return "saved"
-            }
+        ) {
+            _ = await state.nextAttempt()
+            return "saved"
+        }
 
         let outcome = await MHMutationRunner.run(
             mutation: mutation,
@@ -269,7 +269,7 @@ struct MHMutationFlowTests {
             switch failure {
             case .operation:
                 Issue.record("Expected step failure.")
-            case .step(let name, let errorDescription):
+            case let .step(name, errorDescription):
                 #expect(name == "syncNotifications")
                 #expect(errorDescription.contains("sideEffectFailed"))
             }
@@ -287,17 +287,17 @@ private extension MHMutationFlowTests {
 
         for await event in events {
             switch event {
-            case .started(let mutation, let attempt):
+            case let .started(mutation, attempt):
                 titles.append("started:\(mutation):\(attempt)")
             case .progress(let progress):
                 titles.append(progressTitle(progress))
-            case .succeeded(_, let attempts, _):
+            case let .succeeded(_, attempts, _):
                 titles.append("succeeded:\(attempts)")
-            case .failed(let errorDescription, let attempts, _, let isRecoverable):
+            case let .failed(errorDescription, attempts, _, isRecoverable):
                 titles.append(
                     "failed:\(attempts):\(isRecoverable):\(errorDescription)"
                 )
-            case .cancelled(let attempts, _):
+            case let .cancelled(attempts, _):
                 titles.append("cancelled:\(attempts)")
             }
         }
@@ -307,7 +307,7 @@ private extension MHMutationFlowTests {
 
     func progressTitle(_ progress: MHMutationProgress) -> String {
         switch progress {
-        case .retryScheduled(let nextAttempt, let delay):
+        case let .retryScheduled(nextAttempt, delay):
             return "progress:retryScheduled:\(nextAttempt):\(delay)"
         case let .stepStarted(name, completedSteps, totalSteps):
             return "progress:stepStarted:\(name):\(completedSteps)/\(totalSteps)"

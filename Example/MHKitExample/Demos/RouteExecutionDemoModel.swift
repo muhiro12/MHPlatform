@@ -57,11 +57,11 @@ final class RouteExecutionDemoModel: ObservableObject {
         )
 
         coordinator = .init(
-            initialReadiness: true,
-            executor: executor
-        )            { lhs, rhs in
-                lhs == rhs
-            }
+            executor: executor,
+            initialReadiness: true
+        ) { lhs, rhs in
+            lhs == rhs
+        }
     }
 
     func setReadiness(_ isReady: Bool) {

@@ -23,8 +23,8 @@ public actor MHRouteCoordinator<Route: Sendable, Outcome: Sendable> {
     /// Creates a coordinator with explicit readiness state and dedupe behavior.
     @preconcurrency
     public init(
-        initialReadiness: Bool = false,
         executor: MHRouteExecutor<Route, Outcome>,
+        initialReadiness: Bool = false,
         isDuplicate: @escaping DuplicatePredicate = { _, _ in
             false
         }

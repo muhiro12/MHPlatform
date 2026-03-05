@@ -23,7 +23,7 @@ extension MHMutationBackoff {
             return .zero
         case .fixed(let delay):
             return delay
-        case .exponential(let base, let factor, let maximumDelay):
+        case let .exponential(base, factor, maximumDelay):
             let normalizedRetryIndex = max(retryIndex, 1)
             let baseSeconds = base.secondsValue
             let multiplier = pow(

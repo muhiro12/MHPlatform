@@ -15,11 +15,11 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            initialReadiness: true,
-            executor: executor
-        )            { lhs, rhs in
-                lhs == rhs
-            }
+            executor: executor,
+            initialReadiness: true
+        ) { lhs, rhs in
+            lhs == rhs
+        }
 
         let outcome = try await coordinator.submit(3)
 
@@ -49,11 +49,11 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            initialReadiness: false,
-            executor: executor
-        )            { lhs, rhs in
-                lhs == rhs
-            }
+            executor: executor,
+            initialReadiness: false
+        ) { lhs, rhs in
+            lhs == rhs
+        }
 
         let queuedOutcome = try await coordinator.submit(1)
         expectQueued(queuedOutcome)
@@ -90,11 +90,11 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            initialReadiness: false,
-            executor: executor
-        )            { lhs, rhs in
-                lhs == rhs
-            }
+            executor: executor,
+            initialReadiness: false
+        ) { lhs, rhs in
+            lhs == rhs
+        }
 
         let firstOutcome = try await coordinator.submit(1)
         let secondOutcome = try await coordinator.submit(2)
@@ -127,11 +127,11 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            initialReadiness: false,
-            executor: executor
-        )            { lhs, rhs in
-                lhs == rhs
-            }
+            executor: executor,
+            initialReadiness: false
+        ) { lhs, rhs in
+            lhs == rhs
+        }
 
         let firstOutcome = try await coordinator.submit(1)
         let duplicateOutcome = try await coordinator.submit(1)
@@ -160,11 +160,11 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            initialReadiness: true,
-            executor: executor
-        )            { lhs, rhs in
-                lhs == rhs
-            }
+            executor: executor,
+            initialReadiness: true
+        ) { lhs, rhs in
+            lhs == rhs
+        }
 
         let firstTask = Task {
             try await coordinator.submit(1)
@@ -207,11 +207,11 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            initialReadiness: true,
-            executor: executor
-        )            { lhs, rhs in
-                lhs == rhs
-            }
+            executor: executor,
+            initialReadiness: true
+        ) { lhs, rhs in
+            lhs == rhs
+        }
 
         let outcome = try await coordinator.applyPendingIfReady()
         if outcome != nil {
@@ -230,11 +230,11 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            initialReadiness: false,
-            executor: executor
-        )            { lhs, rhs in
-                lhs == rhs
-            }
+            executor: executor,
+            initialReadiness: false
+        ) { lhs, rhs in
+            lhs == rhs
+        }
 
         let queuedOutcome = try await coordinator.submit(1)
         expectQueued(queuedOutcome)
@@ -261,11 +261,11 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            initialReadiness: false,
-            executor: executor
-        )            { lhs, rhs in
-                lhs == rhs
-            }
+            executor: executor,
+            initialReadiness: false
+        ) { lhs, rhs in
+            lhs == rhs
+        }
 
         let queuedOutcome = try await coordinator.submit(1)
         expectQueued(queuedOutcome)
