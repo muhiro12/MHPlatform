@@ -5,14 +5,7 @@ import UserNotifications
 #endif
 
 struct NotificationPayloadsDemoView: View {
-    private enum Constants {
-        static let rowSpacing = 6.0
-        static let rowVerticalPadding = 2.0
-        static let defaultActionIdentifier = "com.apple.UNNotificationDefaultActionIdentifier"
-        static let dismissActionIdentifier = "com.apple.UNNotificationDismissActionIdentifier"
-    }
-
-    private enum Scenario: String, CaseIterable, Identifiable {
+    enum Scenario: String, CaseIterable, Identifiable {
         case incomes
         case cookle
 
@@ -39,7 +32,7 @@ struct NotificationPayloadsDemoView: View {
         }
     }
 
-    private enum ActionSelection: String, CaseIterable, Identifiable {
+    enum ActionSelection: String, CaseIterable, Identifiable {
         case defaultTap
         case custom
         case dismiss
@@ -63,8 +56,41 @@ struct NotificationPayloadsDemoView: View {
         }
     }
 
-    @State private var scenario: Scenario = .incomes
-    @State private var actionSelection: ActionSelection = .defaultTap
+    @State private var scenarioState: Scenario = .incomes
+    @State private var actionSelectionState: ActionSelection = .defaultTap
+
+    #if canImport(UserNotifications)
+    @State private var orchestrationSnapshotState: PayloadOrchestrationSnapshot = .empty
+    #endif
+
+    var scenario: Scenario {
+        get {
+            scenarioState
+        }
+        nonmutating set {
+            scenarioState = newValue
+        }
+    }
+
+    var actionSelection: ActionSelection {
+        get {
+            actionSelectionState
+        }
+        nonmutating set {
+            actionSelectionState = newValue
+        }
+    }
+
+    #if canImport(UserNotifications)
+    var orchestrationSnapshot: PayloadOrchestrationSnapshot {
+        get {
+            orchestrationSnapshotState
+        }
+        nonmutating set {
+            orchestrationSnapshotState = newValue
+        }
+    }
+    #endif
 
     private let codec = MHNotificationPayloadCodec(
         configuration: .init(
@@ -94,11 +120,11 @@ struct NotificationPayloadsDemoView: View {
     private var selectedActionIdentifier: String {
         switch actionSelection {
         case .defaultTap:
-            return Constants.defaultActionIdentifier
+            return NotificationPayloadsDemoConstants.defaultActionIdentifier
         case .custom:
             return scenario.customActionIdentifier
         case .dismiss:
-            return Constants.dismissActionIdentifier
+            return NotificationPayloadsDemoConstants.dismissActionIdentifier
         case .unknown:
             return "unknown.action"
         }
@@ -160,14 +186,22 @@ struct NotificationPayloadsDemoView: View {
                 encodedPayloadSection
                 resolverSection
                 categorySection
+                #if canImport(UserNotifications)
+                orchestrationSection
+                #endif
             }
+            #if canImport(UserNotifications)
+            .task(id: orchestrationTaskID) {
+                await runOrchestrationSimulation()
+            }
+            #endif
             .navigationTitle("MHNotificationPayloads")
         }
     }
 
     private var scenarioSection: some View {
         Section("Scenario") {
-            Picker("Scenario", selection: $scenario) {
+            Picker("Scenario", selection: $scenarioState) {
                 ForEach(Scenario.allCases) { scenario in
                     Text(scenario.title).tag(scenario)
                 }
@@ -185,21 +219,21 @@ struct NotificationPayloadsDemoView: View {
                 Text(line)
                     .font(.caption.monospaced())
                     .textSelection(.enabled)
-                    .padding(.vertical, Constants.rowVerticalPadding)
+                    .padding(.vertical, NotificationPayloadsDemoConstants.rowVerticalPadding)
             }
         }
     }
 
     private var resolverSection: some View {
         Section("Route Resolution") {
-            Picker("Action", selection: $actionSelection) {
+            Picker("Action", selection: $actionSelectionState) {
                 ForEach(ActionSelection.allCases) { selection in
                     Text(selection.title).tag(selection)
                 }
             }
             .pickerStyle(.segmented)
 
-            VStack(alignment: .leading, spacing: Constants.rowSpacing) {
+            VStack(alignment: .leading, spacing: NotificationPayloadsDemoConstants.rowSpacing) {
                 Text("actionIdentifier: \(selectedActionIdentifier)")
                     .font(.caption.monospaced())
                     .textSelection(.enabled)

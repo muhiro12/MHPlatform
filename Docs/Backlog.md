@@ -4,7 +4,6 @@ This backlog is derived from concrete duplication found in `Incomes/` and `Cookl
 
 Current remaining priority after this phase:
 1. Review request and lightweight logging policy
-2. Notification orchestration adapters for payloads
 
 ## P0. Deep link URL grammar is duplicated
 
@@ -110,7 +109,7 @@ Run a sample mutation with retry, side-effect failure, and cancellation toggles.
 ## P1. Notification payload routing core was implemented
 
 Status:
-Implemented in this phase as `MHNotificationPayloads` (routing core).
+Implemented in this phase as `MHNotificationPayloads` (routing core + orchestration adapter).
 
 What was extracted:
 - payload route model (`default`, `fallback`, action map)
@@ -118,6 +117,8 @@ What was extracted:
 - userInfo encode/decode codec
 - response action to route resolution
 - optional `UserNotifications` bridge helpers
+- notification-center abstraction and adapter (`MHNotificationCentering`)
+- orchestration helpers (`MHNotificationOrchestrator`, `MHNotificationRequestSyncResult`)
 
 Evidence:
 - `Incomes/Incomes/Sources/Notification/Models/NotificationService.swift`
@@ -126,12 +127,12 @@ Evidence:
 - `MHKit/Sources/MHNotificationPayloads/`
 
 Remaining work:
-- `UNUserNotificationCenter` orchestration (authorization, registration, scheduling)
 - app-specific notification copy templates
 - attachment generation and persistence policy
+- app-specific adoption in Incomes/Cookle call sites
 
 ExampleApp validation:
-`NotificationPayloadsDemoView` demonstrates both Incomes-style and Cookle-style routing payload scenarios.
+`NotificationPayloadsDemoView` demonstrates both Incomes-style and Cookle-style payload scenarios plus simulated orchestration flow.
 
 ## P1. Route execution decoupling adapter was implemented
 

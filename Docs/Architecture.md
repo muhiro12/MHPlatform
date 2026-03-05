@@ -41,9 +41,9 @@ The package name is `MHKit`, but consumers import concrete module names instead 
   `MHNotificationPayload`, `MHNotificationRouteTargets`, `MHNotificationPayloadCodec`
 - Owns action/category descriptors and route resolution:
   `MHNotificationActionDescriptor`, `MHNotificationCategoryDescriptor`, `MHNotificationRouteResolver`
-- Provides optional `UserNotifications` bridge helpers behind `#if canImport(UserNotifications)`
-- Does not own notification text templates, attachment generation, or
-  `UNUserNotificationCenter` orchestration
+- Owns optional `UserNotifications` bridge and orchestration helpers behind `#if canImport(UserNotifications)`:
+  `MHNotificationCentering`, `MHNotificationOrchestrator`, `MHNotificationRequestSyncResult`
+- Does not own notification text templates, attachment generation, or app-specific scheduling policy
 
 ### `MHMutationFlow`
 
@@ -93,7 +93,7 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 
 ## Out Of Scope
 
-- `UNUserNotificationCenter` orchestration adapters (registration, authorization, scheduling)
+- app-specific `UNUserNotificationCenter` adoption wiring in Incomes/Cookle
 - SwiftUI navigation-state executors
 - shared migration policy for existing app preference formats
 - remote config

@@ -43,10 +43,11 @@ let policy = MHReminderPolicy(
 
 ## MHNotificationPayloads
 
-`MHNotificationPayloads` provides routing-focused payload/action/userInfo models and resolution utilities.
+`MHNotificationPayloads` provides routing-focused payload/action/userInfo models, response route resolution, and `UNUserNotificationCenter` orchestration helpers.
 
 ```swift
 import MHNotificationPayloads
+import UserNotifications
 
 let payload = MHNotificationPayload(
     routes: .init(
@@ -54,6 +55,18 @@ let payload = MHNotificationPayload(
         fallbackRouteURL: URL(string: "myapp://month?year=2026&month=1"),
         actionRouteURLs: ["view-month": URL(string: "myapp://month?year=2026&month=1")!]
     )
+)
+
+let status = await MHNotificationOrchestrator.requestAuthorizationIfNeeded(
+    center: UNUserNotificationCenter.current(),
+    options: [.alert, .sound, .providesAppNotificationSettings]
+)
+let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
+    center: UNUserNotificationCenter.current(),
+    requests: requestsToSchedule,
+    isManagedIdentifier: { identifier in
+        identifier.hasPrefix("upcoming-payment:")
+    }
 )
 ```
 
