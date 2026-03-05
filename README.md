@@ -71,6 +71,29 @@ let outcome = await MHMutationRunner.run(
 )
 ```
 
+## MHRouteExecution
+
+`MHRouteExecution` coordinates route handling with readiness checks and a latest-wins pending route queue.
+
+```swift
+import MHRouteExecution
+
+let executor = MHRouteExecutor<AppRoute, AppRouteOutcome>(
+    resolve: { route in
+        try await resolveOutcome(for: route)
+    },
+    apply: { outcome in
+        try await applyOutcome(outcome)
+    }
+)
+let coordinator = MHRouteCoordinator(
+    isReady: { hasLoadedInitialState },
+    executor: executor
+)
+
+let resolution = try await coordinator.handle(.settings)
+```
+
 ## MHPreferences
 
 `MHPreferences` provides typed preference keys with `UserDefaults` and `AppStorage` bridges.
@@ -86,4 +109,4 @@ store.set(false, for: key)
 
 ## Example App
 
-`MHKitExample` demonstrates all five modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.
+`MHKitExample` demonstrates all six modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.

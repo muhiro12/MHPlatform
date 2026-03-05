@@ -18,6 +18,11 @@ struct ContentView: View {
                     Label("Mutation Flow", systemImage: "arrow.triangle.2.circlepath")
                 }
 
+            RouteExecutionDemoView()
+                .tabItem {
+                    Label("Route Execution", systemImage: "map")
+                }
+
             PreferencesDemoView()
                 .tabItem {
                     Label("Preferences", systemImage: "slider.horizontal.3")

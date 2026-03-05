@@ -6,6 +6,7 @@
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
 - `MHMutationFlow`
+- `MHRouteExecution`
 - `MHPreferences`
 
 The package name is `MHKit`, but consumers import concrete module names instead of a single umbrella module.
@@ -49,6 +50,13 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - Exposes observable execution events through `MHMutationEvent`
 - Does not own persistence, widgets, notifications, or review APIs directly
 
+### `MHRouteExecution`
+
+- Owns route execution orchestration primitives:
+  `MHRouteExecutor`, `MHRouteCoordinator`, `MHRouteResolution`
+- Owns readiness-aware pending queue behavior with latest-wins semantics
+- Does not own URL parsing, route type definitions, persistence access, or UI state models
+
 ### `MHPreferences`
 
 - Owns typed preference keys and `UserDefaults` read/write primitives
@@ -63,6 +71,7 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - `MHNotificationPlans` has no dependency on the other modules.
 - `MHNotificationPayloads` has no dependency on the other modules.
 - `MHMutationFlow` has no dependency on the other modules.
+- `MHRouteExecution` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
 - ExampleApp may import all public modules, but package targets must stay independent.
 

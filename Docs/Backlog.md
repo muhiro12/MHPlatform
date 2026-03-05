@@ -3,9 +3,9 @@
 This backlog is derived from concrete duplication found in `Incomes/` and `Cookle/`. Evidence paths are workspace-root relative and remain read-only references.
 
 Current remaining priority after this phase:
-1. Route execution decoupling adapter
-2. Persistence migration/reset unification
-3. Review request and lightweight logging policy
+1. Persistence migration/reset unification
+2. Review request and lightweight logging policy
+3. Notification orchestration adapters for payloads
 
 ## P0. Deep link URL grammar is duplicated
 
@@ -134,28 +134,29 @@ Remaining work:
 ExampleApp validation:
 `NotificationPayloadsDemoView` demonstrates both Incomes-style and Cookle-style routing payload scenarios.
 
-## P1. Route execution is too coupled to app navigation state
+## P1. Route execution decoupling adapter was implemented
 
-Problem:
-Both apps have route executors, but each executor knows too much about app-specific UI state and persistence lookups.
+Status:
+Implemented in this phase as `MHRouteExecution`.
 
-Why not now:
-The route grammar is shared; route execution remains app-specific.
+What was extracted:
+- async route execution primitive (`MHRouteExecutor`)
+- readiness-aware coordinator (`MHRouteCoordinator`)
+- latest-wins pending queue behavior (`MHRouteResolution`)
 
 Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/MainNavigationRouteExecutor.swift`
 - `Cookle/CookleLibrary/Sources/Common/CookleRouteExecutor.swift`
 - `Cookle/Cookle/Sources/Main/Services/MainRouteService.swift`
+- `MHKit/Sources/MHRouteExecution/`
 
-Recommended module:
-Future navigation adapter layer
-
-Minimal API sketch:
-- `MHRouteResolution`
-- `MHRouteExecutor`
+Remaining work:
+- app-specific route enums and persistence lookups remain in each app
+- app-specific UI state application remains in each app
+- optional URL-input coordinator layer remains out of scope for v1
 
 ExampleApp validation:
-Docs only for now.
+`RouteExecutionDemoView` demonstrates readiness changes, pending route handling, explicit pending application, and failure logging.
 
 ## P1. Preferences and storage codecs are inconsistent
 

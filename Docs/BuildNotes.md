@@ -182,3 +182,44 @@ Workspace-root read-only verification commands:
 - `Incomes/`: no file hash changes detected (`diff` returned no output)
 - `Cookle/`: no file hash changes detected (`diff` returned no output)
 - All implementation changes remain under `MHKit/`
+
+## MHRouteExecution Phase
+
+### Start State
+
+- Branch: `main`
+- `git status --short --branch`:
+
+```text
+## main
+```
+
+### Commands Run
+
+All commands below were run inside `MHKit/`:
+
+1. `swift test`
+2. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+3. `swiftlint lint --strict --no-cache`
+4. `swift test`
+5. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+6. `swiftlint lint --strict --no-cache`
+7. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+
+### Results
+
+- First `swift test`: failed (`MHRouteExecutionTests` variable redeclaration)
+- Second and final `swift test`: passed
+  - 63 tests across 10 suites passed
+- First `xcodebuild ... build`: failed (`RouteExecutionDemoView` Combine import and main-actor/sendable isolation issues)
+- Second and final `xcodebuild ... build`: passed
+  - `MHKitExample.app` built successfully for macOS
+  - non-fatal `appintentsmetadataprocessor` warning remains (metadata extraction skipped without `AppIntents.framework`)
+- First `swiftlint lint --strict --no-cache`: failed (`one_declaration_per_file`, `type_contents_order`, and related style violations)
+- Second and final `swiftlint lint --strict --no-cache`: passed with `0` violations
+
+### Scope Verification
+
+- Added new `MHRouteExecution` module and tests under `MHKit/` only
+- Added `RouteExecutionDemoView` and support files in `Example/MHKitExample/`
+- Updated architecture/backlog/readme/build notes docs in `MHKit/Docs` and `MHKit/README.md`

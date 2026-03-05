@@ -27,6 +27,10 @@ let package = Package(
             targets: ["MHMutationFlow"]
         ),
         .library(
+            name: "MHRouteExecution",
+            targets: ["MHRouteExecution"]
+        ),
+        .library(
             name: "MHPreferences",
             targets: ["MHPreferences"]
         )
@@ -43,6 +47,9 @@ let package = Package(
         ),
         .target(
             name: "MHMutationFlow"
+        ),
+        .target(
+            name: "MHRouteExecution"
         ),
         .target(
             name: "MHPreferences"
@@ -62,6 +69,10 @@ let package = Package(
         .testTarget(
             name: "MHMutationFlowTests",
             dependencies: ["MHMutationFlow"]
+        ),
+        .testTarget(
+            name: "MHRouteExecutionTests",
+            dependencies: ["MHRouteExecution"]
         ),
         .testTarget(
             name: "MHPreferencesTests",
