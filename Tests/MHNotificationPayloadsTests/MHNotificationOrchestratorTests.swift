@@ -133,6 +133,38 @@ struct MHNotificationOrchestratorTests {
     }
 
     @Test
+    func replaceManagedPendingRequests_keeps_existing_request_when_replacement_fails() async {
+        let center = NotificationCenterDouble(
+            authorizationStatus: .authorized,
+            pendingRequests: [
+                request(identifier: "managed.keep"),
+                request(identifier: "managed.remove"),
+                request(identifier: "foreign.keep")
+            ],
+            failingAddIdentifiers: ["managed.keep"]
+        )
+
+        let result = await MHNotificationOrchestrator.replaceManagedPendingRequests(
+            center: center,
+            requests: [
+                request(identifier: "managed.keep"),
+                request(identifier: "managed.new")
+            ]
+        ) { identifier in
+            identifier.hasPrefix("managed.")
+        }
+
+        #expect(result.removedPendingIdentifiers == ["managed.remove"])
+        #expect(result.addedRequestIdentifiers == ["managed.new"])
+        #expect(result.failedRequestIdentifiers == ["managed.keep"])
+        #expect(center.pendingIdentifiers() == [
+            "foreign.keep",
+            "managed.keep",
+            "managed.new"
+        ])
+    }
+
+    @Test
     func resolveRouteURL_applies_expected_precedence() {
         let codec = MHNotificationPayloadCodec()
         let payload = MHNotificationPayload(

@@ -67,6 +67,9 @@ final class NotificationCenterDouble: MHNotificationCentering {
                 code: Self.addFailureCode
             )
         }
+        pendingRequests.removeAll { pendingRequest in
+            pendingRequest.identifier == request.identifier
+        }
         pendingRequests.append(request)
     }
 

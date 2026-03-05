@@ -33,7 +33,7 @@ public enum MHNotificationOrchestrator {
         return await center.fetchAuthorizationStatus()
     }
 
-    /// Replaces managed pending requests and returns partial success details.
+    /// Syncs managed pending requests and returns partial success details.
     @preconcurrency
     public static func replaceManagedPendingRequests(
         center: any MHNotificationCentering,
@@ -41,9 +41,14 @@ public enum MHNotificationOrchestrator {
         isManagedIdentifier: @Sendable (String) -> Bool
     ) async -> MHNotificationRequestSyncResult {
         let pendingRequests = await center.fetchPendingNotificationRequests()
-        let removedPendingIdentifiers = pendingRequests
+        let managedPendingIdentifiers = pendingRequests
             .map(\.identifier)
             .filter(isManagedIdentifier)
+        let managedRequestIdentifiers = Set(requests.map(\.identifier))
+        let removedPendingIdentifiers = managedPendingIdentifiers
+            .filter { identifier in
+                managedRequestIdentifiers.contains(identifier) == false
+            }
             .sorted()
 
         if removedPendingIdentifiers.isEmpty == false {
