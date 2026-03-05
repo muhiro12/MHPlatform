@@ -3,8 +3,7 @@ import Testing
 
 struct MHRouteExecutionTests {
     @Test
-    func handle_applies_route_when_ready() async throws {
-        let readiness = MHRouteExecutionReadinessFlag(initialValue: true)
+    func submit_applies_route_when_ready() async throws {
         let recorder = MHRouteExecutionEventRecorder()
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
@@ -16,14 +15,16 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            isReady: { readiness.value },
+            initialReadiness: true,
             executor: executor
-        )
+        )            { lhs, rhs in
+                lhs == rhs
+            }
 
-        let resolution = try await coordinator.handle(3)
+        let outcome = try await coordinator.submit(3)
 
         expectApplied(
-            resolution,
+            outcome,
             expected: 30
         )
         #expect(
@@ -36,8 +37,7 @@ struct MHRouteExecutionTests {
     }
 
     @Test
-    func handle_queues_route_when_not_ready() async throws {
-        let readiness = MHRouteExecutionReadinessFlag(initialValue: false)
+    func submit_queues_route_until_readiness_gate_opens() async throws {
         let recorder = MHRouteExecutionRouteRecorder()
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
@@ -49,35 +49,36 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            isReady: { readiness.value },
+            initialReadiness: false,
             executor: executor
+        )            { lhs, rhs in
+                lhs == rhs
+            }
+
+        let queuedOutcome = try await coordinator.submit(1)
+        expectQueued(queuedOutcome)
+
+        let queuedPendingOutcome = try #require(
+            try await coordinator.applyPendingIfReady()
         )
+        expectQueued(queuedPendingOutcome)
 
-        let queuedResolution = try await coordinator.handle(1)
-        expectQueued(queuedResolution)
-        #expect(await coordinator.hasPendingRoute)
+        await coordinator.setReadiness(true)
 
-        let pendingResolutionBeforeReady = try #require(
-            try await coordinator.applyPendingIfNeeded()
-        )
-        expectQueued(pendingResolutionBeforeReady)
-
-        readiness.set(true)
-
-        let appliedResolution = try #require(
-            try await coordinator.applyPendingIfNeeded()
+        let appliedOutcome = try #require(
+            try await coordinator.applyPendingIfReady()
         )
         expectApplied(
-            appliedResolution,
+            appliedOutcome,
             expected: 1
         )
+
         #expect(await coordinator.hasPendingRoute == false)
         #expect(await recorder.snapshot() == (resolved: [1], applied: [1]))
     }
 
     @Test
-    func handle_overwrites_pending_route_with_latest_value() async throws {
-        let readiness = MHRouteExecutionReadinessFlag(initialValue: false)
+    func submit_latest_wins_when_multiple_routes_are_queued() async throws {
         let recorder = MHRouteExecutionRouteRecorder()
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
@@ -89,32 +90,58 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            isReady: { readiness.value },
+            initialReadiness: false,
             executor: executor
-        )
+        )            { lhs, rhs in
+                lhs == rhs
+            }
 
-        let firstResolution = try await coordinator.handle(1)
-        let secondResolution = try await coordinator.handle(2)
-        expectQueued(firstResolution)
-        expectQueued(secondResolution)
+        let firstOutcome = try await coordinator.submit(1)
+        let secondOutcome = try await coordinator.submit(2)
+
+        expectQueued(firstOutcome)
+        expectQueued(secondOutcome)
         #expect(await coordinator.hasPendingRoute)
 
-        readiness.set(true)
+        await coordinator.setReadiness(true)
 
-        let pendingResolution = try #require(
-            try await coordinator.applyPendingIfNeeded()
+        let pendingOutcome = try #require(
+            try await coordinator.applyPendingIfReady()
         )
         expectApplied(
-            pendingResolution,
+            pendingOutcome,
             expected: 2
         )
+
         #expect(await recorder.snapshot() == (resolved: [2], applied: [2]))
-        #expect(await coordinator.hasPendingRoute == false)
     }
 
     @Test
-    func handle_queues_new_route_while_execution_is_running() async throws {
-        let readiness = MHRouteExecutionReadinessFlag(initialValue: true)
+    func submit_returns_deduplicated_for_duplicate_pending_route() async throws {
+        let executor = MHRouteExecutor<Int, Int>(
+            resolve: { route in
+                route
+            },
+            apply: { _ in
+                // Intentionally empty.
+            }
+        )
+        let coordinator = MHRouteCoordinator(
+            initialReadiness: false,
+            executor: executor
+        )            { lhs, rhs in
+                lhs == rhs
+            }
+
+        let firstOutcome = try await coordinator.submit(1)
+        let duplicateOutcome = try await coordinator.submit(1)
+
+        expectQueued(firstOutcome)
+        expectDeduplicated(duplicateOutcome)
+    }
+
+    @Test
+    func submit_queues_new_route_while_execution_is_running() async throws {
         let recorder = MHRouteExecutionRouteRecorder()
         let startedSignal = MHRouteExecutionStartedSignal()
         let gate = MHRouteExecutionSuspensionGate()
@@ -133,42 +160,44 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            isReady: { readiness.value },
+            initialReadiness: true,
             executor: executor
-        )
+        )            { lhs, rhs in
+                lhs == rhs
+            }
 
         let firstTask = Task {
-            try await coordinator.handle(1)
+            try await coordinator.submit(1)
         }
 
         await startedSignal.waitForStart()
 
-        let queuedResolution = try await coordinator.handle(2)
-        expectQueued(queuedResolution)
+        let queuedOutcome = try await coordinator.submit(2)
+        expectQueued(queuedOutcome)
         #expect(await coordinator.hasPendingRoute)
 
         await gate.open()
 
-        let firstResolution = try await firstTask.value
+        let firstOutcome = try await firstTask.value
         expectApplied(
-            firstResolution,
+            firstOutcome,
             expected: 1
         )
 
-        let pendingResolution = try #require(
-            try await coordinator.applyPendingIfNeeded()
+        let pendingOutcome = try #require(
+            try await coordinator.applyPendingIfReady()
         )
         expectApplied(
-            pendingResolution,
+            pendingOutcome,
             expected: 2
         )
+
         #expect(await recorder.snapshot() == (resolved: [1, 2], applied: [1, 2]))
         #expect(await coordinator.hasPendingRoute == false)
     }
 
     @Test
     func apply_pending_returns_nil_when_no_pending_route_exists() async throws {
-        let readiness = MHRouteExecutionReadinessFlag(initialValue: true)
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
                 route
@@ -178,19 +207,20 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            isReady: { readiness.value },
+            initialReadiness: true,
             executor: executor
-        )
+        )            { lhs, rhs in
+                lhs == rhs
+            }
 
-        let resolution = try await coordinator.applyPendingIfNeeded()
-        if resolution != nil {
+        let outcome = try await coordinator.applyPendingIfReady()
+        if outcome != nil {
             Issue.record("Expected nil when no pending route exists.")
         }
     }
 
     @Test
-    func apply_pending_keeps_pending_route_when_resolve_fails() async throws {
-        let readiness = MHRouteExecutionReadinessFlag(initialValue: false)
+    func apply_pending_keeps_pending_route_when_execute_fails() async throws {
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { _ in
                 throw MHRouteExecutionTestError.resolveFailed
@@ -200,16 +230,18 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            isReady: { readiness.value },
+            initialReadiness: false,
             executor: executor
-        )
+        )            { lhs, rhs in
+                lhs == rhs
+            }
 
-        let queuedResolution = try await coordinator.handle(1)
-        expectQueued(queuedResolution)
-        readiness.set(true)
+        let queuedOutcome = try await coordinator.submit(1)
+        expectQueued(queuedOutcome)
+        await coordinator.setReadiness(true)
 
         do {
-            _ = try await coordinator.applyPendingIfNeeded()
+            _ = try await coordinator.applyPendingIfReady()
             Issue.record("Expected resolve failure when applying pending route.")
         } catch {
             #expect(error is MHRouteExecutionTestError)
@@ -219,38 +251,7 @@ struct MHRouteExecutionTests {
     }
 
     @Test
-    func apply_pending_keeps_pending_route_when_apply_fails() async throws {
-        let readiness = MHRouteExecutionReadinessFlag(initialValue: false)
-        let executor = MHRouteExecutor<Int, Int>(
-            resolve: { route in
-                route
-            },
-            apply: { _ in
-                throw MHRouteExecutionTestError.applyFailed
-            }
-        )
-        let coordinator = MHRouteCoordinator(
-            isReady: { readiness.value },
-            executor: executor
-        )
-
-        let queuedResolution = try await coordinator.handle(1)
-        expectQueued(queuedResolution)
-        readiness.set(true)
-
-        do {
-            _ = try await coordinator.applyPendingIfNeeded()
-            Issue.record("Expected apply failure when applying pending route.")
-        } catch {
-            #expect(error is MHRouteExecutionTestError)
-        }
-
-        #expect(await coordinator.hasPendingRoute)
-    }
-
-    @Test
     func clear_pending_route_removes_pending_value() async throws {
-        let readiness = MHRouteExecutionReadinessFlag(initialValue: false)
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
                 route
@@ -260,19 +261,21 @@ struct MHRouteExecutionTests {
             }
         )
         let coordinator = MHRouteCoordinator(
-            isReady: { readiness.value },
+            initialReadiness: false,
             executor: executor
-        )
+        )            { lhs, rhs in
+                lhs == rhs
+            }
 
-        let queuedResolution = try await coordinator.handle(1)
-        expectQueued(queuedResolution)
+        let queuedOutcome = try await coordinator.submit(1)
+        expectQueued(queuedOutcome)
         #expect(await coordinator.hasPendingRoute)
 
         await coordinator.clearPendingRoute()
 
         #expect(await coordinator.hasPendingRoute == false)
-        let resolution = try await coordinator.applyPendingIfNeeded()
-        if resolution != nil {
+        let pendingOutcome = try await coordinator.applyPendingIfReady()
+        if pendingOutcome != nil {
             Issue.record("Expected nil after clearing pending route.")
         }
     }

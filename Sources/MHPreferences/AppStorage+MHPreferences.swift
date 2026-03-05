@@ -10,7 +10,7 @@ public extension AppStorage {
     ) where Value == Bool {
         self.init(
             wrappedValue: key.defaultValue,
-            key.name,
+            key.storageKey,
             store: store
         )
     }
@@ -22,7 +22,7 @@ public extension AppStorage {
     ) where Value == Int {
         self.init(
             wrappedValue: key.defaultValue,
-            key.name,
+            key.storageKey,
             store: store
         )
     }
@@ -33,7 +33,7 @@ public extension AppStorage {
         store: UserDefaults = .standard
     ) where Value == String? {
         self.init(
-            key.name,
+            key.storageKey,
             store: store
         )
     }

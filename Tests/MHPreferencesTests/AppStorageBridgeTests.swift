@@ -6,6 +6,8 @@ import Testing
 
 struct AppStorageBridgeTests {
     private enum Constants {
+        static let namespace = "tests.app-storage"
+
         static let boolDefaultValue = true
         static let intDefaultValue = 30
         static let intStoredValue = 12
@@ -85,7 +87,8 @@ struct AppStorageBridgeTests {
     func bool_bridge_uses_default_value() throws {
         let userDefaults = try makeUserDefaults(suiteName: "bool-default")
         let key = MHBoolPreferenceKey(
-            "bool-default-key",
+            namespace: Constants.namespace,
+            name: "bool-default-key",
             default: Constants.boolDefaultValue
         )
         let harness = BoolHarness(
@@ -100,7 +103,8 @@ struct AppStorageBridgeTests {
     func int_bridge_uses_default_value() throws {
         let userDefaults = try makeUserDefaults(suiteName: "int-default")
         let key = MHIntPreferenceKey(
-            "int-default-key",
+            namespace: Constants.namespace,
+            name: "int-default-key",
             default: Constants.intDefaultValue
         )
         let harness = IntHarness(
@@ -114,7 +118,10 @@ struct AppStorageBridgeTests {
     @Test
     func string_bridge_round_trips_and_removes_nil() throws {
         let userDefaults = try makeUserDefaults(suiteName: "string-roundtrip")
-        let key = MHStringPreferenceKey("string-roundtrip-key")
+        let key = MHStringPreferenceKey(
+            namespace: Constants.namespace,
+            name: "string-roundtrip-key"
+        )
         var harness = StringHarness(
             key: key,
             store: userDefaults
@@ -123,22 +130,26 @@ struct AppStorageBridgeTests {
         #expect(harness.wrappedValue == nil)
 
         harness.wrappedValue = "value"
-        #expect(userDefaults.string(forKey: key.name) == "value")
+        #expect(userDefaults.string(forKey: key.storageKey) == "value")
 
         harness.wrappedValue = nil
-        #expect(userDefaults.object(forKey: key.name) == nil)
+        #expect(userDefaults.object(forKey: key.storageKey) == nil)
     }
 
     @Test
     func store_injection_is_respected() throws {
         let userDefaults = try makeUserDefaults(suiteName: "injected-store")
-        let key = MHBoolPreferenceKey("injected-store-key")
+        let key = MHBoolPreferenceKey(
+            namespace: Constants.namespace,
+            name: "injected-store-key"
+        )
         var boolHarness = BoolHarness(
             key: key,
             store: userDefaults
         )
         let intKey = MHIntPreferenceKey(
-            "injected-int-key",
+            namespace: Constants.namespace,
+            name: "injected-int-key",
             default: Constants.intDefaultValue
         )
         var intHarness = IntHarness(
@@ -149,8 +160,8 @@ struct AppStorageBridgeTests {
         boolHarness.wrappedValue = Constants.injectedBoolValue
         intHarness.wrappedValue = Constants.intStoredValue
 
-        #expect(userDefaults.bool(forKey: key.name) == Constants.injectedBoolValue)
-        #expect(userDefaults.integer(forKey: intKey.name) == Constants.intStoredValue)
+        #expect(userDefaults.bool(forKey: key.storageKey) == Constants.injectedBoolValue)
+        #expect(userDefaults.integer(forKey: intKey.storageKey) == Constants.intStoredValue)
     }
 
     private func makeUserDefaults(suiteName: String) throws -> UserDefaults {

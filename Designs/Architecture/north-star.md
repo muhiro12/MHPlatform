@@ -1,64 +1,70 @@
 # MHKit North Star
 
-MHKit is shared application infrastructure extracted from concrete duplication in
-Incomes and Cookle. It is intentionally small, Apple-native, and module-flat.
+MHKit is an application infrastructure kit for SwiftUI/SwiftData apps.
+It provides reusable primitives for app plumbing, not app domain behavior.
 
-## Why MHKit Exists
+## Product Intent
 
-- Provide cross-app infrastructure that repeats across apps but is not
-  app-domain logic.
-- Keep reusable infrastructure in one place so app targets can stay focused on
-  product behavior and platform adapters.
-- Make shared behavior deterministic and testable without introducing a generic
-  core architecture.
-- Preserve each app domain library (`IncomesLibrary`, `CookleLibrary`) as the
-  owner of domain models and rules.
+- Extract duplicated infrastructure from real apps (Incomes, Cookle).
+- Keep APIs small, composable, and Swift-concurrency friendly.
+- Keep behavior deterministic and testable.
+- Keep module boundaries explicit so adoption can be incremental.
 
-## What MHKit Intentionally Avoids
+## Non-Goals
 
-- Domain rules and domain model ownership:
-  finance, recipe, and app-specific business decisions stay in each domain
-  library.
-- UI state stores and presentation coordination:
-  screen state, sheet state, focus state, and view navigation state stay in app
-  targets.
-- Persistence abstraction over SwiftData:
-  no repository/service abstraction that hides `ModelContext`, SwiftData
-  semantics, or app-specific storage policy.
+- No domain rules in MHKit (`finance`, `recipe`, etc. stay in app/domain layers).
+- No generic SwiftData abstraction layer (no repositories, no persistence facade).
+- No global singleton runtime that hides threading or lifecycle ownership.
 
-## Apple-Native Compatibility Stance
+## Canonical Vocabulary
 
-- SwiftUI remains the first-class UI layer.
-- Observation remains the first-class state observation model.
-- SwiftData remains the first-class persistence model.
-- App Intents remain first-class adapter entry points.
-- WidgetKit remains first-class for glanceable surfaces.
-- MHKit is additive glue around these APIs, not a replacement architecture.
-
-## Decision Matrix: Domain Library vs App Adapter vs MHKit
-
-| Decision Rule | Belongs In | Examples |
+| Term | Meaning | MHKit Examples |
 | --- | --- | --- |
-| Domain behavior tied to app entities | Domain Library | `ItemService`, `RecipeService` |
-| Target-only framework adaptation | App Adapter | widget reload, review prompt, `openURL` |
-| Cross-app infra with no domain ownership | MHKit | deep-link codec, route coordinator |
-| Screen and navigation presentation state | App Adapter | view models, sheet/focus flags |
-| Deterministic planning from pure models | MHKit | reminder/suggestion planners |
-| App schema and migration policy decisions | Domain or App Adapter | migration checks |
+| `Outcome` | Terminal async/sync end state used by workflows | `MHRouteExecutionOutcome`, `MHMutationOutcome`, `MHNotificationRequestSyncOutcome`, `MHStoreMigrationOutcome` |
+| `Event` | Ordered progress signal emitted while running | `MHMutationEvent`, `MHDestructiveResetEvent` |
+| `Plan` | Pure deterministic planning output with no side effect | `MHReminderPlan`, `MHSuggestionPlan` |
+| `Inbox` | Consume-once handoff slot (latest only) | `MHDeepLinkInbox` |
+| `Store` | Durable persistence-backed handoff slot | `MHDeepLinkStore`, `MHPreferenceStore` |
+| `Queue` | Backlog behavior with ordering/replacement semantics | `MHRouteCoordinator` pending route (latest-wins) |
 
-## v1 Boundary Guardrails
+## Error and Recoverability Rules
 
-- Keep module dependencies flat:
-  public MHKit modules do not depend on each other.
-- Do not introduce `MHCore` or an umbrella runtime module in v1.
-- Prefer extracting concrete duplicated concerns, not speculative abstractions.
-- Keep app-domain behavior in app domain libraries, even when names look
-  similar across apps.
+- `Outcome.failed(..., isRecoverable: Bool)` is used when caller-side policy decisions are expected (`MHMutationOutcome`).
+- Deterministic pure planners should not hide failures; invalid inputs are filtered or rejected at input boundary.
+- Route execution failure keeps pending route when appropriate (`applyPendingIfReady` re-queues consumed route if no newer pending route exists).
 
-## Naming Convention (Canonical)
+## Module Ownership
 
-Canonical naming for outcomes, events, planners, and handoff storage terms is
-defined in
-[`integration-contracts.md`](integration-contracts.md#naming-convention-decision). This run
-adopts an Outcome-first policy at documentation level with no source-breaking
-renames.
+| Capability | Owned by MHKit | Not Owned by MHKit |
+| --- | --- | --- |
+| Deep link parsing/handoff | URL codec + inbox/store | App route enums, screen selection state |
+| Route execution | readiness-gated execution + latest-wins pending queue | URL parsing, domain interpretation |
+| Notification planning | deterministic candidate -> plan transforms | UN scheduling policy and app-specific copy |
+| Notification payload routing | payload codec + response route resolving + optional bridge helpers | App notification-center adoption strategy |
+| Mutation orchestration | retry/cancel/event/outcome primitive | Domain mutation meaning and business validation |
+| Persistence maintenance | migration/reset orchestration | App-specific schema validation and data rules |
+| Preferences | typed keys + AppStorage bridges + codable-as-Data | Feature semantics for each key |
+| Review request policy | lottery + delayed request orchestration | Product timing/eligibility strategy |
+
+## Decision Matrix
+
+| Question | If Yes | If No |
+| --- | --- | --- |
+| Is behavior tied to domain entities/rules? | Domain library or app module | Continue check |
+| Is this platform adapter glue for one target only? | App adapter layer | Continue check |
+| Is this cross-app infra with stable contract and no domain ownership? | MHKit | Keep local to app |
+
+## Concurrency and State Rules
+
+- Prefer value types and explicit actors.
+- Do not hide mutable global state.
+- Expose threading expectations in each contract:
+  - actor-isolated primitives (`MHRouteCoordinator`, `MHDeepLinkInbox`)
+  - caller-thread pure functions (`MHReminderPlanner`, `MHSuggestionPlanner`)
+  - explicit `MainActor` API where UI platform requires it (`MHReviewRequester`).
+
+## Adoption Posture
+
+- Breaking changes are acceptable during pre-release.
+- API coherence is prioritized over temporary compatibility aliases.
+- Documentation in `Designs/Architecture` is the source of integration truth.

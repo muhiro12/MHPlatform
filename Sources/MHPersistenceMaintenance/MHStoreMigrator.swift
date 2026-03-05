@@ -3,10 +3,14 @@ import Foundation
 /// Migrates and cleans up persisted store files.
 public enum MHStoreMigrator {
     /// Copies legacy store files into the current location when needed.
+    @preconcurrency
     public static func migrateIfNeeded(
         plan: MHStoreMigrationPlan,
-        fileManager: FileManager = .default
-    ) throws -> MHStoreMigrationResult {
+        fileManager: FileManager = .default,
+        validateMigration: @Sendable (_ currentStoreURL: URL, _ copiedFileNames: [String]) throws -> Void = { _, _ in
+            // Intentionally empty.
+        }
+    ) throws -> MHStoreMigrationOutcome {
         guard plan.legacyStoreURL != plan.currentStoreURL else {
             return .skipped(.sameLocation)
         }
@@ -43,6 +47,17 @@ public enum MHStoreMigrator {
             candidateNames: legacyCandidateNames
         )
 
+        do {
+            try validateMigration(plan.currentStoreURL, copiedFileNames)
+        } catch {
+            _ = try removeStoreFilesIfExists(
+                fileManager: fileManager,
+                storeURL: plan.currentStoreURL,
+                candidateNames: copiedFileNames
+            )
+            throw error
+        }
+
         return .migrated(
             copiedFileNames: copiedFileNames,
             removedCurrentFileNames: removedCurrentFileNames
@@ -53,7 +68,7 @@ public enum MHStoreMigrator {
     public static func removeLegacyStoreFilesIfNeeded(
         plan: MHStoreMigrationPlan,
         fileManager: FileManager = .default
-    ) throws -> MHStoreLegacyCleanupResult {
+    ) throws -> MHStoreLegacyCleanupOutcome {
         guard plan.legacyStoreURL != plan.currentStoreURL else {
             return .skipped(.sameLocation)
         }

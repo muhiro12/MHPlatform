@@ -4,10 +4,11 @@ import SwiftUI
 struct PreferencesDemoView: View {
     private enum Constants {
         static let suiteName = "MHKitExample.PreferencesDemo"
-        static let boolKeyName = "example.preferences.bool"
-        static let intKeyName = "example.preferences.int"
-        static let stringKeyName = "example.preferences.string"
-        static let codableKeyName = "example.preferences.codable"
+        static let namespace = "mhkit.example.preferences"
+        static let boolKeyName = "bool"
+        static let intKeyName = "int"
+        static let stringKeyName = "string"
+        static let codableKeyName = "codable"
 
         static let defaultBoolValue = true
         static let defaultIntValue = 5
@@ -36,16 +37,22 @@ struct PreferencesDemoView: View {
     }()
 
     private static let boolKey = MHBoolPreferenceKey(
-        Constants.boolKeyName,
+        namespace: Constants.namespace,
+        name: Constants.boolKeyName,
         default: Constants.defaultBoolValue
     )
     private static let intKey = MHIntPreferenceKey(
-        Constants.intKeyName,
+        namespace: Constants.namespace,
+        name: Constants.intKeyName,
         default: Constants.defaultIntValue
     )
-    private static let stringKey = MHStringPreferenceKey(Constants.stringKeyName)
+    private static let stringKey = MHStringPreferenceKey(
+        namespace: Constants.namespace,
+        name: Constants.stringKeyName
+    )
     private static let codableKey = MHCodablePreferenceKey<DemoPreferencesPayload>(
-        Constants.codableKeyName
+        namespace: Constants.namespace,
+        name: Constants.codableKeyName
     )
     private static let store = MHPreferenceStore(userDefaults: userDefaults)
 
@@ -89,15 +96,15 @@ struct PreferencesDemoView: View {
 
     private var primitiveSection: some View {
         Section("Primitive Values") {
-            Toggle("Bool (\(Self.boolKey.name))", isOn: $boolValue)
+            Toggle("Bool (\(Self.boolKey.storageKey))", isOn: $boolValue)
 
             Stepper(
-                "Int (\(Self.intKey.name)): \(intValue)",
+                "Int (\(Self.intKey.storageKey)): \(intValue)",
                 value: $intValue,
                 in: Constants.intStepperRange
             )
 
-            TextField("String (\(Self.stringKey.name))", text: $stringValue)
+            TextField("String (\(Self.stringKey.storageKey))", text: $stringValue)
                 .autocorrectionDisabled()
         }
     }
@@ -134,13 +141,13 @@ struct PreferencesDemoView: View {
     private var rawStorageSection: some View {
         Section("Raw Storage") {
             LabeledContent("Bool exists") {
-                Text(containsKey(Self.boolKey.name) ? "true" : "false")
+                Text(containsKey(Self.boolKey.storageKey) ? "true" : "false")
             }
             LabeledContent("Int exists") {
-                Text(containsKey(Self.intKey.name) ? "true" : "false")
+                Text(containsKey(Self.intKey.storageKey) ? "true" : "false")
             }
             LabeledContent("String exists") {
-                Text(containsKey(Self.stringKey.name) ? "true" : "false")
+                Text(containsKey(Self.stringKey.storageKey) ? "true" : "false")
             }
             LabeledContent("Codable") {
                 Text(codableStorageStatus)
@@ -157,7 +164,7 @@ struct PreferencesDemoView: View {
     }
 
     private var codableStorageStatus: String {
-        guard let rawObject = Self.userDefaults.object(forKey: Self.codableKey.name) else {
+        guard let rawObject = Self.userDefaults.object(forKey: Self.codableKey.storageKey) else {
             return "No value"
         }
         guard let storedData = rawObject as? Data else {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// UserDefaults-backed pending route storage.
+/// UserDefaults-backed pending deep-link storage.
 public final class MHDeepLinkStore {
     private let userDefaults: UserDefaults
     private let key: String
@@ -15,12 +15,12 @@ public final class MHDeepLinkStore {
     }
 
     /// Persists a pending URL.
-    public func store(_ url: URL) {
+    public func ingest(_ url: URL) {
         userDefaults.set(url.absoluteString, forKey: key)
     }
 
-    /// Consumes and clears a pending URL.
-    public func consume() -> URL? {
+    /// Consumes and clears the latest pending URL.
+    public func consumeLatest() -> URL? {
         defer {
             userDefaults.removeObject(forKey: key)
         }

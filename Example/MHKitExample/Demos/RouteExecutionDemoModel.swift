@@ -13,7 +13,6 @@ final class RouteExecutionDemoModel: ObservableObject {
     @Published private(set) var hasPendingRoute = false
     @Published private(set) var logs = [String]()
 
-    private let readinessFlag: RouteExecutionDemoReadinessFlag
     private let coordinator: MHRouteCoordinator<
         RouteExecutionDemoRoute,
         RouteExecutionDemoOutcome
@@ -21,9 +20,6 @@ final class RouteExecutionDemoModel: ObservableObject {
     private var logSequence = 0
 
     init() {
-        let readinessFlag = RouteExecutionDemoReadinessFlag(initialValue: true)
-        self.readinessFlag = readinessFlag
-
         let executor = MHRouteExecutor<
             RouteExecutionDemoRoute,
             RouteExecutionDemoOutcome
@@ -61,37 +57,39 @@ final class RouteExecutionDemoModel: ObservableObject {
         )
 
         coordinator = .init(
-            isReady: { readinessFlag.value },
+            initialReadiness: true,
             executor: executor
-        )
+        )            { lhs, rhs in
+                lhs == rhs
+            }
     }
 
     func setReadiness(_ isReady: Bool) {
         self.isReady = isReady
-        readinessFlag.set(isReady)
 
         appendLog(
             "readiness: \(isReady ? "ready" : "not-ready")"
         )
 
         Task {
+            await coordinator.setReadiness(isReady)
             await refreshPendingRouteStatus()
         }
     }
 
-    func handle(_ route: RouteExecutionDemoRoute) {
+    func submit(_ route: RouteExecutionDemoRoute) {
         Task {
             do {
-                let resolution = try await coordinator.handle(route)
+                let outcome = try await coordinator.submit(route)
                 appendLog(
-                    resolutionMessage(
-                        for: resolution,
-                        source: "handle(\(route.rawValue))"
+                    outcomeMessage(
+                        for: outcome,
+                        source: "submit(\(route.rawValue))"
                     )
                 )
             } catch {
                 appendLog(
-                    "handle(\(route.rawValue)): error \(describe(error: error))"
+                    "submit(\(route.rawValue)): error \(describe(error: error))"
                 )
             }
 
@@ -99,23 +97,23 @@ final class RouteExecutionDemoModel: ObservableObject {
         }
     }
 
-    func applyPendingIfNeeded() {
+    func applyPendingIfReady() {
         Task {
             do {
-                let resolution = try await coordinator.applyPendingIfNeeded()
-                if let resolution {
+                let outcome = try await coordinator.applyPendingIfReady()
+                if let outcome {
                     appendLog(
-                        resolutionMessage(
-                            for: resolution,
-                            source: "applyPendingIfNeeded"
+                        outcomeMessage(
+                            for: outcome,
+                            source: "applyPendingIfReady"
                         )
                     )
                 } else {
-                    appendLog("applyPendingIfNeeded: no pending route")
+                    appendLog("applyPendingIfReady: no pending route")
                 }
             } catch {
                 appendLog(
-                    "applyPendingIfNeeded: error \(describe(error: error))"
+                    "applyPendingIfReady: error \(describe(error: error))"
                 )
             }
 
@@ -143,15 +141,17 @@ final class RouteExecutionDemoModel: ObservableObject {
         )
     }
 
-    private func resolutionMessage(
-        for resolution: MHRouteResolution<RouteExecutionDemoOutcome>,
+    private func outcomeMessage(
+        for outcome: MHRouteExecutionOutcome<RouteExecutionDemoOutcome>,
         source: String
     ) -> String {
-        switch resolution {
+        switch outcome {
         case .queued:
             return "\(source): queued"
-        case .applied(let outcome):
-            return "\(source): applied \(outcome.destination)"
+        case .applied(let resolvedOutcome):
+            return "\(source): applied \(resolvedOutcome.destination)"
+        case .deduplicated:
+            return "\(source): deduplicated"
         }
     }
 

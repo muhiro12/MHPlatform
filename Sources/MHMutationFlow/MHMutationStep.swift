@@ -1,5 +1,6 @@
 /// Side-effect step executed after a successful mutation.
-public struct MHMutationStep {
+@preconcurrency
+public struct MHMutationStep: Sendable {
     /// Step name used in emitted events and outcomes.
     public let name: String
 

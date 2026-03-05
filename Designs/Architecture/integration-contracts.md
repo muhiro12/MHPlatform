@@ -1,270 +1,281 @@
 # MHKit Integration Contracts
 
-## How to Read Contracts
+## Contract Shape
 
-Each module contract is defined with the same four fields:
+Each module contract is defined with four fields:
 
-- `Required Inputs`:
-  models, callbacks, clocks, stores, and adapters the caller must provide.
-- `Outputs`:
-  values, plans, outcomes, events, and side-effect signals produced by the
-  module.
-- `Threading/Actor`:
-  actor guarantees and caller responsibilities for MainActor or background
-  execution.
-- `Intended Call Sites`:
-  where the module should be invoked in app lifecycle or workflow wiring.
+- `Required Inputs`
+- `Outputs`
+- `Threading / Actor`
+- `Intended Call Sites`
+
+This document is normative for integration design.
 
 ## MHDeepLinking
 
 ### Required Inputs
 
-- `MHDeepLinkConfiguration` for URL grammar policy.
-- App route type conforming to `MHDeepLinkRoute`.
-- Incoming `URL` values from app lifecycle, intents, widgets, or notifications.
-- Optional handoff storage choice:
-  `MHDeepLinkInbox` for in-memory handoff, `MHDeepLinkStore` for durable
-  handoff.
+- `MHDeepLinkConfiguration`
+- App route type conforming to `MHDeepLinkRoute`
+- Incoming `URL` values from app lifecycle and external entry points
+- Optional handoff primitive:
+  - `MHDeepLinkInbox` (consume-once, in-memory)
+  - `MHDeepLinkStore` (consume-once, persistent)
 
 ### Outputs
 
-- Built deep-link `URL` values from route descriptors.
-- Parsed route values from incoming URLs.
-- Consume-once pending URL handoff via inbox or store.
+- Built deep-link URL (`url(for:transport:)`, `preferredURL(for:)`)
+- Parsed route (`parse(_:)`)
+- Pending URL handoff (`ingest(_:)`, `consumeLatest()`)
 
-### Threading/Actor
+### Threading / Actor
 
-- `MHDeepLinkCodec` is a value type and has no MainActor requirement.
-- `MHDeepLinkInbox` is an actor and serializes pending URL access.
-- `MHDeepLinkStore` is `UserDefaults` backed; caller chooses synchronization
-  strategy if accessed from multiple executors.
+- `MHDeepLinkCodec` is value-typed and actor-agnostic.
+- `MHDeepLinkInbox` is an `actor` and serializes latest-pending state.
+- `MHDeepLinkStore` is `UserDefaults` backed; caller owns cross-thread usage policy.
 
 ### Intended Call Sites
 
-- `onOpenURL` and equivalent lifecycle URL entry points.
-- Cold-start replay when app resumes from external entry points.
-- Intent/notification handoff where URL capture and later consumption are
-  needed.
+- `onOpenURL`
+- `scene(_:continue:)` / `NSUserActivity` resume paths
+- push-notification tap handoff
+- widget tap handoff
+- App Intent -> app route handoff
+
+## MHRouteExecution
+
+### Required Inputs
+
+- Route type (`Sendable`)
+- Resolved outcome type (`Sendable`)
+- `MHRouteExecutor<Route, Outcome>` with app-provided `resolve/apply`
+- Initial readiness (`initialReadiness`) and duplicate predicate (`isDuplicate`)
+
+### Outputs
+
+- `MHRouteExecutionOutcome<Outcome>`:
+  - `.applied(Outcome)`
+  - `.queued`
+  - `.deduplicated`
+- Pending route introspection:
+  - `hasPendingRoute`
+  - `isReady`
+
+### Threading / Actor
+
+- `MHRouteCoordinator` is an `actor`.
+- Route submission, queue replacement, and apply are serialized.
+- No implicit `MainActor`; callers hop to UI actor as needed.
+
+### Intended Call Sites
+
+- Parsed route execution from DeepLinking and NotificationPayloads
+- Bootstrap/readiness transitions via `setReadiness(_:)`
+- Replay hook via `applyPendingIfReady()` after app state becomes ready
+
+### Queue Semantics (Normative)
+
+- Queue accepts route submission before readiness is open.
+- Pending slot is latest-wins (single pending route).
+- Deduplication is caller-defined via `isDuplicate`.
+- If `applyPendingIfReady()` consumes pending route and `execute` fails:
+  - consumed route is restored only when no newer pending route was submitted.
+
+## MHMutationFlow
+
+### Required Inputs
+
+- `MHMutation<Value>` (named operation unit)
+- Optional `MHMutationRetryPolicy`
+- Optional `MHCancellationHandle`
+- Optional post-success steps (`[MHMutationStep]`)
+- Optional injected sleep for deterministic retry testing (`MHMutationRunner.Sleep`)
+
+### Outputs
+
+- `MHMutationRun<Value>` (from `start`):
+  - `events: AsyncStream<MHMutationEvent<Value>>`
+  - `outcome: Task<MHMutationOutcome<Value>, Never>`
+- Direct terminal `MHMutationOutcome<Value>` (from `run`)
+- Event vocabulary:
+  - `started`
+  - `progress(.retryScheduled/.stepStarted/.stepSucceeded)`
+  - `succeeded`
+  - `failed`
+  - `cancelled`
+
+### Threading / Actor
+
+- Runner is actor-agnostic.
+- Events are emitted on runner execution context.
+- UI observers must explicitly bridge to `MainActor`.
+
+### Intended Call Sites
+
+- Save/update/delete orchestration in app workflow services
+- Retriable network + local side-effect flows
+- Outcome-driven app side effects (review policy, analytics, etc.)
 
 ## MHNotificationPlans
 
 ### Required Inputs
 
-- Pure candidate models:
-  `MHReminderCandidate` or `MHSuggestionCandidate`.
-- Planning policy:
-  `MHReminderPolicy` or `MHSuggestionPolicy`.
-- Caller-provided `now: Date` and `Calendar` for deterministic planning.
+- Candidate models (`MHReminderCandidate`, `MHSuggestionCandidate`)
+- Policy models (`MHReminderPolicy`, `MHSuggestionPolicy`)
+- Injected `now: Date` and `Calendar`
 
 ### Outputs
 
-- Deterministic arrays of plan models:
-  `[MHReminderPlan]` and `[MHSuggestionPlan]`.
-- Stable identifiers and route URLs suitable for downstream payload/scheduling
-  layers.
+- Deterministic plan arrays:
+  - `[MHReminderPlan]`
+  - `[MHSuggestionPlan]`
 
-### Threading/Actor
+### Threading / Actor
 
-- Planners are pure static functions with caller-defined threading.
-- Safe to run off-main for notification refresh or background recomputation.
-- No internal actor or shared mutable state.
+- Pure static planner APIs.
+- No shared mutable state.
+- Safe for background execution.
 
 ### Intended Call Sites
 
-- Notification refresh workflows when candidates or settings change.
-- App launch or foreground refresh before scheduling requests.
-- Domain-to-adapter boundary where pure planning feeds platform schedulers.
+- Notification refresh pipelines on settings/candidate changes
+- App launch/foreground recomputation prior to scheduling requests
+
+### Determinism Rules (Normative)
+
+- Same input -> same output.
+- Stable sorting and identifier generation.
+- No runtime randomness or system clock capture inside planners.
 
 ## MHNotificationPayloads
 
 ### Required Inputs
 
 - Route payload models:
-  `MHNotificationPayload`, `MHNotificationRouteTargets`.
-- Response context and descriptors:
-  `MHNotificationResponseContext`, `MHNotificationActionDescriptor`,
-  `MHNotificationCategoryDescriptor`.
-- Optional notification-center bridge:
-  `MHNotificationCentering` for orchestrator helpers.
+  - `MHNotificationPayload`
+  - `MHNotificationRouteTargets`
+- Response context:
+  - `MHNotificationResponseContext`
+- Optional bridge dependency:
+  - `MHNotificationCentering` (`UserNotifications` adapter surface)
 
 ### Outputs
 
-- Encoded/decoded `userInfo` dictionaries via `MHNotificationPayloadCodec`.
-- Resolved route URL from notification response metadata.
-- Managed request synchronization summary via
-  `MHNotificationRequestSyncResult`.
+- Payload codec (`MHNotificationPayloadCodec.encode/decode`)
+- Route resolution (`MHNotificationRouteResolver.resolveRouteURL`)
+- Optional orchestration outcome (`MHNotificationRequestSyncOutcome`)
 
-### Threading/Actor
+### Threading / Actor
 
-- Codec and resolver APIs are synchronous and actor-agnostic.
-- Orchestrator async helpers are not MainActor-bound.
-- Caller controls UI hops when resolved routes need presentation updates.
+- Payload codec + route resolver are pure/sync and actor-agnostic.
+- Orchestrator bridge helpers are async and not `MainActor`-bound.
 
 ### Intended Call Sites
 
-- Notification category registration at startup.
-- Notification authorization and pending-request sync workflows.
-- Notification response handling to map actions into route URLs.
+- Pure layer:
+  - payload composition and route mapping in app services
+- Bridge layer:
+  - category registration, auth request, pending request sync
 
-## MHMutationFlow
+### Boundary Rule (Normative)
 
-### Required Inputs
-
-- Primary mutation operation closure.
-- Optional retry policy (`MHMutationRetryPolicy`) and cancellation handle
-  (`MHCancellationHandle`).
-- Ordered post-success steps (`[MHMutationStep]`) and optional event callback.
-
-### Outputs
-
-- Terminal workflow result:
-  `MHMutationOutcome<Value>`.
-- Progress stream through `MHMutationEvent` callback.
-- Completed-step names for observability and post-run diagnostics.
-
-### Threading/Actor
-
-- Runner is async and actor-agnostic; caller chooses execution context.
-- Event callback executes on runner context; UI observers must hop to
-  `MainActor`.
-- Cancellation observes both `Task` cancellation and explicit handle state.
-
-### Intended Call Sites
-
-- App workflow services that combine mutation and side effects.
-- Save/update/delete flows that require retry and deterministic cleanup.
-- Post-success orchestration pipelines (widget reload, notification sync, etc.).
-
-## MHRouteExecution
-
-### Required Inputs
-
-- App route type and resolved outcome type (both `Sendable`).
-- Readiness callback (`isReady`) describing app apply readiness.
-- Resolve/apply closures via `MHRouteExecutor`.
-
-### Outputs
-
-- Immediate apply or queued result via `MHRouteResolution<Outcome>`.
-- Latest-wins pending route state exposed by coordinator APIs.
-
-### Threading/Actor
-
-- `MHRouteCoordinator` is an actor and serializes handle/apply operations.
-- Resolve and apply closures run asynchronously and may hop actors internally.
-- No implicit MainActor behavior; caller decides where presentation state
-  updates occur.
-
-### Intended Call Sites
-
-- Deep-link and notification route entry handling.
-- Readiness replay flows (`applyPendingIfNeeded`) after bootstrap completes.
-- Route pipelines where resolve and apply concerns should remain explicit.
-
-## MHPersistenceMaintenance
-
-### Required Inputs
-
-- Migration plan (`MHStoreMigrationPlan`) and optional `FileManager`.
-- Ordered destructive reset steps (`[MHDestructiveResetStep]`).
-- Optional reset event sink callback.
-
-### Outputs
-
-- Migration and cleanup results:
-  `MHStoreMigrationResult`, `MHStoreLegacyCleanupResult`.
-- Reset execution outputs:
-  `MHDestructiveResetOutcome` plus `MHDestructiveResetEvent` stream.
-
-### Threading/Actor
-
-- Store migration/cleanup APIs are synchronous file operations; off-main usage
-  is preferred.
-- Reset service is async and caller-thread controlled.
-- Event callback is invoked in reset execution context.
-
-### Intended Call Sites
-
-- Startup migration gates before model container or app data bootstrap.
-- User-triggered maintenance and destructive reset workflows.
-- Debug tooling that requires deterministic reset sequencing.
+- Payload composition/resolution is independent of `UNUserNotificationCenter`.
+- Request construction/scheduling responsibility stays in app adapter layer.
 
 ## MHPreferences
 
 ### Required Inputs
 
-- Typed keys:
-  `MHBoolPreferenceKey`, `MHIntPreferenceKey`, `MHStringPreferenceKey`,
-  `MHCodablePreferenceKey`.
-- Backing `UserDefaults` store (`.standard` or app-group suite).
-- Optional `AppStorage` binding use for SwiftUI integration.
+- Typed keys with namespace:
+  - `MHBoolPreferenceKey`
+  - `MHIntPreferenceKey`
+  - `MHStringPreferenceKey`
+  - `MHCodablePreferenceKey`
+- Backing `UserDefaults`
 
 ### Outputs
 
-- Typed read/write access for primitive and codable values.
-- Key removal and codable data encoding/decoding behavior.
-- SwiftUI `AppStorage` bridges for primitive key types.
+- Typed reads/writes through `MHPreferenceStore`
+- Codable persistence as `Data` only
+- SwiftUI bridges via `AppStorage` initializers for primitive keys
 
-### Threading/Actor
+### Threading / Actor
 
-- Store APIs are synchronous and have no MainActor requirement.
-- Underlying `UserDefaults` thread-safety follows Apple behavior.
-- SwiftUI `AppStorage` usage should follow view-layer MainActor expectations.
+- Store APIs are sync and actor-agnostic.
+- Follow `UserDefaults` threading guarantees.
 
 ### Intended Call Sites
 
-- Settings and feature-flag reads/writes.
-- App bootstrap for user-configurable behavior.
-- Lightweight shared preferences used across app targets.
+- Feature flags and settings
+- Lightweight app boot configuration
+
+### Storage Rules (Normative)
+
+- Fully qualified storage key is `"\(namespace).\(name)"`.
+- Namespace/name must be non-empty.
+- Codable values are encoded to `Data`; non-`Data` decode path returns `nil`.
+
+## MHPersistenceMaintenance
+
+### Required Inputs
+
+- `MHStoreMigrationPlan`
+- Optional file manager override
+- Optional migration validation hook:
+  - `validateMigration(currentStoreURL, copiedFileNames)`
+- Destructive reset steps (`[MHDestructiveResetStep]`)
+
+### Outputs
+
+- `MHStoreMigrationOutcome`
+- `MHStoreLegacyCleanupOutcome`
+- `MHDestructiveResetOutcome`
+- `MHDestructiveResetEvent` stream via callback
+
+### Threading / Actor
+
+- Migration/cleanup are synchronous file operations.
+- Destructive reset orchestration is async and sequential.
+- Caller owns actor hops for UI updates.
+
+### Intended Call Sites
+
+- Startup migration gate before model container/bootstrap
+- User-triggered maintenance/reset workflow
+
+### Validation Hook Rule (Normative)
+
+- Validation logic belongs to client app.
+- When validation throws after copy:
+  - copied current-store files are rolled back by migrator.
 
 ## MHReviewPolicy
 
 ### Required Inputs
 
-- `MHReviewPolicy` containing lottery range and optional request delay.
-- Random value provider and sleep closure overrides (for testing or policy
-  control).
-- Foreground scene availability on iOS live path.
+- `MHReviewPolicy`
+- Optional random provider
+- Optional sleep provider
 
 ### Outputs
 
-- Terminal review workflow result:
-  `MHReviewRequestOutcome`.
-- Pure policy decision via `MHReviewPolicy.shouldRequestReview(randomValue:)`.
+- `MHReviewRequestOutcome`
+- Pure gate decision (`shouldRequestReview(randomValue:)`)
 
-### Threading/Actor
+### Threading / Actor
 
-- `MHReviewPolicy` is actor-agnostic and pure.
+- `MHReviewPolicy` is pure and actor-agnostic.
 - `MHReviewRequester.requestIfNeeded` is `@MainActor`.
-- iOS live request path depends on foreground scene and StoreKit request API.
 
 ### Intended Call Sites
 
-- Post-success app workflows where review prompts are eligible.
-- Feature completion milestones where lottery gating is needed.
-- MainActor orchestration layers that already manage UI-side effects.
+- Post-success UX milestones (typically after `MHMutationOutcome.succeeded`)
+- MainActor workflow coordinators
 
-## Naming Convention Decision
+## Canonical Naming Decision
 
-- Terminal async workflow types:
-  prefer `...Outcome`.
-- Progress stream types:
-  prefer `...Event`.
-- `...Result` compatibility:
-  keep existing `Result` types for current low-level/sync surfaces; avoid adding
-  new terminal async `Result` types.
-- Planner pattern:
-  `...Planner.build(...) -> [...Plan]`.
-- Handoff storage terms:
-  `Inbox` for consume-once handoff, `Store` for durable persistence,
-  `Queue` for ordered multi-item backlog.
-
-## Optional Alignment Proposal (Doc-only)
-
-- Proposal:
-  converge future long-running APIs on `Outcome` plus optional `Event` stream.
-- Rationale:
-  this matches existing `MHMutationFlow` and `MHPersistenceMaintenance` shapes
-  and reduces cross-module adoption friction.
-- Migration policy:
-  non-breaking and documentation-only in this run; no source API changes.
+- Terminal states use `Outcome`.
+- Progress streams use `Event`.
+- Deterministic planner outputs use `Plan`.
+- Handoff storage terms are `Inbox` / `Store` / `Queue`.
+- New APIs do not add terminal `Result` naming.

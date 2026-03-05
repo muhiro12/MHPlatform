@@ -1,5 +1,5 @@
 /// Outcome of a store migration attempt.
-public enum MHStoreMigrationResult: Sendable, Equatable {
+public enum MHStoreMigrationOutcome: Sendable, Equatable {
     /// Migration copied files into the current location.
     case migrated(
             copiedFileNames: [String],

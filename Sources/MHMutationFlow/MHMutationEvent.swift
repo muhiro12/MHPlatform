@@ -1,23 +1,36 @@
-/// Events emitted while running a mutation flow.
-public enum MHMutationEvent: Sendable {
-    /// A mutation attempt started.
-    case attemptStarted(Int)
+import Foundation
 
-    /// A mutation attempt failed with a message.
-    case attemptFailed(Int, String)
-
-    /// A mutation attempt succeeded.
-    case attemptSucceeded(Int)
+/// Progress details emitted by a running mutation.
+public enum MHMutationProgress: Sendable {
+    /// A retry was scheduled after an operation failure.
+    case retryScheduled(nextAttempt: Int, delay: Duration)
 
     /// A post-success step started.
-    case stepStarted(String)
+    case stepStarted(name: String, completedSteps: Int, totalSteps: Int)
 
     /// A post-success step succeeded.
-    case stepSucceeded(String)
+    case stepSucceeded(name: String, completedSteps: Int, totalSteps: Int)
+}
 
-    /// A post-success step failed with a message.
-    case stepFailed(String, String)
+/// Events emitted while running a mutation.
+public enum MHMutationEvent<Value: Sendable>: Sendable {
+    /// A mutation attempt started.
+    case started(mutation: String, attempt: Int)
 
-    /// Execution was cancelled.
-    case cancelled
+    /// A mutation progress update was emitted.
+    case progress(MHMutationProgress)
+
+    /// Mutation flow completed successfully.
+    case succeeded(value: Value, attempts: Int, completedSteps: [String])
+
+    /// Mutation flow reported a failure.
+    case failed(
+            errorDescription: String,
+            attempts: Int,
+            completedSteps: [String],
+            isRecoverable: Bool
+         )
+
+    /// Mutation flow was cancelled.
+    case cancelled(attempts: Int, completedSteps: [String])
 }

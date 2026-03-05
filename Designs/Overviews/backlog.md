@@ -118,7 +118,7 @@ What was extracted:
 - response action to route resolution
 - optional `UserNotifications` bridge helpers
 - notification-center abstraction and adapter (`MHNotificationCentering`)
-- orchestration helpers (`MHNotificationOrchestrator`, `MHNotificationRequestSyncResult`)
+- orchestration helpers (`MHNotificationOrchestrator`, `MHNotificationRequestSyncOutcome`)
 
 Evidence:
 - `Incomes/Incomes/Sources/Notification/Models/NotificationService.swift`
@@ -142,7 +142,7 @@ Implemented in this phase as `MHRouteExecution`.
 What was extracted:
 - async route execution primitive (`MHRouteExecutor`)
 - readiness-aware coordinator (`MHRouteCoordinator`)
-- latest-wins pending queue behavior (`MHRouteResolution`)
+- latest-wins pending queue behavior (`MHRouteExecutionOutcome`)
 
 Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/MainNavigationRouteExecutor.swift`
@@ -190,7 +190,7 @@ Implemented in this phase as `MHPersistenceMaintenance`.
 
 What was extracted:
 - store migration plan and skip semantics (`MHStoreMigrationPlan`, `MHStoreMigrationSkipReason`)
-- deterministic migration and legacy cleanup outcomes (`MHStoreMigrationResult`, `MHStoreLegacyCleanupResult`)
+- deterministic migration and legacy cleanup outcomes (`MHStoreMigrationOutcome`, `MHStoreLegacyCleanupOutcome`)
 - store migration and legacy cleanup execution (`MHStoreMigrator`)
 - ordered destructive reset orchestration (`MHDestructiveResetStep`, `MHDestructiveResetService`, `MHDestructiveResetOutcome`)
 

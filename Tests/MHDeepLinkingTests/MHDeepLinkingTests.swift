@@ -208,10 +208,10 @@ struct MHDeepLinkingTests {
         )
         let url = try #require(URL(string: "mhkit://item?id=rent"))
 
-        store.store(url)
+        store.ingest(url)
 
-        #expect(store.consume() == url)
-        #expect(store.consume() == nil)
+        #expect(store.consumeLatest() == url)
+        #expect(store.consumeLatest() == nil)
     }
 
     @Test
@@ -219,10 +219,10 @@ struct MHDeepLinkingTests {
         let inbox = MHDeepLinkInbox()
         let url = try #require(URL(string: "mhkit://search?q=tea"))
 
-        await inbox.store(url)
+        await inbox.ingest(url)
 
-        let firstConsume = await inbox.consume()
-        let secondConsume = await inbox.consume()
+        let firstConsume = await inbox.consumeLatest()
+        let secondConsume = await inbox.consumeLatest()
 
         #expect(firstConsume == url)
         #expect(secondConsume == nil)

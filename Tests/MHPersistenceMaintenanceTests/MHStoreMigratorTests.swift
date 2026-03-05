@@ -3,6 +3,10 @@ import MHPersistenceMaintenance
 import Testing
 
 struct MHStoreMigratorTests {
+    private enum ValidationError: Error {
+        case failed
+    }
+
     @Test
     func migrateIfNeeded_copies_legacy_main_and_sidecars() throws {
         let fileManager: FileManager = .default
@@ -119,6 +123,52 @@ struct MHStoreMigratorTests {
                 at: currentDirectoryURL,
                 fileManager: fileManager
             ) == expectedFileNames(for: storeFileName, sidecars: ["wal"])
+        )
+    }
+
+    @Test
+    func migrateIfNeeded_runs_validation_hook_and_rolls_back_copied_files_on_failure() throws {
+        let fileManager: FileManager = .default
+        let sandboxURL = try makeSandboxDirectory(fileManager: fileManager)
+        defer {
+            try? fileManager.removeItem(at: sandboxURL)
+        }
+
+        let storeFileName = "Demo.store"
+        let storeURLs = try makeStoreURLs(
+            sandboxURL: sandboxURL,
+            fileManager: fileManager,
+            storeFileName: storeFileName
+        )
+
+        createLegacyStoreFiles(
+            fileManager: fileManager,
+            legacyStoreURL: storeURLs.legacyStoreURL,
+            legacyDirectoryURL: storeURLs.legacyDirectoryURL,
+            storeFileName: storeFileName,
+            sidecars: ["wal"]
+        )
+
+        do {
+            _ = try MHStoreMigrator.migrateIfNeeded(
+                plan: .init(
+                    legacyStoreURL: storeURLs.legacyStoreURL,
+                    currentStoreURL: storeURLs.currentStoreURL
+                ),
+                fileManager: fileManager
+            )                { _, _ in
+                    throw ValidationError.failed
+                }
+            Issue.record("Expected validation failure.")
+        } catch {
+            #expect(error is ValidationError)
+        }
+
+        #expect(
+            try sortedDirectoryNames(
+                at: storeURLs.currentDirectoryURL,
+                fileManager: fileManager
+            ).isEmpty
         )
     }
 

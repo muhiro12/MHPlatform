@@ -10,14 +10,38 @@ struct ContentView: View {
     }
 
     @ViewBuilder private var tabs: some View {
+        deepLinkRoutePipelineTab
+        notificationPipelineTab
+        mutationReviewPipelineTab
         deepLinkingTab
+        preferencesTab
+        notificationPayloadsTab
         notificationPlansTab
         mutationFlowTab
         routeExecutionTab
-        preferencesTab
         reviewPolicyTab
-        notificationPayloadsTab
         persistenceMaintenanceTab
+    }
+
+    private var deepLinkRoutePipelineTab: some View {
+        DeepLinkRoutePipelineDemoView()
+            .tabItem {
+                Label("DeepLink Route", systemImage: "arrow.triangle.merge")
+            }
+    }
+
+    private var notificationPipelineTab: some View {
+        NotificationPipelineDemoView()
+            .tabItem {
+                Label("Plans Payloads", systemImage: "bell.and.waves.left.and.right")
+            }
+    }
+
+    private var mutationReviewPipelineTab: some View {
+        MutationReviewPipelineDemoView()
+            .tabItem {
+                Label("Mutation Review", systemImage: "star.leadinghalf.filled")
+            }
     }
 
     private var deepLinkingTab: some View {

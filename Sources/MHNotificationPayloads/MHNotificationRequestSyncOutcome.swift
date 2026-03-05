@@ -1,8 +1,8 @@
 #if canImport(UserNotifications)
 import Foundation
 
-/// Result of replacing managed pending notification requests.
-public struct MHNotificationRequestSyncResult: Sendable, Equatable {
+/// Outcome of replacing managed pending notification requests.
+public struct MHNotificationRequestSyncOutcome: Sendable, Equatable {
     /// Pending request identifiers removed before scheduling.
     public let removedPendingIdentifiers: [String]
 
@@ -12,7 +12,7 @@ public struct MHNotificationRequestSyncResult: Sendable, Equatable {
     /// Request identifiers that failed to add.
     public let failedRequestIdentifiers: [String]
 
-    /// Creates a sync result.
+    /// Creates a sync outcome.
     public init(
         removedPendingIdentifiers: [String],
         addedRequestIdentifiers: [String],

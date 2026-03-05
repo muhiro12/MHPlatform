@@ -96,8 +96,13 @@ Integration contract:
 ```swift
 import MHMutationFlow
 
+let mutation = MHMutation<String>(
+    name: "save-item",
+    operation: { "saved" }
+)
+
 let outcome = await MHMutationRunner.run(
-    operation: { "saved" },
+    mutation: mutation,
     retryPolicy: .default,
     afterSuccess: [.init(name: "syncNotifications") {}]
 )
@@ -122,11 +127,12 @@ let executor = MHRouteExecutor<AppRoute, AppRouteOutcome>(
     }
 )
 let coordinator = MHRouteCoordinator(
-    isReady: { hasLoadedInitialState },
+    initialReadiness: false,
     executor: executor
 )
+await coordinator.setReadiness(hasLoadedInitialState)
 
-let resolution = try await coordinator.handle(.settings)
+let outcome = try await coordinator.submit(.settings)
 ```
 
 ## MHPersistenceMaintenance
@@ -143,7 +149,7 @@ let plan = MHStoreMigrationPlan(
     legacyStoreURL: legacyURL,
     currentStoreURL: currentURL
 )
-let migrationResult = try MHStoreMigrator.migrateIfNeeded(plan: plan)
+let migrationOutcome = try MHStoreMigrator.migrateIfNeeded(plan: plan)
 
 let resetOutcome = await MHDestructiveResetService.run(
     steps: [
@@ -165,7 +171,11 @@ Integration contract:
 import MHPreferences
 
 let store = MHPreferenceStore()
-let key = MHBoolPreferenceKey("notifications.enabled", default: true)
+let key = MHBoolPreferenceKey(
+    namespace: "app.preferences",
+    name: "notifications.enabled",
+    default: true
+)
 let isEnabled = store.bool(for: key)
 store.set(false, for: key)
 ```
@@ -190,4 +200,10 @@ let outcome = await MHReviewRequester.requestIfNeeded(policy: policy)
 
 ## Example App
 
-`MHKitExample` demonstrates all eight modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.
+`MHKitExample` demonstrates all eight modules with app-local sample data in `Example/`.
+
+It includes cross-module demos for:
+
+- DeepLinking + RouteExecution pipeline
+- NotificationPlans + NotificationPayloads pipeline
+- MutationOutcome-driven ReviewPolicy trigger

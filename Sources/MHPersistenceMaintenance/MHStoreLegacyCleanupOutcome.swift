@@ -1,5 +1,5 @@
 /// Outcome of a legacy store cleanup attempt.
-public enum MHStoreLegacyCleanupResult: Sendable, Equatable {
+public enum MHStoreLegacyCleanupOutcome: Sendable, Equatable {
     /// Legacy files were removed.
     case removed(fileNames: [String])
 

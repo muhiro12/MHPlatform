@@ -246,7 +246,7 @@ private extension MHStoreMigratorDirectoryHandlingTests {
     }
 
     func assertMigrationResult(
-        _ result: MHStoreMigrationResult,
+        _ result: MHStoreMigrationOutcome,
         expectedFileNames: [String]
     ) {
         switch result {

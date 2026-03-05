@@ -42,7 +42,7 @@ struct RouteExecutionDemoView: View {
         Section("Send Route") {
             ForEach(RouteExecutionDemoRoute.allCases) { route in
                 Button(route.buttonTitle) {
-                    model.handle(route)
+                    model.submit(route)
                 }
             }
         }
@@ -56,7 +56,7 @@ struct RouteExecutionDemoView: View {
             }
 
             Button("Apply Pending Route") {
-                model.applyPendingIfNeeded()
+                model.applyPendingIfReady()
             }
 
             Button("Clear Pending Route") {

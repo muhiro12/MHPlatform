@@ -1,195 +1,196 @@
-# MHKit Example Integration Cookbook
+# MHKit Integration Cookbook
 
-## Adoption Principles
+This cookbook focuses on composable end-to-end integration patterns.
 
-- Keep adapters thin:
-  app targets translate platform APIs into MHKit input models and consume
-  outputs.
-- Prefer lifecycle-first placement:
-  wire each module where the app already owns that concern.
-- Keep domain ownership local:
-  pass domain values into MHKit, but do not move domain rules into MHKit.
-- Compose modules explicitly:
-  avoid hidden framework layers or cross-module dependencies.
+## Recipe 1: DeepLink -> Inbox -> Resolution -> Executor
 
-## MHDeepLinking
-
-Where to call this:
-`onOpenURL`, app-delegate URL handlers, or cold-start URL replay.
+Use this pipeline when URLs can arrive before UI/bootstrap readiness.
 
 ```swift
 import MHDeepLinking
+import MHRouteExecution
 
-let codec = MHDeepLinkCodec<AppRoute>(configuration: deepLinkConfiguration)
-let inbox = MHDeepLinkInbox()
+actor AppRoutePipeline {
+    private let codec: MHDeepLinkCodec<AppRoute>
+    private let inbox = MHDeepLinkInbox()
+    private let coordinator: MHRouteCoordinator<AppRoute, RouteApplyToken>
 
-func receiveIncomingURL(_ url: URL) async {
-    guard codec.parse(url) != nil else {
-        return
+    init() {
+        codec = .init(configuration: .init(
+            customScheme: "myapp",
+            preferredUniversalLinkHost: "example.com",
+            allowedUniversalLinkHosts: ["example.com"],
+            universalLinkPathPrefix: "MyApp",
+            preferredTransport: .customScheme
+        ))
+
+        let executor = MHRouteExecutor<AppRoute, RouteApplyToken>(
+            resolve: { route in
+                try await resolveRoute(route)
+            },
+            apply: { token in
+                try await applyRoute(token)
+            }
+        )
+
+        coordinator = .init(
+            initialReadiness: false,
+            executor: executor,
+            isDuplicate: { lhs, rhs in lhs == rhs }
+        )
     }
-    await inbox.store(url)
+
+    func receiveURL(_ url: URL) async {
+        guard codec.parse(url) != nil else {
+            return
+        }
+        await inbox.ingest(url)
+    }
+
+    func setReady(_ ready: Bool) async {
+        await coordinator.setReadiness(ready)
+        _ = try? await coordinator.applyPendingIfReady()
+    }
+
+    func drainInboxOnce() async {
+        guard let url = await inbox.consumeLatest(),
+              let route = codec.parse(url) else {
+            return
+        }
+
+        _ = try? await coordinator.submit(route)
+    }
 }
 ```
 
-## MHNotificationPlans
+Lifecycle placement checklist:
 
-Where to call this:
-notification refresh workflows after settings or candidate updates.
+- `onOpenURL`: parse and `ingest`
+- `NSUserActivity`: convert to URL and `ingest`
+- push notification tap: resolve target URL and `ingest`
+- widget tap: receive URL and `ingest`
+- App Intent handoff: convert intent params to URL/route and `ingest`
 
-```swift
-import MHNotificationPlans
+## Recipe 2: NotificationPlans + NotificationPayloads (Pure + Bridge Split)
 
-let reminderPlans = MHReminderPlanner.build(
-    candidates: reminderCandidates,
-    policy: reminderPolicy,
-    now: now,
-    calendar: calendar
-)
-let suggestionPlans = MHSuggestionPlanner.build(
-    candidates: suggestionCandidates,
-    policy: suggestionPolicy,
-    now: now,
-    calendar: calendar
-)
-```
-
-## MHNotificationPayloads
-
-Where to call this:
-notification registration/response handlers in app adapter layers.
+Keep plan/payload composition pure.
+Keep request creation/scheduling in app adapter layer.
 
 ```swift
 import MHNotificationPayloads
+import MHNotificationPlans
 
-let codec = MHNotificationPayloadCodec()
-let userInfo = codec.encode(notificationPayload)
+struct NotificationRefreshService {
+    func refresh(now: Date, calendar: Calendar) -> ([MHReminderPlan], [[AnyHashable: Any]]) {
+        let plans = MHReminderPlanner.build(
+            candidates: reminderCandidates(),
+            policy: reminderPolicy(),
+            now: now,
+            calendar: calendar
+        )
 
-let routeURL = MHNotificationRouteResolver.resolveRouteURL(
-    payload: notificationPayload,
-    response: .init(actionIdentifier: actionIdentifier)
-)
+        let codec = MHNotificationPayloadCodec()
+        let userInfos = plans.map { plan in
+            let payload = MHNotificationPayload(
+                routes: .init(
+                    defaultRouteURL: plan.primaryRouteURL,
+                    fallbackRouteURL: plan.secondaryRouteURL,
+                    actionRouteURLs: ["open-fallback": plan.secondaryRouteURL]
+                ),
+                metadata: ["kind": "reminder", "planId": plan.identifier]
+            )
+            return codec.encode(payload)
+        }
+
+        return (plans, userInfos)
+    }
+}
 ```
 
-## MHMutationFlow
+Optional bridge layer (app adapter responsibility):
 
-Where to call this:
-app workflow services that combine mutation and side effects.
+```swift
+#if canImport(UserNotifications)
+import MHNotificationPayloads
+import UserNotifications
+
+func syncRequests(
+    center: UNUserNotificationCenter,
+    requests: [UNNotificationRequest],
+    managedPrefix: String
+) async -> MHNotificationRequestSyncOutcome {
+    await MHNotificationOrchestrator.replaceManagedPendingRequests(
+        center: center,
+        requests: requests,
+        isManagedIdentifier: { $0.hasPrefix(managedPrefix) }
+    )
+}
+#endif
+```
+
+## Recipe 3: MutationOutcome -> ReviewPolicy
+
+Trigger review policy only from meaningful success outcomes.
 
 ```swift
 import MHMutationFlow
-
-let outcome = await MHMutationRunner.run(
-    operation: { try await saveDraft() },
-    retryPolicy: .default,
-    afterSuccess: [
-        .init(name: "syncNotifications") { try await syncNotifications() },
-        .init(name: "reloadWidgets") { reloadWidgets() }
-    ]
-)
-```
-
-## MHRouteExecution
-
-Where to call this:
-route orchestration service that can queue until app readiness.
-
-```swift
-import MHRouteExecution
-
-let executor = MHRouteExecutor<AppRoute, AppRouteOutcome>(
-    resolve: resolveRoute,
-    apply: applyRouteOutcome
-)
-let coordinator = MHRouteCoordinator(isReady: isReadyToApply, executor: executor)
-
-let resolution = try await coordinator.handle(route)
-```
-
-## MHPersistenceMaintenance
-
-Where to call this:
-startup migration gates and user-triggered destructive reset workflows.
-
-```swift
-import MHPersistenceMaintenance
-
-let migrationResult = try MHStoreMigrator.migrateIfNeeded(plan: migrationPlan)
-
-let resetOutcome = await MHDestructiveResetService.run(
-    steps: resetSteps
-) { event in
-    logger.info("\(event)")
-}
-```
-
-## MHPreferences
-
-Where to call this:
-settings, feature flags, and bootstrap preference reads.
-
-```swift
-import MHPreferences
-
-let store = MHPreferenceStore(userDefaults: sharedDefaults)
-let enabledKey = MHBoolPreferenceKey("notification.enabled", default: true)
-
-let isEnabled = store.bool(for: enabledKey)
-store.set(false, for: enabledKey)
-```
-
-## MHReviewPolicy
-
-Where to call this:
-post-success workflows on `MainActor` after meaningful user completion.
-
-```swift
 import MHReviewPolicy
 
 @MainActor
-func maybeRequestReview() async -> MHReviewRequestOutcome {
-    let policy = MHReviewPolicy(lotteryMaxExclusive: 10, requestDelay: .seconds(2))
-    return await MHReviewRequester.requestIfNeeded(policy: policy)
-}
-```
+func runSaveAndMaybeRequestReview() async {
+    let mutation = MHMutation<Void>(
+        name: "saveItem",
+        operation: {
+            try await saveItem()
+        }
+    )
 
-## Combined: DeepLinking + RouteExecution
+    let run = MHMutationRunner.start(
+        mutation: mutation,
+        retryPolicy: .init(maximumAttempts: 3, backoff: .fixed(.milliseconds(200))),
+        afterSuccess: [
+            .init(name: "syncNotifications") { try await syncNotifications() }
+        ]
+    )
 
-Where to call this:
-`onOpenURL` in the app target with readiness-aware route application.
-
-```swift
-import MHDeepLinking
-import MHRouteExecution
-
-func onOpenURL(_ url: URL) {
-    guard let route = deepLinkCodec.parse(url) else { return }
-    Task {
-        _ = try await routeCoordinator.handle(route)
-        _ = try await routeCoordinator.applyPendingIfNeeded()
+    for await event in run.events {
+        logMutationEvent(event)
     }
+
+    let outcome = await run.outcome.value
+    guard case .succeeded = outcome else {
+        return
+    }
+
+    let reviewOutcome = await MHReviewRequester.requestIfNeeded(
+        policy: .init(lotteryMaxExclusive: 10, requestDelay: .seconds(1))
+    )
+    logReviewOutcome(reviewOutcome)
 }
 ```
 
-## Combined: NotificationPlans + NotificationPayloads
+## Adoption Notes
 
-Where to call this:
-notification synchronization service after candidate recomputation.
+### Incomes 向け導入順
 
-```swift
-import MHNotificationPayloads
-import MHNotificationPlans
-import UserNotifications
+1. `MHDeepLinking` + `MHRouteExecution` を先行導入し、起動直後の deep link 取りこぼしを防ぐ。
+2. `MHNotificationPlans` を導入し、既存通知候補から deterministic な `Plan` を生成する。
+3. `MHNotificationPayloads` を導入し、payload codec と route resolver を統一する。
+4. `MHMutationFlow` で更新系ワークフローの retry/cancel/event/outcome を標準化する。
+5. `MHPersistenceMaintenance` と `MHPreferences` を段階導入し、起動時保守処理と typed preferences を統一する。
+6. 最後に `MHReviewPolicy` を `MHMutationOutcome.succeeded` 起点で接続する。
 
-let plans = MHReminderPlanner.build(
-    candidates: candidates,
-    policy: policy,
-    now: now,
-    calendar: calendar
-)
-let requests = plans.map(makeRequestFromPlan)
-let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
-    center: UNUserNotificationCenter.current(),
-    requests: requests,
-    isManagedIdentifier: { $0.hasPrefix(policy.identifierPrefix) }
-)
-```
+### Cookle 向け導入順
+
+1. `MHPreferences` と `MHNotificationPayloads` を先に入れて設定/通知の契約を安定化する。
+2. `MHDeepLinking` + `MHRouteExecution` を導入し、widget/push 入口を readiness-aware に統合する。
+3. `MHNotificationPlans` を導入して候補選定を deterministic 化する。
+4. `MHMutationFlow` を保存系処理へ適用し、Outcome/Event ベースの副作用判断へ寄せる。
+5. `MHPersistenceMaintenance` を導入して migration/reset orchestration を共通化する。
+6. `MHReviewPolicy` は成功体験フローに限定して接続する。
+
+### 役割分離（必須）
+
+- domain rules は各アプリ/ドメインライブラリが保持する。
+- UI state（画面遷移、sheet/focus、view model state）は各アプリが保持する。
+- SwiftData query と `ModelContext` 利用方針は各アプリが保持する。

@@ -3,6 +3,18 @@ public protocol MHPreferenceKeyProtocol {
     /// The value type associated with this preference key.
     associatedtype Value
 
-    /// The raw storage key name used by `UserDefaults`.
+    /// Namespace segment used for collision-safe key composition.
+    var namespace: String { get }
+
+    /// Key name segment within the namespace.
     var name: String { get }
+
+    /// Fully composed storage key name used by `UserDefaults`.
+    var storageKey: String { get }
+}
+
+public extension MHPreferenceKeyProtocol {
+    var storageKey: String {
+        "\(namespace).\(name)"
+    }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-/// In-memory pending route inbox that is safe to use across concurrent tasks.
+/// In-memory pending deep-link inbox that is safe across concurrent tasks.
 public actor MHDeepLinkInbox {
     private var pendingURL: URL?
 
@@ -9,13 +9,13 @@ public actor MHDeepLinkInbox {
         // Intentionally empty.
     }
 
-    /// Stores a pending URL and replaces any previous one.
-    public func store(_ url: URL) {
+    /// Ingests a pending URL and replaces any previous one.
+    public func ingest(_ url: URL) {
         pendingURL = url
     }
 
-    /// Consumes and clears the pending URL.
-    public func consume() -> URL? {
+    /// Consumes and clears the latest pending URL.
+    public func consumeLatest() -> URL? {
         let currentURL = pendingURL
         pendingURL = nil
         return currentURL

@@ -209,7 +209,7 @@ struct DeepLinkingDemoView: View {
                         return
                     }
 
-                    await Self.inbox.store(url)
+                    await Self.inbox.ingest(url)
                     await MainActor.run {
                         inboxStatus = "Stored \(url.absoluteString)"
                     }
@@ -218,7 +218,7 @@ struct DeepLinkingDemoView: View {
 
             Button("Consume Inbox Route") {
                 Task {
-                    let url = await Self.inbox.consume()
+                    let url = await Self.inbox.consumeLatest()
                     await MainActor.run {
                         inboxStatus = url?.absoluteString ?? "No pending inbox URL"
                     }
@@ -238,12 +238,12 @@ struct DeepLinkingDemoView: View {
                     return
                 }
 
-                Self.store.store(url)
+                Self.store.ingest(url)
                 storeStatus = "Stored \(url.absoluteString)"
             }
 
             Button("Consume Stored Route") {
-                storeStatus = Self.store.consume()?.absoluteString ?? "No stored URL"
+                storeStatus = Self.store.consumeLatest()?.absoluteString ?? "No stored URL"
             }
 
             Text(storeStatus)

@@ -39,7 +39,7 @@ public enum MHNotificationOrchestrator {
         center: any MHNotificationCentering,
         requests: [UNNotificationRequest],
         isManagedIdentifier: @Sendable (String) -> Bool
-    ) async -> MHNotificationRequestSyncResult {
+    ) async -> MHNotificationRequestSyncOutcome {
         let pendingRequests = await center.fetchPendingNotificationRequests()
         let managedPendingIdentifiers = pendingRequests
             .map(\.identifier)

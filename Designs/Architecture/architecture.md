@@ -52,7 +52,7 @@ Integration contract:
 - Owns action/category descriptors and route resolution:
   `MHNotificationActionDescriptor`, `MHNotificationCategoryDescriptor`, `MHNotificationRouteResolver`
 - Owns optional `UserNotifications` bridge and orchestration helpers behind `#if canImport(UserNotifications)`:
-  `MHNotificationCentering`, `MHNotificationOrchestrator`, `MHNotificationRequestSyncResult`
+  `MHNotificationCentering`, `MHNotificationOrchestrator`, `MHNotificationRequestSyncOutcome`
 - Does not own notification text templates, attachment generation, or app-specific scheduling policy
 
 ### `MHMutationFlow`
@@ -70,7 +70,7 @@ Integration contract:
 [`MHRouteExecution`](integration-contracts.md#mhrouteexecution)
 
 - Owns route execution orchestration primitives:
-  `MHRouteExecutor`, `MHRouteCoordinator`, `MHRouteResolution`
+  `MHRouteExecutor`, `MHRouteCoordinator`, `MHRouteExecutionOutcome`
 - Owns readiness-aware pending queue behavior with latest-wins semantics
 - Does not own URL parsing, route type definitions, persistence access, or UI state models
 
@@ -80,8 +80,8 @@ Integration contract:
 [`MHPersistenceMaintenance`](integration-contracts.md#mhpersistencemaintenance)
 
 - Owns store-file migration and legacy cleanup primitives:
-  `MHStoreMigrationPlan`, `MHStoreMigrator`, `MHStoreMigrationResult`,
-  `MHStoreLegacyCleanupResult`, `MHStoreMigrationSkipReason`
+  `MHStoreMigrationPlan`, `MHStoreMigrator`, `MHStoreMigrationOutcome`,
+  `MHStoreLegacyCleanupOutcome`, `MHStoreMigrationSkipReason`
 - Owns ordered destructive-reset orchestration primitives:
   `MHDestructiveResetStep`, `MHDestructiveResetService`,
   `MHDestructiveResetOutcome`, `MHDestructiveResetEvent`
