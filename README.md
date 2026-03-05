@@ -41,6 +41,22 @@ let policy = MHReminderPolicy(
 )
 ```
 
+## MHNotificationPayloads
+
+`MHNotificationPayloads` provides routing-focused payload/action/userInfo models and resolution utilities.
+
+```swift
+import MHNotificationPayloads
+
+let payload = MHNotificationPayload(
+    routes: .init(
+        defaultRouteURL: URL(string: "myapp://item?id=rent"),
+        fallbackRouteURL: URL(string: "myapp://month?year=2026&month=1"),
+        actionRouteURLs: ["view-month": URL(string: "myapp://month?year=2026&month=1")!]
+    )
+)
+```
+
 ## MHMutationFlow
 
 `MHMutationFlow` runs a mutation with retry, cancellation, and ordered post-success side effects.
@@ -70,4 +86,4 @@ store.set(false, for: key)
 
 ## Example App
 
-`MHKitExample` demonstrates all four modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.
+`MHKitExample` demonstrates all five modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.

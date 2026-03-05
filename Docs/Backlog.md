@@ -3,10 +3,9 @@
 This backlog is derived from concrete duplication found in `Incomes/` and `Cookle/`. Evidence paths are workspace-root relative and remain read-only references.
 
 Current remaining priority after this phase:
-1. Notification payload composition adapter
-2. Route execution decoupling adapter
-3. Persistence migration/reset unification
-4. Review request and lightweight logging policy
+1. Route execution decoupling adapter
+2. Persistence migration/reset unification
+3. Review request and lightweight logging policy
 
 ## P0. Deep link URL grammar is duplicated
 
@@ -109,28 +108,31 @@ Minimal API sketch:
 ExampleApp validation:
 Run a sample mutation with retry, side-effect failure, and cancellation toggles.
 
-## P1. Notification payload composition is duplicated but still platform-bound
+## P1. Notification payload routing core was implemented
 
-Problem:
-The content-building logic for delivered notifications is shared in spirit, but still depends on app-specific copy, images, routes, and `UNMutableNotificationContent`.
+Status:
+Implemented in this phase as `MHNotificationPayloads` (routing core).
 
-Why not now:
-The planner is stable; the payload layer still mixes too much app-specific presentation.
+What was extracted:
+- payload route model (`default`, `fallback`, action map)
+- action/category descriptors
+- userInfo encode/decode codec
+- response action to route resolution
+- optional `UserNotifications` bridge helpers
 
 Evidence:
 - `Incomes/Incomes/Sources/Notification/Models/NotificationService.swift`
 - `Cookle/Cookle/Sources/Notification/Services/RecipeSuggestionNotificationComposer.swift`
 - `Cookle/Cookle/Sources/Notification/Services/NotificationService.swift`
+- `MHKit/Sources/MHNotificationPayloads/`
 
-Recommended module:
-Future adapter on top of `MHNotificationPlans`
-
-Minimal API sketch:
-- `MHNotificationPayloadBuilder`
-- `MHNotificationActionDescriptor`
+Remaining work:
+- `UNUserNotificationCenter` orchestration (authorization, registration, scheduling)
+- app-specific notification copy templates
+- attachment generation and persistence policy
 
 ExampleApp validation:
-Docs only for now.
+`NotificationPayloadsDemoView` demonstrates both Incomes-style and Cookle-style routing payload scenarios.
 
 ## P1. Route execution is too coupled to app navigation state
 

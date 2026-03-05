@@ -19,6 +19,10 @@ let package = Package(
             targets: ["MHNotificationPlans"]
         ),
         .library(
+            name: "MHNotificationPayloads",
+            targets: ["MHNotificationPayloads"]
+        ),
+        .library(
             name: "MHMutationFlow",
             targets: ["MHMutationFlow"]
         ),
@@ -35,6 +39,9 @@ let package = Package(
             name: "MHNotificationPlans"
         ),
         .target(
+            name: "MHNotificationPayloads"
+        ),
+        .target(
             name: "MHMutationFlow"
         ),
         .target(
@@ -47,6 +54,10 @@ let package = Package(
         .testTarget(
             name: "MHNotificationPlansTests",
             dependencies: ["MHNotificationPlans"]
+        ),
+        .testTarget(
+            name: "MHNotificationPayloadsTests",
+            dependencies: ["MHNotificationPayloads"]
         ),
         .testTarget(
             name: "MHMutationFlowTests",

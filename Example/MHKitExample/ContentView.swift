@@ -22,6 +22,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("Preferences", systemImage: "slider.horizontal.3")
                 }
+
+            NotificationPayloadsDemoView()
+                .tabItem {
+                    Label("Payloads", systemImage: "bell.badge")
+                }
         }
         // swiftlint:disable:next no_magic_numbers
         .frame(minWidth: 900, minHeight: 640)

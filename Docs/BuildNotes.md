@@ -134,3 +134,51 @@ Workspace-root read-only verification commands:
 
 - `find` checks for `Incomes/` and `Cookle/` returned no recently modified files
 - Cross-directory change check returned only `MHKit`
+
+## MHNotificationPayloads Phase
+
+### Start State
+
+- Branch: `main`
+- `git status --short --branch`:
+
+```text
+## main
+```
+
+### Commands Run
+
+All commands below were run inside `MHKit/`:
+
+1. `swiftlint lint --strict --no-cache`
+2. `swift test`
+3. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+4. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+5. `swiftlint lint --strict --no-cache`
+
+Workspace-root read-only verification commands:
+
+1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_incomes_before.sha256`
+2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_cookle_before.sha256`
+3. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_incomes_after.sha256`
+4. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_cookle_after.sha256`
+5. `diff -u /tmp/mhkit_incomes_before.sha256 /tmp/mhkit_incomes_after.sha256`
+6. `diff -u /tmp/mhkit_cookle_before.sha256 /tmp/mhkit_cookle_after.sha256`
+
+### Results
+
+- First `swiftlint lint --strict --no-cache`: failed (new file-name and ordering violations in `MHNotificationPayloads` additions)
+- Second `swiftlint lint --strict --no-cache`: passed with `0` violations
+- First `swift test`: failed (URL validity assumptions in new codec tests)
+- Second `swift test`: passed
+  - 55 tests across 9 suites passed
+- First `xcodebuild ... build`: failed (access-level issue in `NotificationPayloadsDemoView`)
+- Second and final `xcodebuild ... build`: passed
+  - `MHKitExample.app` built successfully for macOS
+  - non-fatal `appintentsmetadataprocessor` warning remains (metadata extraction skipped without `AppIntents.framework`)
+
+### Read-only Verification
+
+- `Incomes/`: no file hash changes detected (`diff` returned no output)
+- `Cookle/`: no file hash changes detected (`diff` returned no output)
+- All implementation changes remain under `MHKit/`

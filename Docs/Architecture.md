@@ -4,6 +4,7 @@
 
 - `MHDeepLinking`
 - `MHNotificationPlans`
+- `MHNotificationPayloads`
 - `MHMutationFlow`
 - `MHPreferences`
 
@@ -32,6 +33,16 @@ The package name is `MHKit`, but consumers import concrete module names instead 
   candidates, policies, plans, delivery time
 - Does not own `UNNotificationRequest`, categories, authorization, or payload composition
 
+### `MHNotificationPayloads`
+
+- Owns routing-focused notification payload primitives:
+  `MHNotificationPayload`, `MHNotificationRouteTargets`, `MHNotificationPayloadCodec`
+- Owns action/category descriptors and route resolution:
+  `MHNotificationActionDescriptor`, `MHNotificationCategoryDescriptor`, `MHNotificationRouteResolver`
+- Provides optional `UserNotifications` bridge helpers behind `#if canImport(UserNotifications)`
+- Does not own notification text templates, attachment generation, or
+  `UNUserNotificationCenter` orchestration
+
 ### `MHMutationFlow`
 
 - Owns mutation retry, cancellation, and post-success side-effect orchestration
@@ -50,6 +61,7 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - Module dependencies are intentionally flat for v1.
 - `MHDeepLinking` has no dependency on the other modules.
 - `MHNotificationPlans` has no dependency on the other modules.
+- `MHNotificationPayloads` has no dependency on the other modules.
 - `MHMutationFlow` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
 - ExampleApp may import all public modules, but package targets must stay independent.
@@ -62,7 +74,7 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 
 ## Out Of Scope
 
-- `UNUserNotificationCenter` adapters
+- `UNUserNotificationCenter` orchestration adapters (registration, authorization, scheduling)
 - SwiftUI navigation-state executors
 - shared migration policy for existing app preference formats
 - database migration and destructive reset helpers
