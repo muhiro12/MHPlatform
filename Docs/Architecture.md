@@ -5,6 +5,7 @@
 - `MHDeepLinking`
 - `MHNotificationPlans`
 - `MHMutationFlow`
+- `MHPreferences`
 
 The package name is `MHKit`, but consumers import concrete module names instead of a single umbrella module.
 
@@ -37,12 +38,20 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - Exposes observable execution events through `MHMutationEvent`
 - Does not own persistence, widgets, notifications, or review APIs directly
 
+### `MHPreferences`
+
+- Owns typed preference keys and `UserDefaults` read/write primitives
+- Owns `AppStorage` bridge initializers for primitive preference keys
+- Stores codable values as `Data` without legacy string-format fallback
+- Does not define app-specific preference key names or policy
+
 ## Dependency Rules
 
 - Module dependencies are intentionally flat for v1.
 - `MHDeepLinking` has no dependency on the other modules.
 - `MHNotificationPlans` has no dependency on the other modules.
 - `MHMutationFlow` has no dependency on the other modules.
+- `MHPreferences` has no dependency on the other modules.
 - ExampleApp may import all public modules, but package targets must stay independent.
 
 ## Why No Generic Core Layer
@@ -55,7 +64,7 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 
 - `UNUserNotificationCenter` adapters
 - SwiftUI navigation-state executors
-- `AppStorage` and general `UserDefaults` abstraction
+- shared migration policy for existing app preference formats
 - database migration and destructive reset helpers
 - remote config
 - a generic umbrella `MHKit` product

@@ -55,6 +55,19 @@ let outcome = await MHMutationRunner.run(
 )
 ```
 
+## MHPreferences
+
+`MHPreferences` provides typed preference keys with `UserDefaults` and `AppStorage` bridges.
+
+```swift
+import MHPreferences
+
+let store = MHPreferenceStore()
+let key = MHBoolPreferenceKey("notifications.enabled", default: true)
+let isEnabled = store.bool(for: key)
+store.set(false, for: key)
+```
+
 ## Example App
 
-`MHKitExample` demonstrates all three modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.
+`MHKitExample` demonstrates all four modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.

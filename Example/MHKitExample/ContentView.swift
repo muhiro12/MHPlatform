@@ -17,6 +17,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("Mutation Flow", systemImage: "arrow.triangle.2.circlepath")
                 }
+
+            PreferencesDemoView()
+                .tabItem {
+                    Label("Preferences", systemImage: "slider.horizontal.3")
+                }
         }
         // swiftlint:disable:next no_magic_numbers
         .frame(minWidth: 900, minHeight: 640)

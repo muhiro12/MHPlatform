@@ -2,6 +2,12 @@
 
 This backlog is derived from concrete duplication found in `Incomes/` and `Cookle/`. Evidence paths are workspace-root relative and remain read-only references.
 
+Current remaining priority after this phase:
+1. Notification payload composition adapter
+2. Route execution decoupling adapter
+3. Persistence migration/reset unification
+4. Review request and lightweight logging policy
+
 ## P0. Deep link URL grammar is duplicated
 
 Problem:
@@ -154,8 +160,8 @@ Docs only for now.
 Problem:
 Both apps have lightweight preference helpers, but they encode settings in different ways and with different abstractions.
 
-Why not now:
-There is shared need, but the extracted surface is not yet as stable as deep linking or schedule planning.
+Why now:
+Implemented in this phase as `MHPreferences` to provide typed keys, `UserDefaults` storage, codable `Data` persistence, and `AppStorage` bridges.
 
 Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/AppStorageCodable.swift`
@@ -163,15 +169,16 @@ Evidence:
 - `Cookle/CookleLibrary/Sources/Common/CooklePreferences.swift`
 
 Recommended module:
-Future `MHPreferences`
+`MHPreferences` (implemented)
 
 Minimal API sketch:
-- `MHPreferenceKey`
+- `MHPreferenceKeyProtocol`
+- `MHBoolPreferenceKey`, `MHIntPreferenceKey`, `MHStringPreferenceKey`, `MHCodablePreferenceKey`
 - `MHPreferenceStore`
-- `MHStoredCodableValue`
+- `AppStorage` bridge initializers
 
 ExampleApp validation:
-Docs only for now.
+`PreferencesDemoView` demonstrates bool/int/string/codable read-write-reset and raw stored value inspection.
 
 ## P2. Persistence migration and destructive reset have overlap
 

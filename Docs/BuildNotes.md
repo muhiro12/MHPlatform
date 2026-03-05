@@ -47,3 +47,90 @@ Workspace-root read-only verification commands:
 
 - Commit message: `Add deep linking notification plans and mutation flow`
 - Final commit hash: `TO_BE_FILLED_AFTER_COMMIT`
+
+## MHPreferences Phase
+
+### Start State
+
+- Branch: `main`
+- `git status --short --branch`:
+
+```text
+## main
+```
+
+### Commands Run
+
+All commands below were run inside `MHKit/`:
+
+1. `swiftlint lint --strict --no-cache`
+2. `swift test`
+3. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+4. `swiftlint lint --strict --no-cache`
+
+Workspace-root read-only verification commands:
+
+1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_incomes_after.sha256`
+2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_cookle_after.sha256`
+3. `diff -u /tmp/mhkit_incomes_before.sha256 /tmp/mhkit_incomes_after.sha256`
+4. `diff -u /tmp/mhkit_cookle_before.sha256 /tmp/mhkit_cookle_after.sha256`
+
+### Results
+
+- `swiftlint lint --strict --no-cache`: passed with `0` violations
+- `swift test`: passed
+  - 39 tests across 6 suites passed
+- `xcodebuild ... build`: passed
+  - `MHKitExample.app` built successfully for macOS
+  - `appintentsmetadataprocessor` reported metadata extraction was skipped because there is no `AppIntents.framework` dependency (non-fatal)
+
+### Read-only Verification
+
+- `Incomes/`: no file hash changes detected (`diff` returned no output)
+- `Cookle/`: no file hash changes detected (`diff` returned no output)
+- All implementation changes remain under `MHKit/`
+
+## MHPreferences Finalization Pass
+
+### Start State
+
+- Branch: `main`
+- Working tree: not clean (in-progress `MHPreferences` edits already present)
+
+### Commands Run
+
+All commands below were run inside `MHKit/`:
+
+1. `git status --short --branch`
+2. `swiftlint lint --strict --no-cache`
+3. `swift test`
+4. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+5. `swiftlint lint --strict --no-cache`
+6. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+7. `swiftlint lint --strict --no-cache`
+8. `swift test`
+9. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+10. `swiftlint lint --strict --no-cache`
+11. `git status --short --branch`
+
+Workspace-root read-only verification commands:
+
+1. `find /Users/Hiromu/Repositories/MKKitFactory/Incomes -type f -newermt '2026-03-05 09:00:00' | head`
+2. `find /Users/Hiromu/Repositories/MKKitFactory/Cookle -type f -newermt '2026-03-05 09:00:00' | head`
+3. `find MHKit Incomes Cookle -type f -newermt '2026-03-05 09:00:00' | awk -F/ '{print $1}' | sort -u`
+
+### Results
+
+- `swiftlint lint --strict --no-cache`: passed with `0` violations
+- `swift test`: passed
+  - 39 tests across 6 suites passed
+- First `xcodebuild ... build`: failed (missing closing brace in `PreferencesDemoView`)
+- Second `xcodebuild ... build`: failed (iOS-only `textInputAutocapitalization` modifier)
+- Final `xcodebuild ... build`: passed
+  - `MHKitExample.app` built successfully for macOS
+  - non-fatal warning remains in `MutationFlowDemoView` for main-actor isolation on event recorder call
+
+### Read-only Verification
+
+- `find` checks for `Incomes/` and `Cookle/` returned no recently modified files
+- Cross-directory change check returned only `MHKit`

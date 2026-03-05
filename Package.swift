@@ -21,6 +21,10 @@ let package = Package(
         .library(
             name: "MHMutationFlow",
             targets: ["MHMutationFlow"]
+        ),
+        .library(
+            name: "MHPreferences",
+            targets: ["MHPreferences"]
         )
     ],
     targets: [
@@ -33,6 +37,9 @@ let package = Package(
         .target(
             name: "MHMutationFlow"
         ),
+        .target(
+            name: "MHPreferences"
+        ),
         .testTarget(
             name: "MHDeepLinkingTests",
             dependencies: ["MHDeepLinking"]
@@ -44,6 +51,10 @@ let package = Package(
         .testTarget(
             name: "MHMutationFlowTests",
             dependencies: ["MHMutationFlow"]
+        ),
+        .testTarget(
+            name: "MHPreferencesTests",
+            dependencies: ["MHPreferences"]
         )
     ]
 )
