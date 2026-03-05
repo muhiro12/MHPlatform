@@ -62,9 +62,11 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 ### `MHPersistenceMaintenance`
 
 - Owns store-file migration and legacy cleanup primitives:
-  `MHStoreMigrationPlan`, `MHStoreMigrator`, `MHStoreMigrationResult`
+  `MHStoreMigrationPlan`, `MHStoreMigrator`, `MHStoreMigrationResult`,
+  `MHStoreLegacyCleanupResult`, `MHStoreMigrationSkipReason`
 - Owns ordered destructive-reset orchestration primitives:
-  `MHDestructiveResetStep`, `MHDestructiveResetService`, `MHDestructiveResetOutcome`
+  `MHDestructiveResetStep`, `MHDestructiveResetService`,
+  `MHDestructiveResetOutcome`, `MHDestructiveResetEvent`
 - Does not own app-specific persistence model types, migration validation, or data-deletion policy decisions
 
 ### `MHPreferences`
