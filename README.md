@@ -6,9 +6,19 @@ Minimum supported platforms:
 - iOS 18.0+
 - macOS 15.0+
 
+## Documentation Map
+
+- [North Star](Docs/NORTH_STAR.md)
+- [Integration Contracts](Docs/CONTRACTS.md)
+- [Integration Cookbook](Docs/COOKBOOK.md)
+- [Architecture](Docs/Architecture.md)
+
 ## MHDeepLinking
 
 `MHDeepLinking` handles route URL building, parsing, and pending-route handoff without owning app-specific route enums.
+
+Integration contract:
+[`MHDeepLinking`](Docs/CONTRACTS.md#mhdeeplinking)
 
 ```swift
 import MHDeepLinking
@@ -28,6 +38,9 @@ let codec = MHDeepLinkCodec<MyRoute>(
 
 `MHNotificationPlans` builds deterministic reminder and suggestion schedules without depending on `UserNotifications`.
 
+Integration contract:
+[`MHNotificationPlans`](Docs/CONTRACTS.md#mhnotificationplans)
+
 ```swift
 import MHNotificationPlans
 
@@ -44,6 +57,9 @@ let policy = MHReminderPolicy(
 ## MHNotificationPayloads
 
 `MHNotificationPayloads` provides routing-focused payload/action/userInfo models, response route resolution, and `UNUserNotificationCenter` orchestration helpers.
+
+Integration contract:
+[`MHNotificationPayloads`](Docs/CONTRACTS.md#mhnotificationpayloads)
 
 ```swift
 import MHNotificationPayloads
@@ -74,6 +90,9 @@ let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
 
 `MHMutationFlow` runs a mutation with retry, cancellation, and ordered post-success side effects.
 
+Integration contract:
+[`MHMutationFlow`](Docs/CONTRACTS.md#mhmutationflow)
+
 ```swift
 import MHMutationFlow
 
@@ -87,6 +106,9 @@ let outcome = await MHMutationRunner.run(
 ## MHRouteExecution
 
 `MHRouteExecution` coordinates route handling with readiness checks and a latest-wins pending route queue.
+
+Integration contract:
+[`MHRouteExecution`](Docs/CONTRACTS.md#mhrouteexecution)
 
 ```swift
 import MHRouteExecution
@@ -111,6 +133,9 @@ let resolution = try await coordinator.handle(.settings)
 
 `MHPersistenceMaintenance` provides store-file migration helpers and ordered destructive reset orchestration.
 
+Integration contract:
+[`MHPersistenceMaintenance`](Docs/CONTRACTS.md#mhpersistencemaintenance)
+
 ```swift
 import MHPersistenceMaintenance
 
@@ -133,6 +158,9 @@ let resetOutcome = await MHDestructiveResetService.run(
 
 `MHPreferences` provides typed preference keys with `UserDefaults` and `AppStorage` bridges.
 
+Integration contract:
+[`MHPreferences`](Docs/CONTRACTS.md#mhpreferences)
+
 ```swift
 import MHPreferences
 
@@ -145,6 +173,9 @@ store.set(false, for: key)
 ## MHReviewPolicy
 
 `MHReviewPolicy` provides review-request lottery policy and a high-level requester with platform-aware fallback behavior.
+
+Integration contract:
+[`MHReviewPolicy`](Docs/CONTRACTS.md#mhreviewpolicy)
 
 ```swift
 import MHReviewPolicy

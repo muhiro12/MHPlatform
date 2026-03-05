@@ -22,6 +22,9 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 
 ### `MHDeepLinking`
 
+Integration contract:
+[`MHDeepLinking`](CONTRACTS.md#mhdeeplinking)
+
 - Owns URL grammar primitives:
   `MHDeepLinkConfiguration`, `MHDeepLinkDescriptor`, `MHDeepLinkCodec`
 - Owns pending-route handoff primitives:
@@ -30,6 +33,9 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 
 ### `MHNotificationPlans`
 
+Integration contract:
+[`MHNotificationPlans`](CONTRACTS.md#mhnotificationplans)
+
 - Owns deterministic schedule planning:
   `MHReminderPlanner`, `MHSuggestionPlanner`
 - Owns schedule input/output models:
@@ -37,6 +43,9 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - Does not own `UNNotificationRequest`, categories, authorization, or payload composition
 
 ### `MHNotificationPayloads`
+
+Integration contract:
+[`MHNotificationPayloads`](CONTRACTS.md#mhnotificationpayloads)
 
 - Owns routing-focused notification payload primitives:
   `MHNotificationPayload`, `MHNotificationRouteTargets`, `MHNotificationPayloadCodec`
@@ -48,11 +57,17 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 
 ### `MHMutationFlow`
 
+Integration contract:
+[`MHMutationFlow`](CONTRACTS.md#mhmutationflow)
+
 - Owns mutation retry, cancellation, and post-success side-effect orchestration
 - Exposes observable execution events through `MHMutationEvent`
 - Does not own persistence, widgets, notifications, or review APIs directly
 
 ### `MHRouteExecution`
+
+Integration contract:
+[`MHRouteExecution`](CONTRACTS.md#mhrouteexecution)
 
 - Owns route execution orchestration primitives:
   `MHRouteExecutor`, `MHRouteCoordinator`, `MHRouteResolution`
@@ -60,6 +75,9 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - Does not own URL parsing, route type definitions, persistence access, or UI state models
 
 ### `MHPersistenceMaintenance`
+
+Integration contract:
+[`MHPersistenceMaintenance`](CONTRACTS.md#mhpersistencemaintenance)
 
 - Owns store-file migration and legacy cleanup primitives:
   `MHStoreMigrationPlan`, `MHStoreMigrator`, `MHStoreMigrationResult`,
@@ -71,12 +89,18 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 
 ### `MHPreferences`
 
+Integration contract:
+[`MHPreferences`](CONTRACTS.md#mhpreferences)
+
 - Owns typed preference keys and `UserDefaults` read/write primitives
 - Owns `AppStorage` bridge initializers for primitive preference keys
 - Stores codable values as `Data` without legacy string-format fallback
 - Does not define app-specific preference key names or policy
 
 ### `MHReviewPolicy`
+
+Integration contract:
+[`MHReviewPolicy`](CONTRACTS.md#mhreviewpolicy)
 
 - Owns review-request policy primitives:
   `MHReviewPolicy`, `MHReviewRequestOutcome`
