@@ -142,6 +142,21 @@ let isEnabled = store.bool(for: key)
 store.set(false, for: key)
 ```
 
+## MHReviewPolicy
+
+`MHReviewPolicy` provides review-request lottery policy and a high-level requester with platform-aware fallback behavior.
+
+```swift
+import MHReviewPolicy
+
+let policy = MHReviewPolicy(
+    lotteryMaxExclusive: 10,
+    requestDelay: .seconds(2)
+)
+
+let outcome = await MHReviewRequester.requestIfNeeded(policy: policy)
+```
+
 ## Example App
 
-`MHKitExample` demonstrates all seven modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.
+`MHKitExample` demonstrates all eight modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.

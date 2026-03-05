@@ -37,6 +37,10 @@ let package = Package(
         .library(
             name: "MHPreferences",
             targets: ["MHPreferences"]
+        ),
+        .library(
+            name: "MHReviewPolicy",
+            targets: ["MHReviewPolicy"]
         )
     ],
     targets: [
@@ -60,6 +64,9 @@ let package = Package(
         ),
         .target(
             name: "MHPreferences"
+        ),
+        .target(
+            name: "MHReviewPolicy"
         ),
         .testTarget(
             name: "MHDeepLinkingTests",
@@ -88,6 +95,10 @@ let package = Package(
         .testTarget(
             name: "MHPreferencesTests",
             dependencies: ["MHPreferences"]
+        ),
+        .testTarget(
+            name: "MHReviewPolicyTests",
+            dependencies: ["MHReviewPolicy"]
         )
     ]
 )

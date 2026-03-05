@@ -9,6 +9,7 @@
 - `MHRouteExecution`
 - `MHPersistenceMaintenance`
 - `MHPreferences`
+- `MHReviewPolicy`
 
 The package name is `MHKit`, but consumers import concrete module names instead of a single umbrella module.
 
@@ -73,6 +74,15 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - Stores codable values as `Data` without legacy string-format fallback
 - Does not define app-specific preference key names or policy
 
+### `MHReviewPolicy`
+
+- Owns review-request policy primitives:
+  `MHReviewPolicy`, `MHReviewRequestOutcome`
+- Owns high-level requester flow:
+  `MHReviewRequester`
+- Uses platform-aware fallback behavior for non-iOS builds
+- Does not own app-specific lifecycle triggers or presentation timing policy beyond configured delay/lottery
+
 ## Dependency Rules
 
 - Module dependencies are intentionally flat for v1.
@@ -83,6 +93,7 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - `MHRouteExecution` has no dependency on the other modules.
 - `MHPersistenceMaintenance` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
+- `MHReviewPolicy` has no dependency on the other modules.
 - ExampleApp may import all public modules, but package targets must stay independent.
 
 ## Why No Generic Core Layer

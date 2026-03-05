@@ -14,6 +14,7 @@
 		B1000000000000000000000A /* MHNotificationPayloads in Frameworks */ = {isa = PBXBuildFile; productRef = B1000000000000000000000B /* MHNotificationPayloads */; };
 		B1000000000000000000000C /* MHRouteExecution in Frameworks */ = {isa = PBXBuildFile; productRef = B1000000000000000000000D /* MHRouteExecution */; };
 		B1000000000000000000000E /* MHPersistenceMaintenance in Frameworks */ = {isa = PBXBuildFile; productRef = B1000000000000000000000F /* MHPersistenceMaintenance */; };
+		B10000000000000000000010 /* MHReviewPolicy in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000011 /* MHReviewPolicy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 				B1000000000000000000000C /* MHRouteExecution in Frameworks */,
 				B1000000000000000000000E /* MHPersistenceMaintenance in Frameworks */,
 				B10000000000000000000008 /* MHPreferences in Frameworks */,
+				B10000000000000000000010 /* MHReviewPolicy in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,6 +91,7 @@
 				B1000000000000000000000D /* MHRouteExecution */,
 				B1000000000000000000000F /* MHPersistenceMaintenance */,
 				B10000000000000000000009 /* MHPreferences */,
+				B10000000000000000000011 /* MHReviewPolicy */,
 			);
 			productName = MHKitExample;
 			productReference = ADC37BA02F5869FF000178F8 /* MHKitExample.app */;
@@ -421,6 +424,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
 			productName = MHPersistenceMaintenance;
+		};
+		B10000000000000000000011 /* MHReviewPolicy */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
+			productName = MHReviewPolicy;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

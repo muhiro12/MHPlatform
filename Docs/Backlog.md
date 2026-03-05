@@ -3,7 +3,7 @@
 This backlog is derived from concrete duplication found in `Incomes/` and `Cookle/`. Evidence paths are workspace-root relative and remain read-only references.
 
 Current remaining priority after this phase:
-1. Review request and lightweight logging policy
+1. Lightweight logging policy
 
 ## P0. Deep link URL grammar is duplicated
 
@@ -208,24 +208,46 @@ Remaining work:
 ExampleApp validation:
 `PersistenceMaintenanceDemoView` demonstrates migration, legacy cleanup, and reset event flow with temporary sandbox files.
 
-## P2. Review request and lightweight logging policy are inconsistent
+## P2. Review request policy unification was implemented
 
-Problem:
-The apps have small review-request and logging helpers, but they are still tied to app lifecycle and presentation details.
+Status:
+Implemented in this phase as `MHReviewPolicy`.
 
-Why not now:
-There is not enough stable shared behavior yet to justify a dedicated module.
+What was extracted:
+- review request policy model (`MHReviewPolicy`)
+- review request outcomes (`MHReviewRequestOutcome`)
+- high-level requester API (`MHReviewRequester`)
+- iOS live request path with guarded non-iOS fallback
 
 Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/ReviewRequestPolicy.swift`
 - `Cookle/Cookle/Sources/Main/Services/MainReviewService.swift`
+- `Cookle/Cookle/Sources/Common/Services/CookleReviewRequester.swift`
+- `MHKit/Sources/MHReviewPolicy/`
+
+Remaining work:
+- app-specific adoption in Incomes/Cookle call sites remains out of scope
+- review trigger heuristics per feature remain app-level concerns
+
+ExampleApp validation:
+`ReviewPolicyDemoView` demonstrates policy evaluation and requester outcomes.
+
+## P2. Lightweight logging policy is still inconsistent
+
+Problem:
+The apps still use app-local logging helpers with different wrappers and categories.
+
+Why not now:
+This phase focused on review request extraction with minimal safe scope.
+
+Evidence:
 - `Cookle/Cookle/Sources/Common/Logger.swift`
+- app-local logging call sites across Incomes and Cookle
 
 Recommended module:
-Future observability and review-policy layer
+Future observability layer
 
 Minimal API sketch:
-- `MHReviewPolicy`
 - `MHLogEvent`
 - `MHLogSink`
 
