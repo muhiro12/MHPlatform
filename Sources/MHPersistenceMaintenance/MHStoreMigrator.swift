@@ -92,7 +92,17 @@ private extension MHStoreMigrator {
         let baseName = storeURL.lastPathComponent
         let directoryNames = try fileManager.contentsOfDirectory(atPath: storeDirectoryURL.path)
         let candidateNames = directoryNames.filter { name in
-            name == baseName || name.hasPrefix(baseName + "-")
+            guard name == baseName || name.hasPrefix(baseName + "-") else {
+                return false
+            }
+
+            let candidateURL = storeDirectoryURL.appendingPathComponent(name)
+            var isDirectory: ObjCBool = false
+            let exists = fileManager.fileExists(
+                atPath: candidateURL.path,
+                isDirectory: &isDirectory
+            )
+            return exists && isDirectory.boolValue == false
         }
 
         return candidateNames.sorted()
