@@ -31,6 +31,10 @@ let package = Package(
             targets: ["MHRouteExecution"]
         ),
         .library(
+            name: "MHPersistenceMaintenance",
+            targets: ["MHPersistenceMaintenance"]
+        ),
+        .library(
             name: "MHPreferences",
             targets: ["MHPreferences"]
         )
@@ -50,6 +54,9 @@ let package = Package(
         ),
         .target(
             name: "MHRouteExecution"
+        ),
+        .target(
+            name: "MHPersistenceMaintenance"
         ),
         .target(
             name: "MHPreferences"
@@ -73,6 +80,10 @@ let package = Package(
         .testTarget(
             name: "MHRouteExecutionTests",
             dependencies: ["MHRouteExecution"]
+        ),
+        .testTarget(
+            name: "MHPersistenceMaintenanceTests",
+            dependencies: ["MHPersistenceMaintenance"]
         ),
         .testTarget(
             name: "MHPreferencesTests",

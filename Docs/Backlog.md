@@ -3,9 +3,8 @@
 This backlog is derived from concrete duplication found in `Incomes/` and `Cookle/`. Evidence paths are workspace-root relative and remain read-only references.
 
 Current remaining priority after this phase:
-1. Persistence migration/reset unification
-2. Review request and lightweight logging policy
-3. Notification orchestration adapters for payloads
+1. Review request and lightweight logging policy
+2. Notification orchestration adapters for payloads
 
 ## P0. Deep link URL grammar is duplicated
 
@@ -183,29 +182,30 @@ Minimal API sketch:
 ExampleApp validation:
 `PreferencesDemoView` demonstrates bool/int/string/codable read-write-reset and raw stored value inspection.
 
-## P2. Persistence migration and destructive reset have overlap
+## P2. Persistence migration and destructive reset unification was implemented
 
-Problem:
-Both apps own file migration and destructive reset flows that are related operationally, but not yet aligned enough for a safe v1 extraction.
+Status:
+Implemented in this phase as `MHPersistenceMaintenance`.
 
-Why not now:
-These paths are release-sensitive and need a more explicit data model contract first.
+What was extracted:
+- store migration plan and skip semantics (`MHStoreMigrationPlan`, `MHStoreMigrationSkipReason`)
+- deterministic migration and legacy cleanup outcomes (`MHStoreMigrationResult`, `MHStoreLegacyCleanupResult`)
+- store migration and legacy cleanup execution (`MHStoreMigrator`)
+- ordered destructive reset orchestration (`MHDestructiveResetStep`, `MHDestructiveResetService`, `MHDestructiveResetOutcome`)
 
 Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/DatabaseMigrator.swift`
 - `Incomes/IncomesLibrary/Sources/Common/DataMaintenanceService.swift`
 - `Cookle/CookleLibrary/Sources/Common/DatabaseMigrator.swift`
 - `Cookle/CookleLibrary/Sources/Common/DataResetService.swift`
+- `MHKit/Sources/MHPersistenceMaintenance/`
 
-Recommended module:
-Future persistence maintenance package
-
-Minimal API sketch:
-- `MHStoreMigrator`
-- `MHDestructiveResetService`
+Remaining work:
+- app-specific adoption in Incomes/Cookle call sites is intentionally deferred
+- migration-validation policy (for example object-count checks) remains app-specific
 
 ExampleApp validation:
-Docs only for now.
+`PersistenceMaintenanceDemoView` demonstrates migration, legacy cleanup, and reset event flow with temporary sandbox files.
 
 ## P2. Review request and lightweight logging policy are inconsistent
 

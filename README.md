@@ -1,6 +1,6 @@
 # MHKit
 
-MHKit is a Swift package workspace for shared app logic extracted from real usage in Incomes and Cookle. The current v1 baseline focuses on deep-link handling, deterministic notification planning, and post-mutation side-effect orchestration.
+MHKit is a Swift package workspace for shared app logic extracted from real usage in Incomes and Cookle. The current v1 baseline focuses on deep-link handling, deterministic notification planning, post-mutation side-effect orchestration, and persistence maintenance primitives.
 
 Minimum supported platforms:
 - iOS 18.0+
@@ -94,6 +94,28 @@ let coordinator = MHRouteCoordinator(
 let resolution = try await coordinator.handle(.settings)
 ```
 
+## MHPersistenceMaintenance
+
+`MHPersistenceMaintenance` provides store-file migration helpers and ordered destructive reset orchestration.
+
+```swift
+import MHPersistenceMaintenance
+
+let plan = MHStoreMigrationPlan(
+    legacyStoreURL: legacyURL,
+    currentStoreURL: currentURL
+)
+let migrationResult = try MHStoreMigrator.migrateIfNeeded(plan: plan)
+
+let resetOutcome = await MHDestructiveResetService.run(
+    steps: [
+        .init(name: "deleteAll") {
+            try await deleteAllData()
+        }
+    ]
+)
+```
+
 ## MHPreferences
 
 `MHPreferences` provides typed preference keys with `UserDefaults` and `AppStorage` bridges.
@@ -109,4 +131,4 @@ store.set(false, for: key)
 
 ## Example App
 
-`MHKitExample` demonstrates all six modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.
+`MHKitExample` demonstrates all seven modules with app-local sample data in `Example/`. It does not import any domain types from Incomes or Cookle.

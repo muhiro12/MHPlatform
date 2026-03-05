@@ -7,6 +7,7 @@
 - `MHNotificationPayloads`
 - `MHMutationFlow`
 - `MHRouteExecution`
+- `MHPersistenceMaintenance`
 - `MHPreferences`
 
 The package name is `MHKit`, but consumers import concrete module names instead of a single umbrella module.
@@ -57,6 +58,14 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - Owns readiness-aware pending queue behavior with latest-wins semantics
 - Does not own URL parsing, route type definitions, persistence access, or UI state models
 
+### `MHPersistenceMaintenance`
+
+- Owns store-file migration and legacy cleanup primitives:
+  `MHStoreMigrationPlan`, `MHStoreMigrator`, `MHStoreMigrationResult`
+- Owns ordered destructive-reset orchestration primitives:
+  `MHDestructiveResetStep`, `MHDestructiveResetService`, `MHDestructiveResetOutcome`
+- Does not own app-specific persistence model types, migration validation, or data-deletion policy decisions
+
 ### `MHPreferences`
 
 - Owns typed preference keys and `UserDefaults` read/write primitives
@@ -72,6 +81,7 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - `MHNotificationPayloads` has no dependency on the other modules.
 - `MHMutationFlow` has no dependency on the other modules.
 - `MHRouteExecution` has no dependency on the other modules.
+- `MHPersistenceMaintenance` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
 - ExampleApp may import all public modules, but package targets must stay independent.
 
@@ -86,7 +96,6 @@ The package name is `MHKit`, but consumers import concrete module names instead 
 - `UNUserNotificationCenter` orchestration adapters (registration, authorization, scheduling)
 - SwiftUI navigation-state executors
 - shared migration policy for existing app preference formats
-- database migration and destructive reset helpers
 - remote config
 - a generic umbrella `MHKit` product
 

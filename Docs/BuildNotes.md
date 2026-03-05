@@ -223,3 +223,49 @@ All commands below were run inside `MHKit/`:
 - Added new `MHRouteExecution` module and tests under `MHKit/` only
 - Added `RouteExecutionDemoView` and support files in `Example/MHKitExample/`
 - Updated architecture/backlog/readme/build notes docs in `MHKit/Docs` and `MHKit/README.md`
+
+## MHPersistenceMaintenance Phase
+
+### Start State
+
+- Branch: `main`
+- `git status --short --branch`:
+
+```text
+## main
+```
+
+### Commands Run
+
+All commands below were run inside `MHKit/`:
+
+1. `swift test`
+2. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+3. `swiftlint lint --strict --no-cache`
+4. `swift test`
+5. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+6. `swiftlint lint --strict --no-cache`
+7. `bash ci_scripts/run_required_builds.sh`
+8. `swiftlint lint --strict --no-cache`
+9. `bash ci_scripts/run_required_builds.sh`
+
+### Results
+
+- `swift test`: passed
+  - 71 tests across 12 suites passed
+- `xcodebuild ... build`: passed
+  - `MHKitExample.app` built successfully for macOS
+  - non-fatal `appintentsmetadataprocessor` warning remains (metadata extraction skipped without `AppIntents.framework`)
+- `swiftlint lint --strict --no-cache`: passed with `0` violations
+- First `bash ci_scripts/run_required_builds.sh`: failed (new `implicit_return` violation in `MHDestructiveResetService`)
+- Final `bash ci_scripts/run_required_builds.sh`: passed
+  - `swift test` passed
+  - `xcodebuild ... build` passed
+  - `swiftlint lint --strict --no-cache` passed
+
+### Scope Verification
+
+- Added new `MHPersistenceMaintenance` module and tests under `MHKit/Sources` and `MHKit/Tests`
+- Added `PersistenceMaintenanceDemoView` and updated `ContentView` in `Example/MHKitExample/`
+- Added standardized `ci_scripts/run_required_builds.sh` for MHKit
+- Updated `README.md`, `Docs/Architecture.md`, `Docs/Backlog.md`, and `.swiftlint.yml`

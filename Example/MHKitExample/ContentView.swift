@@ -32,6 +32,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("Payloads", systemImage: "bell.badge")
                 }
+
+            PersistenceMaintenanceDemoView()
+                .tabItem {
+                    Label("Persistence", systemImage: "externaldrive")
+                }
         }
         // swiftlint:disable:next no_magic_numbers
         .frame(minWidth: 900, minHeight: 640)
