@@ -145,41 +145,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ..;
-		};
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		B10000000000000000000005 /* MHDeepLinking */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHDeepLinking;
-		};
-		B10000000000000000000006 /* MHNotificationPlans */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHNotificationPlans;
-		};
-		B1000000000000000000000B /* MHNotificationPayloads */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHNotificationPayloads;
-		};
-		B10000000000000000000007 /* MHMutationFlow */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHMutationFlow;
-		};
-		B10000000000000000000009 /* MHPreferences */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHPreferences;
-		};
-/* End XCSwiftPackageProductDependency section */
-
 /* Begin XCBuildConfiguration section */
 		ADC37BAB2F586A00000178F8 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -335,7 +300,7 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
@@ -379,7 +344,7 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
@@ -407,6 +372,41 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B10000000000000000000005 /* MHDeepLinking */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
+			productName = MHDeepLinking;
+		};
+		B10000000000000000000006 /* MHNotificationPlans */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
+			productName = MHNotificationPlans;
+		};
+		B10000000000000000000007 /* MHMutationFlow */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
+			productName = MHMutationFlow;
+		};
+		B10000000000000000000009 /* MHPreferences */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
+			productName = MHPreferences;
+		};
+		B1000000000000000000000B /* MHNotificationPayloads */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
+			productName = MHNotificationPayloads;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = ADC37B982F5869FF000178F8 /* Project object */;
 }

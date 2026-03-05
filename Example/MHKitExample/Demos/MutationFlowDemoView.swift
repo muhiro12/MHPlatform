@@ -2,13 +2,13 @@ import MHMutationFlow
 import SwiftUI
 
 struct MutationFlowDemoView: View {
-    private enum Constants {
+    nonisolated private enum Constants {
         static let firstAttempt = 1
         static let retryMaximumAttempts = 2
         static let eventLogDisplayOffset = 1
     }
 
-    private struct MutationScenario: Sendable {
+    nonisolated private struct MutationScenario: Sendable {
         let failFirstAttempt: Bool
         let failSideEffect: Bool
         let cancelBeforeStepTwo: Bool
@@ -23,7 +23,7 @@ struct MutationFlowDemoView: View {
         }
     }
 
-    private final class MutationEventRecorder: @unchecked Sendable {
+    nonisolated private final class MutationEventRecorder: @unchecked Sendable {
         private let lock = NSLock()
         private var values = [String]()
 
@@ -60,7 +60,7 @@ struct MutationFlowDemoView: View {
         }
     }
 
-    private enum MutationDemoError: Error {
+    nonisolated private enum MutationDemoError: Error {
         case operationFailed
         case sideEffectFailed
     }
