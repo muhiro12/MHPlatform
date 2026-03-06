@@ -169,10 +169,10 @@ struct MHNotificationOrchestratorTests {
         let codec = MHNotificationPayloadCodec()
         let payload = MHNotificationPayload(
             routes: .init(
-                defaultRouteURL: url("mhkit://item?id=rent"),
-                fallbackRouteURL: url("mhkit://month?year=2026&month=1"),
+                defaultRouteURL: url("mhplatform://item?id=rent"),
+                fallbackRouteURL: url("mhplatform://month?year=2026&month=1"),
                 actionRouteURLs: [
-                    "view-month": url("mhkit://month?year=2026&month=1")
+                    "view-month": url("mhplatform://month?year=2026&month=1")
                 ]
             )
         )
@@ -183,7 +183,7 @@ struct MHNotificationOrchestratorTests {
                 userInfo: userInfo,
                 actionIdentifier: "view-month",
                 codec: codec
-            ) == url("mhkit://month?year=2026&month=1")
+            ) == url("mhplatform://month?year=2026&month=1")
         )
 
         #expect(
@@ -191,7 +191,7 @@ struct MHNotificationOrchestratorTests {
                 userInfo: userInfo,
                 actionIdentifier: "unknown",
                 codec: codec
-            ) == url("mhkit://item?id=rent")
+            ) == url("mhplatform://item?id=rent")
         )
 
         #expect(
@@ -205,7 +205,7 @@ struct MHNotificationOrchestratorTests {
         let fallbackOnlyPayload = MHNotificationPayload(
             routes: .init(
                 defaultRouteURL: nil,
-                fallbackRouteURL: url("mhkit://month?year=2026&month=1")
+                fallbackRouteURL: url("mhplatform://month?year=2026&month=1")
             )
         )
         let fallbackOnlyUserInfo = codec.encode(fallbackOnlyPayload)
@@ -215,7 +215,7 @@ struct MHNotificationOrchestratorTests {
                 userInfo: fallbackOnlyUserInfo,
                 actionIdentifier: "unknown",
                 codec: codec
-            ) == url("mhkit://month?year=2026&month=1")
+            ) == url("mhplatform://month?year=2026&month=1")
         )
     }
 }

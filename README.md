@@ -1,6 +1,6 @@
-# MHKit
+# MHPlatform
 
-MHKit is a Swift package workspace for shared app logic extracted from real usage in Incomes and Cookle. The current v1 baseline focuses on deep-link handling, deterministic notification planning, post-mutation side-effect orchestration, and persistence maintenance primitives.
+MHPlatform is an internal app platform foundation delivered as a Swift package workspace for shared infrastructure extracted from real usage in Incomes and Cookle. The current v1 baseline focuses on deep-link handling, deterministic notification planning, post-mutation side-effect orchestration, and persistence maintenance primitives.
 
 Minimum supported platforms:
 - iOS 18.0+
@@ -200,7 +200,7 @@ let outcome = await MHReviewRequester.requestIfNeeded(policy: policy)
 
 ## Example App
 
-`MHKitExample` demonstrates all eight modules with app-local sample data in `Example/`.
+`MHPlatformExample` demonstrates all eight modules with app-local sample data in `Example/`.
 
 It includes cross-module demos for:
 

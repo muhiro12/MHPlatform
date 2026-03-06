@@ -94,20 +94,20 @@ struct DeepLinkingDemoView: View {
     }
 
     private static let configuration = MHDeepLinkConfiguration(
-        customScheme: "mhkit",
+        customScheme: "mhplatform",
         preferredUniversalLinkHost: "example.com",
         allowedUniversalLinkHosts: [
             "example.com",
             "www.example.com"
         ],
-        universalLinkPathPrefix: "MHKit",
+        universalLinkPathPrefix: "MHPlatform",
         preferredTransport: .customScheme
     )
 
     private static let inbox = MHDeepLinkInbox()
     private static let store = MHDeepLinkStore(
         userDefaults: .standard,
-        key: "MHKitExample.pendingDeepLink"
+        key: "MHPlatformExample.pendingDeepLink"
     )
 
     @State private var inboxStatus = "No pending inbox URL"
@@ -128,10 +128,10 @@ struct DeepLinkingDemoView: View {
 
     private var sampleURLStrings: [String] {
         [
-            "mhkit://",
-            "mhkit://item?id=rent",
-            "https://example.com/MHKit/settings/notifications",
-            "https://example.com/MHKit/search?q=tea"
+            "mhplatform://",
+            "mhplatform://item?id=rent",
+            "https://example.com/MHPlatform/settings/notifications",
+            "https://example.com/MHPlatform/search?q=tea"
         ]
     }
 

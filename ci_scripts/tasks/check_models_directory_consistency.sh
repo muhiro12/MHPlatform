@@ -7,4 +7,4 @@ if [[ $argument_count -ne 0 ]]; then
   exit 2
 fi
 
-echo "Models directory consistency check is not applicable for MHKit Swift Package."
+echo "Models directory consistency check is not applicable for MHPlatform Swift Package."

@@ -15,10 +15,10 @@ struct MHNotificationPayloadCodecTests {
         )
         let payload = MHNotificationPayload(
             routes: .init(
-                defaultRouteURL: url("mhkit://item?id=rent"),
-                fallbackRouteURL: url("mhkit://month?year=2026&month=1"),
+                defaultRouteURL: url("mhplatform://item?id=rent"),
+                fallbackRouteURL: url("mhplatform://month?year=2026&month=1"),
                 actionRouteURLs: [
-                    "view-month": url("mhkit://month?year=2026&month=1")
+                    "view-month": url("mhplatform://month?year=2026&month=1")
                 ]
             ),
             metadata: [
@@ -37,20 +37,20 @@ struct MHNotificationPayloadCodecTests {
     func decode_ignores_invalid_url_entries() throws {
         let codec = MHNotificationPayloadCodec()
         let userInfo: [AnyHashable: Any] = [
-            "mh.notification.defaultRouteURL": "mhkit://root",
+            "mh.notification.defaultRouteURL": "mhplatform://root",
             "mh.notification.fallbackRouteURL": "",
             "mh.notification.actionRouteURLs": [
-                "view-item": "mhkit://item?id=rent",
+                "view-item": "mhplatform://item?id=rent",
                 "view-month": ""
             ]
         ]
 
         let decoded = try #require(codec.decode(userInfo))
 
-        #expect(decoded.routes.defaultRouteURL == url("mhkit://root"))
+        #expect(decoded.routes.defaultRouteURL == url("mhplatform://root"))
         #expect(decoded.routes.fallbackRouteURL == nil)
         #expect(decoded.routes.actionRouteURLs == [
-            "view-item": url("mhkit://item?id=rent")
+            "view-item": url("mhplatform://item?id=rent")
         ])
     }
 
@@ -77,7 +77,7 @@ struct MHNotificationPayloadCodecTests {
     func decode_filters_metadata_by_allowlist_and_reserved_keys() throws {
         let codec = MHNotificationPayloadCodec(
             configuration: .init(
-                keys: .mhKit,
+                keys: .mhPlatform,
                 decodableMetadataKeys: [
                     "contentKind",
                     "stableIdentifier",
@@ -86,7 +86,7 @@ struct MHNotificationPayloadCodecTests {
             )
         )
         let userInfo: [AnyHashable: Any] = [
-            "mh.notification.defaultRouteURL": "mhkit://recipes",
+            "mh.notification.defaultRouteURL": "mhplatform://recipes",
             "contentKind": "recipeSuggestion",
             "stableIdentifier": "recipe-123",
             "other": "ignored"
@@ -161,12 +161,12 @@ struct MHNotificationPayloadCodecTests {
         let codec = MHNotificationPayloadCodec()
         let payload = MHNotificationPayload(
             routes: .init(
-                defaultRouteURL: url("mhkit://item?id=rent"),
-                fallbackRouteURL: url("mhkit://month?year=2026&month=1")
+                defaultRouteURL: url("mhplatform://item?id=rent"),
+                fallbackRouteURL: url("mhplatform://month?year=2026&month=1")
             ),
             metadata: [
-                "mh.notification.defaultRouteURL": "mhkit://override",
-                "mh.notification.fallbackRouteURL": "mhkit://override-fallback",
+                "mh.notification.defaultRouteURL": "mhplatform://override",
+                "mh.notification.fallbackRouteURL": "mhplatform://override-fallback",
                 "note": "kept"
             ]
         )
@@ -175,11 +175,11 @@ struct MHNotificationPayloadCodecTests {
 
         #expect(
             encoded["mh.notification.defaultRouteURL"] as? String ==
-                "mhkit://item?id=rent"
+                "mhplatform://item?id=rent"
         )
         #expect(
             encoded["mh.notification.fallbackRouteURL"] as? String ==
-                "mhkit://month?year=2026&month=1"
+                "mhplatform://month?year=2026&month=1"
         )
         #expect(encoded["note"] as? String == "kept")
     }

@@ -1,4 +1,4 @@
-# MHKit Backlog
+# MHPlatform Backlog
 
 This backlog is derived from concrete duplication found in `Incomes/` and `Cookle/`. Evidence paths are workspace-root relative and remain read-only references.
 
@@ -124,7 +124,7 @@ Evidence:
 - `Incomes/Incomes/Sources/Notification/Models/NotificationService.swift`
 - `Cookle/Cookle/Sources/Notification/Services/RecipeSuggestionNotificationComposer.swift`
 - `Cookle/Cookle/Sources/Notification/Services/NotificationService.swift`
-- `MHKit/Sources/MHNotificationPayloads/`
+- `MHPlatform/Sources/MHNotificationPayloads/`
 
 Remaining work:
 - app-specific notification copy templates
@@ -148,7 +148,7 @@ Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/MainNavigationRouteExecutor.swift`
 - `Cookle/CookleLibrary/Sources/Common/CookleRouteExecutor.swift`
 - `Cookle/Cookle/Sources/Main/Services/MainRouteService.swift`
-- `MHKit/Sources/MHRouteExecution/`
+- `MHPlatform/Sources/MHRouteExecution/`
 
 Remaining work:
 - app-specific route enums and persistence lookups remain in each app
@@ -199,7 +199,7 @@ Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/DataMaintenanceService.swift`
 - `Cookle/CookleLibrary/Sources/Common/DatabaseMigrator.swift`
 - `Cookle/CookleLibrary/Sources/Common/DataResetService.swift`
-- `MHKit/Sources/MHPersistenceMaintenance/`
+- `MHPlatform/Sources/MHPersistenceMaintenance/`
 
 Remaining work:
 - app-specific adoption in Incomes/Cookle call sites is intentionally deferred
@@ -223,7 +223,7 @@ Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/ReviewRequestPolicy.swift`
 - `Cookle/Cookle/Sources/Main/Services/MainReviewService.swift`
 - `Cookle/Cookle/Sources/Common/Services/CookleReviewRequester.swift`
-- `MHKit/Sources/MHReviewPolicy/`
+- `MHPlatform/Sources/MHReviewPolicy/`
 
 Remaining work:
 - app-specific adoption in Incomes/Cookle call sites remains out of scope

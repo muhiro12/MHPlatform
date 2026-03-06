@@ -26,7 +26,7 @@ start_time_display=$(date +"%Y-%m-%d %H:%M:%S %z")
 start_time_iso=$(date +"%Y-%m-%dT%H:%M:%S%z")
 
 overall_result="success"
-run_note="Executed required build and test steps for MHKit."
+run_note="Executed required build and test steps for MHPlatform."
 failed_step=""
 failed_log=""
 executed_steps=()
@@ -48,7 +48,7 @@ finalize_run_artifacts() {
 
   if [[ $exit_code -ne 0 ]]; then
     overall_result="failure"
-    if [[ "$run_note" == "Executed required build and test steps for MHKit." ]]; then
+    if [[ "$run_note" == "Executed required build and test steps for MHPlatform." ]]; then
       run_note="A required step failed. Review failure details and logs."
     fi
   fi
@@ -133,7 +133,7 @@ run_step \
 
 run_step \
   "build_app" \
-  "Build MHKit package and example app" \
+  "Build MHPlatform package and example app" \
   bash "$repository_root/ci_scripts/tasks/build_app.sh"
 
 run_step \

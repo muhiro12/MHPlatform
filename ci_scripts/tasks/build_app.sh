@@ -32,30 +32,30 @@ mkdir -p \
   "$derived_data_path" \
   "$results_directory"
 
-echo "Running swift build for MHKit package."
+echo "Running swift build for MHPlatform package."
 HOME="$local_home_directory" \
 TMPDIR="$temporary_directory" \
 XDG_CACHE_HOME="$cache_directory" \
 CLANG_MODULE_CACHE_PATH="$clang_module_cache_directory" \
 swift build
 
-example_project_path="$repository_root/Example/MHKitExample.xcodeproj"
+example_project_path="$repository_root/Example/MHPlatformExample.xcodeproj"
 if [[ ! -d "$example_project_path" ]]; then
-  echo "Example project not found. Skipping MHKitExample build."
+  echo "Example project not found. Skipping MHPlatformExample build."
   exit 0
 fi
 
 timestamp=$(date +%s)
-result_bundle_path="$results_directory/BuildResults_MHKitExample_${timestamp}.xcresult"
+result_bundle_path="$results_directory/BuildResults_MHPlatformExample_${timestamp}.xcresult"
 
-echo "Building MHKitExample (macOS)."
+echo "Building MHPlatformExample (macOS)."
 HOME="$local_home_directory" \
 TMPDIR="$temporary_directory" \
 XDG_CACHE_HOME="$cache_directory" \
 CLANG_MODULE_CACHE_PATH="$clang_module_cache_directory" \
 xcodebuild \
   -project "$example_project_path" \
-  -scheme "MHKitExample" \
+  -scheme "MHPlatformExample" \
   -destination 'generic/platform=macOS' \
   -derivedDataPath "$derived_data_path" \
   -resultBundlePath "$result_bundle_path" \
@@ -64,4 +64,4 @@ xcodebuild \
   "CLANG_MODULE_CACHE_PATH=$clang_module_cache_directory" \
   build
 
-echo "Finished MHKitExample build. Result bundle: $result_bundle_path"
+echo "Finished MHPlatformExample build. Result bundle: $result_bundle_path"

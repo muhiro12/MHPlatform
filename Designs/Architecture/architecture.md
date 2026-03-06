@@ -1,4 +1,4 @@
-# MHKit Architecture
+# MHPlatform Architecture
 
 ## Public Modules
 
@@ -11,7 +11,8 @@
 - `MHPreferences`
 - `MHReviewPolicy`
 
-The package name is `MHKit`, but consumers import concrete module names instead of a single umbrella module.
+The package name is `MHPlatform`, but consumers import concrete module names instead of a single umbrella module.
+MHPlatform is maintained as an internal app platform foundation for reusable non-domain app infrastructure.
 
 ## Platform Baseline
 
@@ -134,11 +135,11 @@ Integration contract:
 - SwiftUI navigation-state executors
 - shared migration policy for existing app preference formats
 - remote config
-- a generic umbrella `MHKit` product
+- a generic umbrella `MHPlatform` product
 
 ## Verification Expectations
 
-- Changes stay inside `MHKit/`.
+- Changes stay inside `MHPlatform/`.
 - `Incomes/` and `Cookle/` remain read-only reference material.
 - `swift test` must pass.
-- `MHKitExample` in `Example/` must build through `xcodebuild`.
+- `MHPlatformExample` in `Example/` must build through `xcodebuild`.

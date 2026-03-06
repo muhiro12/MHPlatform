@@ -54,12 +54,12 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
 
     private let codec = MHDeepLinkCodec<AppRoute>(
         configuration: .init(
-            customScheme: "mhkit",
+            customScheme: "mhplatform",
             preferredUniversalLinkHost: "example.com",
             allowedUniversalLinkHosts: [
                 "example.com"
             ],
-            universalLinkPathPrefix: "MHKit",
+            universalLinkPathPrefix: "MHPlatform",
             preferredTransport: .customScheme
         )
     )

@@ -4,7 +4,7 @@ import PackageDescription
 
 // swiftlint:disable:next prefixed_toplevel_constant
 let package = Package(
-    name: "MHKit",
+    name: "MHPlatform",
     platforms: [
         .iOS(.v18),
         .macOS(.v15)

@@ -1,6 +1,6 @@
-# MHKit North Star
+# MHPlatform North Star
 
-MHKit is an application infrastructure kit for SwiftUI/SwiftData apps.
+MHPlatform is an internal app platform foundation for SwiftUI/SwiftData apps.
 It provides reusable primitives for app plumbing, not app domain behavior.
 
 ## Product Intent
@@ -12,13 +12,13 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 
 ## Non-Goals
 
-- No domain rules in MHKit (`finance`, `recipe`, etc. stay in app/domain layers).
+- No domain rules in MHPlatform (`finance`, `recipe`, etc. stay in app/domain layers).
 - No generic SwiftData abstraction layer (no repositories, no persistence facade).
 - No global singleton runtime that hides threading or lifecycle ownership.
 
 ## Canonical Vocabulary
 
-| Term | Meaning | MHKit Examples |
+| Term | Meaning | MHPlatform Examples |
 | --- | --- | --- |
 | `Outcome` | Terminal async/sync end state used by workflows | `MHRouteExecutionOutcome`, `MHMutationOutcome`, `MHNotificationRequestSyncOutcome`, `MHStoreMigrationOutcome` |
 | `Event` | Ordered progress signal emitted while running | `MHMutationEvent`, `MHDestructiveResetEvent` |
@@ -35,7 +35,7 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 
 ## Module Ownership
 
-| Capability | Owned by MHKit | Not Owned by MHKit |
+| Capability | Owned by MHPlatform | Not Owned by MHPlatform |
 | --- | --- | --- |
 | Deep link parsing/handoff | URL codec + inbox/store | App route enums, screen selection state |
 | Route execution | readiness-gated execution + latest-wins pending queue | URL parsing, domain interpretation |
@@ -52,7 +52,7 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 | --- | --- | --- |
 | Is behavior tied to domain entities/rules? | Domain library or app module | Continue check |
 | Is this platform adapter glue for one target only? | App adapter layer | Continue check |
-| Is this cross-app infra with stable contract and no domain ownership? | MHKit | Keep local to app |
+| Is this cross-app infra with stable contract and no domain ownership? | MHPlatform | Keep local to app |
 
 ## Concurrency and State Rules
 

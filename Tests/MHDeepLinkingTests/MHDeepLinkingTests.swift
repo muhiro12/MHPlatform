@@ -68,13 +68,13 @@ struct MHDeepLinkingTests {
     }
 
     private let configuration = MHDeepLinkConfiguration(
-        customScheme: "mhkit",
+        customScheme: "mhplatform",
         preferredUniversalLinkHost: "example.com",
         allowedUniversalLinkHosts: [
             "example.com",
             "www.example.com"
         ],
-        universalLinkPathPrefix: "MHKit",
+        universalLinkPathPrefix: "MHPlatform",
         preferredTransport: .customScheme
     )
 
@@ -89,7 +89,7 @@ struct MHDeepLinkingTests {
             transport: .customScheme
         )
 
-        #expect(url?.absoluteString == "mhkit://item?id=rent")
+        #expect(url?.absoluteString == "mhplatform://item?id=rent")
     }
 
     @Test
@@ -103,7 +103,7 @@ struct MHDeepLinkingTests {
             transport: .universalLink
         )
 
-        #expect(url?.absoluteString == "https://example.com/MHKit/search?q=tea")
+        #expect(url?.absoluteString == "https://example.com/MHPlatform/search?q=tea")
     }
 
     @Test
@@ -113,7 +113,7 @@ struct MHDeepLinkingTests {
         )
 
         let route = codec.parse(
-            try #require(URL(string: "https://www.example.com/mhkit/search?q=tea"))
+            try #require(URL(string: "https://www.example.com/mhplatform/search?q=tea"))
         )
 
         #expect(route == .search("tea"))
@@ -126,7 +126,7 @@ struct MHDeepLinkingTests {
         )
 
         let route = codec.parse(
-            try #require(URL(string: "https://invalid.example/MHKit/item?id=rent"))
+            try #require(URL(string: "https://invalid.example/MHPlatform/item?id=rent"))
         )
 
         #expect(route == nil)
@@ -139,10 +139,10 @@ struct MHDeepLinkingTests {
         )
 
         let customSchemeRoute = codec.parse(
-            try #require(URL(string: "mhkit://"))
+            try #require(URL(string: "mhplatform://"))
         )
         let universalLinkRoute = codec.parse(
-            try #require(URL(string: "https://example.com/MHKit"))
+            try #require(URL(string: "https://example.com/MHPlatform"))
         )
 
         #expect(customSchemeRoute == .root)
@@ -186,14 +186,14 @@ struct MHDeepLinkingTests {
                 customScheme: "",
                 preferredUniversalLinkHost: "example.com",
                 allowedUniversalLinkHosts: ["example.com"],
-                universalLinkPathPrefix: "MHKit",
+                universalLinkPathPrefix: "MHPlatform",
                 preferredTransport: .customScheme
             )
         )
 
         let url = codec.preferredURL(for: .item("rent"))
 
-        #expect(url?.absoluteString == "https://example.com/MHKit/item?id=rent")
+        #expect(url?.absoluteString == "https://example.com/MHPlatform/item?id=rent")
     }
 
     @Test
@@ -206,7 +206,7 @@ struct MHDeepLinkingTests {
             userDefaults: userDefaults,
             key: "pendingURL"
         )
-        let url = try #require(URL(string: "mhkit://item?id=rent"))
+        let url = try #require(URL(string: "mhplatform://item?id=rent"))
 
         store.ingest(url)
 
@@ -217,7 +217,7 @@ struct MHDeepLinkingTests {
     @Test
     func inbox_consumes_value_once() async throws {
         let inbox = MHDeepLinkInbox()
-        let url = try #require(URL(string: "mhkit://search?q=tea"))
+        let url = try #require(URL(string: "mhplatform://search?q=tea"))
 
         await inbox.ingest(url)
 

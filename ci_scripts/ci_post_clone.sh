@@ -7,4 +7,4 @@ if [[ $argument_count -ne 0 ]]; then
   exit 2
 fi
 
-echo "No post-clone setup is required for MHKit."
+echo "No post-clone setup is required for MHPlatform."

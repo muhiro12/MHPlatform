@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct MHKitExampleApp: App {
+struct MHPlatformExampleApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

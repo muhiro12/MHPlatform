@@ -1,4 +1,4 @@
-# MHKit Integration Cookbook
+# MHPlatform Integration Cookbook
 
 This cookbook focuses on composable end-to-end integration patterns.
 

@@ -6,10 +6,10 @@ struct MHNotificationRouteResolverTests {
     @Test
     func dismiss_action_returns_nil() {
         let payload = makePayload(
-            defaultRouteURL: "mhkit://item?id=rent",
-            fallbackRouteURL: "mhkit://month?year=2026&month=1",
+            defaultRouteURL: "mhplatform://item?id=rent",
+            fallbackRouteURL: "mhplatform://month?year=2026&month=1",
             actionRouteURLs: [
-                "view-month": "mhkit://month?year=2026&month=1"
+                "view-month": "mhplatform://month?year=2026&month=1"
             ]
         )
         let response = MHNotificationResponseContext(
@@ -27,10 +27,10 @@ struct MHNotificationRouteResolverTests {
     @Test
     func action_specific_route_wins_over_default() {
         let payload = makePayload(
-            defaultRouteURL: "mhkit://item?id=rent",
-            fallbackRouteURL: "mhkit://month?year=2026&month=1",
+            defaultRouteURL: "mhplatform://item?id=rent",
+            fallbackRouteURL: "mhplatform://month?year=2026&month=1",
             actionRouteURLs: [
-                "view-month": "mhkit://month?year=2026&month=1"
+                "view-month": "mhplatform://month?year=2026&month=1"
             ]
         )
         let response = MHNotificationResponseContext(
@@ -42,14 +42,14 @@ struct MHNotificationRouteResolverTests {
             response: response
         )
 
-        #expect(resolved == url("mhkit://month?year=2026&month=1"))
+        #expect(resolved == url("mhplatform://month?year=2026&month=1"))
     }
 
     @Test
     func unknown_action_falls_back_to_default() {
         let payload = makePayload(
-            defaultRouteURL: "mhkit://item?id=rent",
-            fallbackRouteURL: "mhkit://month?year=2026&month=1"
+            defaultRouteURL: "mhplatform://item?id=rent",
+            fallbackRouteURL: "mhplatform://month?year=2026&month=1"
         )
         let response = MHNotificationResponseContext(
             actionIdentifier: "unknown-action"
@@ -60,13 +60,13 @@ struct MHNotificationRouteResolverTests {
             response: response
         )
 
-        #expect(resolved == url("mhkit://item?id=rent"))
+        #expect(resolved == url("mhplatform://item?id=rent"))
     }
 
     @Test
     func missing_default_falls_back_to_fallback() {
         let payload = makePayload(
-            fallbackRouteURL: "mhkit://month?year=2026&month=1"
+            fallbackRouteURL: "mhplatform://month?year=2026&month=1"
         )
         let response = MHNotificationResponseContext(
             actionIdentifier: "unknown-action"
@@ -77,7 +77,7 @@ struct MHNotificationRouteResolverTests {
             response: response
         )
 
-        #expect(resolved == url("mhkit://month?year=2026&month=1"))
+        #expect(resolved == url("mhplatform://month?year=2026&month=1"))
     }
 
     @Test

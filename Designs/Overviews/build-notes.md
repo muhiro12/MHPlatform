@@ -1,15 +1,15 @@
-# MHKit Build Notes
+# MHPlatform Build Notes
 
 ## Start State
 
 - Workspace root: `/Users/Hiromu/Repositories/MKKitFactory`
-- Git repository used for all git operations: `MHKit/`
+- Git repository used for all git operations: `MHPlatform/`
 - Initial branch: `main`
-- Initial working tree status: not clean (the ongoing MHKit refactor edits were already in progress)
+- Initial working tree status: not clean (the ongoing MHPlatform refactor edits were already in progress)
 
 ## Commands Run
 
-All build and lint commands below were run inside `MHKit/`:
+All build and lint commands below were run inside `MHPlatform/`:
 
 1. `git status --short --branch`
 2. `swiftlint lint --strict`
@@ -17,15 +17,15 @@ All build and lint commands below were run inside `MHKit/`:
 4. `swift test`
 5. `swiftlint lint --strict --no-cache`
 6. `swift test`
-7. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+7. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 8. `swiftlint lint --strict --no-cache`
 
 Workspace-root read-only verification commands:
 
-1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_incomes_after.sha256`
-2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_cookle_after.sha256`
-3. `diff -u /tmp/mhkit_incomes_before.sha256 /tmp/mhkit_incomes_after.sha256`
-4. `diff -u /tmp/mhkit_cookle_before.sha256 /tmp/mhkit_cookle_after.sha256`
+1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_incomes_after.sha256`
+2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_cookle_after.sha256`
+3. `diff -u /tmp/mhplatform_incomes_before.sha256 /tmp/mhplatform_incomes_after.sha256`
+4. `diff -u /tmp/mhplatform_cookle_before.sha256 /tmp/mhplatform_cookle_after.sha256`
 
 ## Results
 
@@ -34,14 +34,14 @@ Workspace-root read-only verification commands:
 - `swift test`: passed
   - 25 tests across 4 suites passed
 - `xcodebuild ... build`: passed
-  - `MHKitExample.app` built successfully for macOS
+  - `MHPlatformExample.app` built successfully for macOS
   - `appintentsmetadataprocessor` reported metadata extraction was skipped because there is no `AppIntents.framework` dependency (non-fatal)
 
 ## Read-only Verification
 
 - `Incomes/`: no file hash changes detected (`diff` returned no output)
 - `Cookle/`: no file hash changes detected (`diff` returned no output)
-- All implementation changes remain under `MHKit/`
+- All implementation changes remain under `MHPlatform/`
 
 ## Commit
 
@@ -61,19 +61,19 @@ Workspace-root read-only verification commands:
 
 ### Commands Run
 
-All commands below were run inside `MHKit/`:
+All commands below were run inside `MHPlatform/`:
 
 1. `swiftlint lint --strict --no-cache`
 2. `swift test`
-3. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+3. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 4. `swiftlint lint --strict --no-cache`
 
 Workspace-root read-only verification commands:
 
-1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_incomes_after.sha256`
-2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_cookle_after.sha256`
-3. `diff -u /tmp/mhkit_incomes_before.sha256 /tmp/mhkit_incomes_after.sha256`
-4. `diff -u /tmp/mhkit_cookle_before.sha256 /tmp/mhkit_cookle_after.sha256`
+1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_incomes_after.sha256`
+2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_cookle_after.sha256`
+3. `diff -u /tmp/mhplatform_incomes_before.sha256 /tmp/mhplatform_incomes_after.sha256`
+4. `diff -u /tmp/mhplatform_cookle_before.sha256 /tmp/mhplatform_cookle_after.sha256`
 
 ### Results
 
@@ -81,14 +81,14 @@ Workspace-root read-only verification commands:
 - `swift test`: passed
   - 39 tests across 6 suites passed
 - `xcodebuild ... build`: passed
-  - `MHKitExample.app` built successfully for macOS
+  - `MHPlatformExample.app` built successfully for macOS
   - `appintentsmetadataprocessor` reported metadata extraction was skipped because there is no `AppIntents.framework` dependency (non-fatal)
 
 ### Read-only Verification
 
 - `Incomes/`: no file hash changes detected (`diff` returned no output)
 - `Cookle/`: no file hash changes detected (`diff` returned no output)
-- All implementation changes remain under `MHKit/`
+- All implementation changes remain under `MHPlatform/`
 
 ## MHPreferences Finalization Pass
 
@@ -99,17 +99,17 @@ Workspace-root read-only verification commands:
 
 ### Commands Run
 
-All commands below were run inside `MHKit/`:
+All commands below were run inside `MHPlatform/`:
 
 1. `git status --short --branch`
 2. `swiftlint lint --strict --no-cache`
 3. `swift test`
-4. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+4. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 5. `swiftlint lint --strict --no-cache`
-6. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+6. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 7. `swiftlint lint --strict --no-cache`
 8. `swift test`
-9. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+9. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 10. `swiftlint lint --strict --no-cache`
 11. `git status --short --branch`
 
@@ -117,7 +117,7 @@ Workspace-root read-only verification commands:
 
 1. `find /Users/Hiromu/Repositories/MKKitFactory/Incomes -type f -newermt '2026-03-05 09:00:00' | head`
 2. `find /Users/Hiromu/Repositories/MKKitFactory/Cookle -type f -newermt '2026-03-05 09:00:00' | head`
-3. `find MHKit Incomes Cookle -type f -newermt '2026-03-05 09:00:00' | awk -F/ '{print $1}' | sort -u`
+3. `find MHPlatform Incomes Cookle -type f -newermt '2026-03-05 09:00:00' | awk -F/ '{print $1}' | sort -u`
 
 ### Results
 
@@ -127,13 +127,13 @@ Workspace-root read-only verification commands:
 - First `xcodebuild ... build`: failed (missing closing brace in `PreferencesDemoView`)
 - Second `xcodebuild ... build`: failed (iOS-only `textInputAutocapitalization` modifier)
 - Final `xcodebuild ... build`: passed
-  - `MHKitExample.app` built successfully for macOS
+  - `MHPlatformExample.app` built successfully for macOS
   - non-fatal warning remains in `MutationFlowDemoView` for main-actor isolation on event recorder call
 
 ### Read-only Verification
 
 - `find` checks for `Incomes/` and `Cookle/` returned no recently modified files
-- Cross-directory change check returned only `MHKit`
+- Cross-directory change check returned only `MHPlatform`
 
 ## MHNotificationPayloads Phase
 
@@ -148,22 +148,22 @@ Workspace-root read-only verification commands:
 
 ### Commands Run
 
-All commands below were run inside `MHKit/`:
+All commands below were run inside `MHPlatform/`:
 
 1. `swiftlint lint --strict --no-cache`
 2. `swift test`
-3. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
-4. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+3. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
+4. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 5. `swiftlint lint --strict --no-cache`
 
 Workspace-root read-only verification commands:
 
-1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_incomes_before.sha256`
-2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_cookle_before.sha256`
-3. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_incomes_after.sha256`
-4. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhkit_cookle_after.sha256`
-5. `diff -u /tmp/mhkit_incomes_before.sha256 /tmp/mhkit_incomes_after.sha256`
-6. `diff -u /tmp/mhkit_cookle_before.sha256 /tmp/mhkit_cookle_after.sha256`
+1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_incomes_before.sha256`
+2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_cookle_before.sha256`
+3. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_incomes_after.sha256`
+4. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_cookle_after.sha256`
+5. `diff -u /tmp/mhplatform_incomes_before.sha256 /tmp/mhplatform_incomes_after.sha256`
+6. `diff -u /tmp/mhplatform_cookle_before.sha256 /tmp/mhplatform_cookle_after.sha256`
 
 ### Results
 
@@ -174,14 +174,14 @@ Workspace-root read-only verification commands:
   - 55 tests across 9 suites passed
 - First `xcodebuild ... build`: failed (access-level issue in `NotificationPayloadsDemoView`)
 - Second and final `xcodebuild ... build`: passed
-  - `MHKitExample.app` built successfully for macOS
+  - `MHPlatformExample.app` built successfully for macOS
   - non-fatal `appintentsmetadataprocessor` warning remains (metadata extraction skipped without `AppIntents.framework`)
 
 ### Read-only Verification
 
 - `Incomes/`: no file hash changes detected (`diff` returned no output)
 - `Cookle/`: no file hash changes detected (`diff` returned no output)
-- All implementation changes remain under `MHKit/`
+- All implementation changes remain under `MHPlatform/`
 
 ## MHRouteExecution Phase
 
@@ -196,15 +196,15 @@ Workspace-root read-only verification commands:
 
 ### Commands Run
 
-All commands below were run inside `MHKit/`:
+All commands below were run inside `MHPlatform/`:
 
 1. `swift test`
-2. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+2. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 3. `swiftlint lint --strict --no-cache`
 4. `swift test`
-5. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+5. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 6. `swiftlint lint --strict --no-cache`
-7. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+7. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 
 ### Results
 
@@ -213,16 +213,16 @@ All commands below were run inside `MHKit/`:
   - 63 tests across 10 suites passed
 - First `xcodebuild ... build`: failed (`RouteExecutionDemoView` Combine import and main-actor/sendable isolation issues)
 - Second and final `xcodebuild ... build`: passed
-  - `MHKitExample.app` built successfully for macOS
+  - `MHPlatformExample.app` built successfully for macOS
   - non-fatal `appintentsmetadataprocessor` warning remains (metadata extraction skipped without `AppIntents.framework`)
 - First `swiftlint lint --strict --no-cache`: failed (`one_declaration_per_file`, `type_contents_order`, and related style violations)
 - Second and final `swiftlint lint --strict --no-cache`: passed with `0` violations
 
 ### Scope Verification
 
-- Added new `MHRouteExecution` module and tests under `MHKit/` only
-- Added `RouteExecutionDemoView` and support files in `Example/MHKitExample/`
-- Updated architecture/backlog/readme/build notes docs in `MHKit/Docs` and `MHKit/README.md`
+- Added new `MHRouteExecution` module and tests under `MHPlatform/` only
+- Added `RouteExecutionDemoView` and support files in `Example/MHPlatformExample/`
+- Updated architecture/backlog/readme/build notes docs in `MHPlatform/Docs` and `MHPlatform/README.md`
 
 ## MHPersistenceMaintenance Phase
 
@@ -237,13 +237,13 @@ All commands below were run inside `MHKit/`:
 
 ### Commands Run
 
-All commands below were run inside `MHKit/`:
+All commands below were run inside `MHPlatform/`:
 
 1. `swift test`
-2. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+2. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 3. `swiftlint lint --strict --no-cache`
 4. `swift test`
-5. `xcodebuild -project Example/MHKitExample.xcodeproj -scheme MHKitExample -destination 'generic/platform=macOS' build`
+5. `xcodebuild -project Example/MHPlatformExample.xcodeproj -scheme MHPlatformExample -destination 'generic/platform=macOS' build`
 6. `swiftlint lint --strict --no-cache`
 7. `bash ci_scripts/tasks/run_required_builds.sh`
 8. `swiftlint lint --strict --no-cache`
@@ -254,7 +254,7 @@ All commands below were run inside `MHKit/`:
 - `swift test`: passed
   - 71 tests across 12 suites passed
 - `xcodebuild ... build`: passed
-  - `MHKitExample.app` built successfully for macOS
+  - `MHPlatformExample.app` built successfully for macOS
   - non-fatal `appintentsmetadataprocessor` warning remains (metadata extraction skipped without `AppIntents.framework`)
 - `swiftlint lint --strict --no-cache`: passed with `0` violations
 - First `bash ci_scripts/tasks/run_required_builds.sh`: failed (new `implicit_return` violation in `MHDestructiveResetService`)
@@ -265,8 +265,8 @@ All commands below were run inside `MHKit/`:
 
 ### Scope Verification
 
-- Added new `MHPersistenceMaintenance` module and tests under `MHKit/Sources` and `MHKit/Tests`
-- Added `PersistenceMaintenanceDemoView` and updated `ContentView` in `Example/MHKitExample/`
-- Added standardized `ci_scripts/tasks/run_required_builds.sh` for MHKit
+- Added new `MHPersistenceMaintenance` module and tests under `MHPlatform/Sources` and `MHPlatform/Tests`
+- Added `PersistenceMaintenanceDemoView` and updated `ContentView` in `Example/MHPlatformExample/`
+- Added standardized `ci_scripts/tasks/run_required_builds.sh` for MHPlatform
 - Updated `README.md`, `Designs/Architecture/architecture.md`,
   `Designs/Overviews/backlog.md`, and `.swiftlint.yml`

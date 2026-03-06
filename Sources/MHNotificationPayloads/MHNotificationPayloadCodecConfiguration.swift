@@ -10,7 +10,7 @@ public struct MHNotificationPayloadCodecConfiguration: Equatable, Sendable {
 
     /// Creates codec configuration.
     public init(
-        keys: MHNotificationPayloadKeys = .mhKit,
+        keys: MHNotificationPayloadKeys = .mhPlatform,
         decodableMetadataKeys: Set<String> = []
     ) {
         self.keys = keys

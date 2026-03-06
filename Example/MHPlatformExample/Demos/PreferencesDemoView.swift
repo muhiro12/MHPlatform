@@ -3,8 +3,8 @@ import SwiftUI
 
 struct PreferencesDemoView: View {
     private enum Constants {
-        static let suiteName = "MHKitExample.PreferencesDemo"
-        static let namespace = "mhkit.example.preferences"
+        static let suiteName = "MHPlatformExample.PreferencesDemo"
+        static let namespace = "mhplatform.example.preferences"
         static let boolKeyName = "bool"
         static let intKeyName = "int"
         static let stringKeyName = "string"

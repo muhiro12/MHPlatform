@@ -14,8 +14,8 @@ struct NotificationPipelineDemoView: View {
         static let dueDateISO8601 = "2026-01-20T00:00:00Z"
         static let planningNowISO8601 = "2026-01-01T10:00:00Z"
 
-        static let primaryRoute = "mhkit://item?id=rent"
-        static let fallbackRoute = "mhkit://month?year=2026&month=1"
+        static let primaryRoute = "mhplatform://item?id=rent"
+        static let fallbackRoute = "mhplatform://month?year=2026&month=1"
 
         static let actionRouteIdentifier = "view-month"
         static let metadataKey = "notificationKind"

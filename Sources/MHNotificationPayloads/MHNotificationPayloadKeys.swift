@@ -2,8 +2,8 @@ import Foundation
 
 /// Reserved userInfo keys used by `MHNotificationPayloadCodec`.
 public struct MHNotificationPayloadKeys: Equatable, Sendable {
-    /// Default MHKit key set.
-    public static let mhKit = Self(
+    /// Default MHPlatform key set.
+    public static let mhPlatform = Self(
         defaultRouteURL: "mh.notification.defaultRouteURL",
         fallbackRouteURL: "mh.notification.fallbackRouteURL",
         actionRouteURLs: "mh.notification.actionRouteURLs"

@@ -21,7 +21,7 @@ mkdir -p \
   "$temporary_directory" \
   "$local_home_directory/Library/Caches"
 
-echo "Running swift test for MHKit package."
+echo "Running swift test for MHPlatform package."
 HOME="$local_home_directory" \
 TMPDIR="$temporary_directory" \
 XDG_CACHE_HOME="$cache_directory" \

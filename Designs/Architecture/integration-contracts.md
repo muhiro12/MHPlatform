@@ -1,4 +1,4 @@
-# MHKit Integration Contracts
+# MHPlatform Integration Contracts
 
 ## Contract Shape
 

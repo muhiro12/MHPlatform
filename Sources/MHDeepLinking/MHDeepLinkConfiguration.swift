@@ -2,7 +2,7 @@ import Foundation
 
 /// Holds the URL grammar configuration used by `MHDeepLinkCodec`.
 public struct MHDeepLinkConfiguration: Sendable {
-    /// Custom URL scheme such as `mhkit`.
+    /// Custom URL scheme such as `mhplatform`.
     public let customScheme: String
 
     /// Host used when building universal links.
