@@ -38,4 +38,20 @@ public struct MHMutationAdapter<Value: Sendable>: Sendable {
     ) -> [MHMutationStep] {
         stepBuilder(value)
     }
+
+    /// Appends fixed post-success steps after the steps derived by this adapter.
+    public func appending(
+        _ steps: [MHMutationStep]
+    ) -> Self {
+        appending(.fixed(steps))
+    }
+
+    /// Appends another adapter after the steps derived by this adapter.
+    public func appending(
+        _ other: Self
+    ) -> Self {
+        .init { value in
+            steps(for: value) + other.steps(for: value)
+        }
+    }
 }
