@@ -1,6 +1,12 @@
 # MHPlatform
 
-MHPlatform is an internal app platform foundation delivered as a Swift package workspace for shared infrastructure extracted from real usage in Incomes and Cookle. It ships both an umbrella `MHPlatform` product for app-side convenience and granular module products for narrower adoption. The current v1 baseline focuses on runtime startup, deep-link handling, deterministic notification planning, post-mutation side-effect orchestration, and persistence maintenance primitives.
+MHPlatform is an internal app platform foundation delivered as a Swift package
+workspace for shared infrastructure extracted from real usage in Incomes and
+Cookle. It ships both an umbrella `MHPlatform` product for app-side
+convenience and granular module products for narrower adoption. The current v1
+baseline focuses on runtime startup, deep-link handling, route execution,
+deterministic notification planning, post-mutation side-effect orchestration,
+logging, preferences, and persistence maintenance primitives.
 
 Minimum supported platforms:
 - iOS 18.0+
@@ -63,6 +69,11 @@ import MHRouteExecution
 - Domain mutation result models, follow-up metadata, and concrete side effects
   still belong to each app. `MHMutationFlow` now provides a bridge for future
   adoption without standardizing those app-specific schemas.
+- Recent MHPlatform-first additions focus on thinner app integration:
+  `MHRouteExecution` identity helpers, codec-backed deep-link inbox/store
+  helpers, `MHLoggerFactory`, and `MHMutationAdapter` composition. These reduce
+  app-side boilerplate without moving route enums, effect models, or concrete
+  side effects into MHPlatform.
 
 ## MHAppRuntime
 
@@ -91,7 +102,9 @@ runtime.startIfNeeded()
 
 ## MHDeepLinking
 
-`MHDeepLinking` handles route URL building, parsing, and pending-route handoff without owning app-specific route enums.
+`MHDeepLinking` handles route URL building, parsing, and pending-route handoff
+without owning app-specific route enums. Inbox/store helpers can also round-trip
+app-owned routes through a codec while keeping the stored payload as a `URL`.
 
 Integration contract:
 [`MHDeepLinking`](Designs/Architecture/integration-contracts.md#mhdeeplinking)
@@ -108,6 +121,10 @@ let codec = MHDeepLinkCodec<MyRoute>(
         preferredTransport: .customScheme
     )
 )
+let inbox = MHDeepLinkInbox()
+
+await inbox.ingest(.settings, using: codec)
+let pendingRoute = await inbox.consumeLatest(using: codec)
 ```
 
 ## MHNotificationPlans
@@ -167,7 +184,8 @@ let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
 `MHMutationFlow` runs a mutation with retry, cancellation, and ordered
 post-success side effects. `MHMutationAdapter` lets an app map its own success
 value metadata or effect hints into ordered steps without introducing a shared
-cross-app mutation outcome model.
+cross-app mutation outcome model. Adapters can also be composed to keep fixed
+and value-derived follow-up steps explicit.
 
 Integration contract:
 [`MHMutationFlow`](Designs/Architecture/integration-contracts.md#mhmutationflow)
@@ -190,19 +208,23 @@ let mutation = MHMutation<SaveItemResult>(
     }
 )
 
-let adapter = MHMutationAdapter<SaveItemResult> { result in
+let workflowAdapter = MHMutationAdapter<SaveItemResult> { result in
     var steps = [MHMutationStep]()
 
     if result.shouldReloadWidgets {
         steps.append(.init(name: "reloadWidgets") {})
     }
 
-    if result.shouldRequestReview {
-        steps.append(.init(name: "requestReview") {})
-    }
-
     return steps
 }
+let reviewAdapter = MHMutationAdapter<SaveItemResult> { result in
+    if result.shouldRequestReview {
+        return [.init(name: "requestReview") {}]
+    }
+
+    return []
+}
+let adapter = workflowAdapter.appending(reviewAdapter)
 
 let outcome = await MHMutationRunner.run(
     mutation: mutation,
@@ -213,7 +235,10 @@ let outcome = await MHMutationRunner.run(
 
 ## MHRouteExecution
 
-`MHRouteExecution` coordinates route handling with readiness checks and a latest-wins pending route queue.
+`MHRouteExecution` coordinates route handling with readiness checks and a
+latest-wins pending route queue. For `Route == Outcome` flows, the identity
+helper removes the need for a dummy resolver while keeping app-owned apply logic
+at the call site.
 
 Integration contract:
 [`MHRouteExecution`](Designs/Architecture/integration-contracts.md#mhrouteexecution)
@@ -221,21 +246,15 @@ Integration contract:
 ```swift
 import MHRouteExecution
 
-let executor = MHRouteExecutor<AppRoute, AppRouteOutcome>(
-    resolve: { route in
-        try await resolveOutcome(for: route)
-    },
-    apply: { outcome in
-        try await applyOutcome(outcome)
-    }
-)
-let coordinator = MHRouteCoordinator(
+let coordinator: MHRouteCoordinator<AppRoute, AppRoute> = .init(
     initialReadiness: false,
-    executor: executor
+    isDuplicate: ==
 )
 await coordinator.setReadiness(hasLoadedInitialState)
 
-let outcome = try await coordinator.submit(.settings)
+let outcome = try await coordinator.submit(.settings) { route in
+    try await applyRoute(route)
+}
 ```
 
 ## MHPersistenceMaintenance
@@ -303,7 +322,10 @@ let outcome = await MHReviewRequester.requestIfNeeded(policy: policy)
 
 ## MHLogging
 
-`MHLogging` provides a structured logging surface with in-memory query support, JSONL persistence, and reusable console UI.
+`MHLogging` provides a structured logging surface with in-memory query support,
+JSONL persistence, and reusable console UI. `MHLoggerFactory` is a thin helper
+for app-owned logger setup; it does not move runtime wiring or policy decisions
+into MHPlatform.
 
 Integration contract:
 [`MHLogging`](Designs/Architecture/integration-contracts.md#mhlogging)
@@ -313,21 +335,21 @@ import MHLogging
 
 let policy = MHLogPolicy.default
 let jsonSink = MHJSONLLogSink(
-    fileURL: FileManager.default.temporaryDirectory.appendingPathComponent("app.logs.jsonl"),
+    fileURL: FileManager.default.temporaryDirectory
+        .appendingPathComponent("app.logs.jsonl"),
     maximumFileSizeBytes: policy.maximumDiskBytes
 )
-let store = MHLogStore(
+let loggerFactory = MHLoggerFactory(
     policy: policy,
+    subsystem: "com.example.app",
     sinks: [
         MHOSLogSink(),
         jsonSink
     ]
 )
-let logger = MHLogger(
-    #fileID,
-    subsystem: "com.example.app",
-    store: store,
-    policy: policy
+let logger = loggerFactory.logger(
+    category: "startup",
+    source: #fileID
 )
 logger.info("App started")
 ```
@@ -339,6 +361,8 @@ logger.info("App started")
 It includes cross-module demos for:
 
 - DeepLinking + RouteExecution pipeline
+- RouteExecution identity-route apply path
 - NotificationPlans + NotificationPayloads pipeline
 - MutationOutcome-driven ReviewPolicy trigger
 - Structured logging + JSONL analysis workflow
+- MutationFlow adapter composition with ordered follow-up steps

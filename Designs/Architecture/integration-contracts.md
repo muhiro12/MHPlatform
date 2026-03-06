@@ -65,6 +65,8 @@ This document is normative for integration design.
 - Built deep-link URL (`url(for:transport:)`, `preferredURL(for:)`)
 - Parsed route (`parse(_:)`)
 - Pending URL handoff (`ingest(_:)`, `consumeLatest()`)
+- Route-aware URL bridge helpers:
+  `ingest(_:using:transport:)`, `consumeLatest(using:)`
 
 ### Threading / Actor
 
@@ -80,13 +82,21 @@ This document is normative for integration design.
 - widget tap handoff
 - App Intent -> app route handoff
 
+### Boundary Rule (Normative)
+
+- Route-aware helpers remain codec-backed bridges over URL storage/inbox state.
+- MHPlatform does not persist app route values directly outside their encoded
+  `URL` representation.
+
 ## MHRouteExecution
 
 ### Required Inputs
 
 - Route type (`Sendable`)
 - Resolved outcome type (`Sendable`)
-- `MHRouteExecutor<Route, Outcome>` with app-provided `resolve/apply`
+- Either:
+  - `MHRouteExecutor<Route, Outcome>` with app-provided `resolve/apply`
+  - identity execution path when `Route == Outcome`
 - Initial readiness (`initialReadiness`) and duplicate predicate (`isDuplicate`)
 
 ### Outputs
@@ -110,6 +120,8 @@ This document is normative for integration design.
 - Parsed route execution from DeepLinking and NotificationPayloads
 - Bootstrap/readiness transitions via `setReadiness(_:)`
 - Replay hook via `applyPendingIfReady()` after app state becomes ready
+- Identity-route flows that already have the final route value and only need an
+  app-owned `applyOnMainActor` closure
 
 ### Queue Semantics (Normative)
 
@@ -118,6 +130,12 @@ This document is normative for integration design.
 - Deduplication is caller-defined via `isDuplicate`.
 - If `applyPendingIfReady()` consumes pending route and `execute` fails:
   - consumed route is restored only when no newer pending route was submitted.
+
+### Boundary Rule (Normative)
+
+- Identity helpers only remove dummy resolve/apply boilerplate.
+- Apps still own route definitions, readiness decisions, and concrete route
+  application logic.
 
 ## MHMutationFlow
 
@@ -130,6 +148,7 @@ This document is normative for integration design.
   - `MHMutationAdapter<Value>` for deriving ordered steps from a successful
     app-owned mutation value
   - `[MHMutationStep]` through `afterSuccess` for fixed ordered steps
+- Optional adapter composition through `MHMutationAdapter.appending(_:)`
 - Optional injected sleep for deterministic retry testing (`MHMutationRunner.Sleep`)
 
 ### Outputs
@@ -163,6 +182,8 @@ This document is normative for integration design.
 
 - `MHMutationAdapter` only maps a successful mutation value into ordered
   `MHMutationStep`s.
+- Adapter composition preserves explicit step ordering but does not define or
+  standardize the app-owned mutation schema.
 - MHPlatform does not define a shared cross-app mutation outcome, hint, or
   effect model.
 
@@ -328,6 +349,8 @@ This document is normative for integration design.
 
 - Log policy (`MHLogPolicy`)
 - Log store sinks (`[MHLogSink]`)
+- Optional thin setup helper:
+  `MHLoggerFactory`
 - Logger call-site context:
   - `file` / `function` / `line`
   - `subsystem` / `category`
@@ -346,6 +369,8 @@ This document is normative for integration design.
 - Sink adapters:
   - `MHOSLogSink`
   - `MHJSONLLogSink`
+- Thin logger setup helper:
+  `MHLoggerFactory`
 - Reusable console UI:
   - `MHLogConsoleView`
 
@@ -360,6 +385,7 @@ This document is normative for integration design.
 
 - App startup and lifecycle diagnostics
 - Mutation or workflow event tracing
+- Shared app logger setup that still owns its policy/subsystem decisions locally
 - In-app debug console and incident triage
 - JSONL export for machine-assisted analysis
 

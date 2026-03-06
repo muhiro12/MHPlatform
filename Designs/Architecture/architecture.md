@@ -38,6 +38,9 @@ MHPlatform is maintained as an internal app platform foundation for reusable non
   workflow decisions remain app-specific.
 - `MHMutationFlow` is available in MHPlatform and now includes an app-facing
   adapter contract, but it has not been adopted in the apps yet.
+- Recent platform-first work adds helper surfaces for route execution,
+  deep-link handoff, logging setup, and mutation adapter composition without
+  moving app-owned route/effect models into MHPlatform.
 
 ## Module Boundaries
 
@@ -65,6 +68,8 @@ Integration contract:
   `MHDeepLinkConfiguration`, `MHDeepLinkDescriptor`, `MHDeepLinkCodec`
 - Owns pending-route handoff primitives:
   `MHDeepLinkInbox`, `MHDeepLinkStore`
+- Owns codec-backed route handoff helpers on inbox/store while keeping URL
+  storage as the persisted representation
 - Does not own app navigation state or route execution
 
 ### `MHNotificationPlans`
@@ -99,6 +104,8 @@ Integration contract:
 - Owns mutation retry, cancellation, and post-success side-effect orchestration
 - Owns the app-facing adapter bridge from successful mutation values to ordered
   `MHMutationStep`s through `MHMutationAdapter`
+- Owns additive adapter composition helpers for sequencing fixed and
+  value-derived post-success steps
 - Exposes observable execution events through `MHMutationEvent`
 - Does not define a shared cross-app mutation metadata, hint, or effect schema
 - Does not own persistence, widgets, notifications, or review APIs directly
@@ -111,6 +118,8 @@ Integration contract:
 - Owns route execution orchestration primitives:
   `MHRouteExecutor`, `MHRouteCoordinator`, `MHRouteExecutionOutcome`
 - Owns readiness-aware pending queue behavior with latest-wins semantics
+- Owns an identity-route convenience path for `Route == Outcome` flows while
+  leaving route application in app-owned closures
 - Does not own URL parsing, route type definitions, persistence access, or UI state models
 
 ### `MHPersistenceMaintenance`
@@ -159,6 +168,8 @@ Integration contract:
   `MHLogStore`, `MHLogQuery`
 - Owns sink abstractions and default adapters:
   `MHLogSink`, `MHOSLogSink`, `MHJSONLLogSink`
+- Owns a lightweight logger setup helper:
+  `MHLoggerFactory`
 - Owns reusable log console UI:
   `MHLogConsoleView`
 - Does not own app-specific PII masking policy, alerting policy, or external telemetry backend contracts
