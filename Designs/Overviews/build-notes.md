@@ -2,7 +2,7 @@
 
 ## Start State
 
-- Workspace root: `<workspace-root>` (contains `MHPlatform/`, `Incomes/`, and `Cookle/`)
+- Workspace root: `<workspace-root>` (the parent directory of `MHPlatform/`, containing `MHPlatform/`, `Incomes/`, and `Cookle/`)
 - Git repository used for all git operations: `MHPlatform/`
 - Initial branch: `main`
 - Initial working tree status: not clean (the ongoing MHPlatform refactor edits were already in progress)
