@@ -3,7 +3,7 @@
 This backlog is derived from concrete duplication found in `Incomes/` and `Cookle/`. Evidence paths are workspace-root relative and remain read-only references.
 
 Current remaining priority after this phase:
-1. Lightweight logging policy
+1. No remaining P0/P1 shared-infrastructure extractions are queued.
 
 ## P0. Deep link URL grammar is duplicated
 
@@ -232,24 +232,26 @@ Remaining work:
 ExampleApp validation:
 `ReviewPolicyDemoView` demonstrates policy evaluation and requester outcomes.
 
-## P2. Lightweight logging policy is still inconsistent
+## P2. Lightweight logging policy unification was implemented
 
-Problem:
-The apps still use app-local logging helpers with different wrappers and categories.
+Status:
+Implemented in this phase as `MHLogging`.
 
-Why not now:
-This phase focused on review request extraction with minimal safe scope.
+What was extracted:
+- structured log event model and levels (`MHLogEvent`, `MHLogLevel`, `MHLogSource`)
+- logger and policy surface (`MHLogger`, `MHLogPolicy`)
+- queryable ring-buffer store (`MHLogStore`, `MHLogQuery`)
+- sink abstractions and adapters (`MHLogSink`, `MHOSLogSink`, `MHJSONLLogSink`)
+- reusable log console UI (`MHLogConsoleView`)
 
 Evidence:
 - `Cookle/Cookle/Sources/Common/Logger.swift`
 - app-local logging call sites across Incomes and Cookle
+- `MHPlatform/Sources/MHLogging/`
 
-Recommended module:
-Future observability layer
-
-Minimal API sketch:
-- `MHLogEvent`
-- `MHLogSink`
+Remaining work:
+- app-specific adoption in Incomes/Cookle call sites remains out of scope
+- PII masking policy and operational alert routing remain app-level concerns
 
 ExampleApp validation:
-Docs only for now.
+`LoggingDemoView` demonstrates sample emission, in-app filtering, and JSONL export flow.

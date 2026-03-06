@@ -169,6 +169,56 @@ func runSaveAndMaybeRequestReview() async {
 }
 ```
 
+## Recipe 4: Structured Logging + JSONL Analysis
+
+Use this pattern when you need in-app inspection and machine-assisted analysis from a shared log stream.
+
+```swift
+import MHLogging
+import SwiftUI
+
+@MainActor
+final class AppLogging {
+    let policy: MHLogPolicy
+    let store: MHLogStore
+    let logger: MHLogger
+
+    init() {
+        policy = .default
+
+        let jsonFileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app.logs.jsonl")
+        let jsonSink = MHJSONLLogSink(
+            fileURL: jsonFileURL,
+            maximumFileSizeBytes: policy.maximumDiskBytes
+        )
+
+        store = MHLogStore(
+            policy: policy,
+            sinks: [MHOSLogSink(), jsonSink]
+        )
+        logger = MHLogger(
+            #fileID,
+            subsystem: "com.example.app",
+            store: store,
+            policy: policy
+        )
+    }
+
+    func markLaunch() {
+        logger.info("app launched")
+    }
+}
+
+struct DebugLogView: View {
+    let logging: AppLogging
+
+    var body: some View {
+        MHLogConsoleView(store: logging.store)
+    }
+}
+```
+
 ## Adoption Notes
 
 ### Incomes 向け導入順
@@ -179,6 +229,7 @@ func runSaveAndMaybeRequestReview() async {
 4. `MHMutationFlow` で更新系ワークフローの retry/cancel/event/outcome を標準化する。
 5. `MHPersistenceMaintenance` と `MHPreferences` を段階導入し、起動時保守処理と typed preferences を統一する。
 6. 最後に `MHReviewPolicy` を `MHMutationOutcome.succeeded` 起点で接続する。
+7. `MHLogging` を導入し、Debug画面で `MHLogConsoleView` による検索と JSONL 抽出を提供する。
 
 ### Cookle 向け導入順
 
@@ -188,6 +239,7 @@ func runSaveAndMaybeRequestReview() async {
 4. `MHMutationFlow` を保存系処理へ適用し、Outcome/Event ベースの副作用判断へ寄せる。
 5. `MHPersistenceMaintenance` を導入して migration/reset orchestration を共通化する。
 6. `MHReviewPolicy` は成功体験フローに限定して接続する。
+7. `MHLogging` を導入し、`Logger(#file)` 相当の呼び出しを `MHLogger` に統一する。
 
 ### 役割分離（必須）
 

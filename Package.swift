@@ -45,6 +45,10 @@ let package = Package(
         .library(
             name: "MHReviewPolicy",
             targets: ["MHReviewPolicy"]
+        ),
+        .library(
+            name: "MHLogging",
+            targets: ["MHLogging"]
         )
     ],
     dependencies: [
@@ -106,6 +110,9 @@ let package = Package(
         .target(
             name: "MHReviewPolicy"
         ),
+        .target(
+            name: "MHLogging"
+        ),
         .testTarget(
             name: "MHAppRuntimeTests",
             dependencies: [
@@ -144,6 +151,10 @@ let package = Package(
         .testTarget(
             name: "MHReviewPolicyTests",
             dependencies: ["MHReviewPolicy"]
+        ),
+        .testTarget(
+            name: "MHLoggingTests",
+            dependencies: ["MHLogging"]
         )
     ]
 )

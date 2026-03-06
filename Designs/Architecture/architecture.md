@@ -11,6 +11,7 @@
 - `MHPersistenceMaintenance`
 - `MHPreferences`
 - `MHReviewPolicy`
+- `MHLogging`
 
 The package name is `MHPlatform`, but consumers import concrete module names instead of a single umbrella module.
 MHPlatform is maintained as an internal app platform foundation for reusable non-domain app infrastructure.
@@ -124,6 +125,21 @@ Integration contract:
 - Uses platform-aware fallback behavior for non-iOS builds
 - Does not own app-specific lifecycle triggers or presentation timing policy beyond configured delay/lottery
 
+### `MHLogging`
+
+Integration contract:
+[`MHLogging`](integration-contracts.md#mhlogging)
+
+- Owns structured log models and logger surface:
+  `MHLogLevel`, `MHLogEvent`, `MHLogger`
+- Owns in-memory queryable store:
+  `MHLogStore`, `MHLogQuery`
+- Owns sink abstractions and default adapters:
+  `MHLogSink`, `MHOSLogSink`, `MHJSONLLogSink`
+- Owns reusable log console UI:
+  `MHLogConsoleView`
+- Does not own app-specific PII masking policy, alerting policy, or external telemetry backend contracts
+
 ## Dependency Rules
 
 - Module dependencies are intentionally flat for v1.
@@ -137,12 +153,13 @@ Integration contract:
 - `MHPersistenceMaintenance` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
 - `MHReviewPolicy` has no dependency on the other modules.
+- `MHLogging` has no dependency on the other modules.
 - ExampleApp may import all public modules, but package targets must stay independent.
 
 ## Why No Generic Core Layer
 
 - The duplicated logic found in Incomes and Cookle is concrete and concern-specific.
-- Introducing `MHCore`, `MHObservability`, or a generic workflow layer now would create abstraction before stable shared usage exists.
+- Introducing `MHCore` or a generic workflow layer would create abstraction before stable shared usage exists.
 - If repeated low-level types emerge later, they can be extracted after at least two modules genuinely need them.
 
 ## Out Of Scope

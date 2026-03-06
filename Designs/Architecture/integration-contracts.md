@@ -310,6 +310,54 @@ This document is normative for integration design.
 - Post-success UX milestones (typically after `MHMutationOutcome.succeeded`)
 - MainActor workflow coordinators
 
+## MHLogging
+
+### Required Inputs
+
+- Log policy (`MHLogPolicy`)
+- Log store sinks (`[MHLogSink]`)
+- Logger call-site context:
+  - `file` / `function` / `line`
+  - `subsystem` / `category`
+- Optional JSONL sink configuration:
+  - `fileURL`
+  - `maximumFileSizeBytes`
+
+### Outputs
+
+- Structured event model:
+  - `MHLogEvent`
+  - `MHLogLevel`
+- Queryable in-memory store:
+  - `MHLogStore.events(matching:)`
+  - `MHLogStore.exportJSONLines(matching:)`
+- Sink adapters:
+  - `MHOSLogSink`
+  - `MHJSONLLogSink`
+- Reusable console UI:
+  - `MHLogConsoleView`
+
+### Threading / Actor
+
+- `MHLogStore` is an `actor`; record/query/export/clear are serialized.
+- `MHJSONLLogSink` is an `actor`; append/rotation/load are serialized.
+- `MHLogger` is value-typed and actor-agnostic; sync methods enqueue writes via `Task`.
+- Console UI fetches actor state asynchronously and updates on `MainActor`.
+
+### Intended Call Sites
+
+- App startup and lifecycle diagnostics
+- Mutation or workflow event tracing
+- In-app debug console and incident triage
+- JSONL export for machine-assisted analysis
+
+### Retention Rules (Normative)
+
+- Debug default policy keeps verbose events and enables JSONL persistence.
+- Release default policy keeps warning/error/critical events and disables JSONL persistence.
+- Ring buffer uses latest-wins eviction when capacity is exceeded.
+- JSONL sink rotates to a single archive file when byte cap is exceeded.
+
 ## Canonical Naming Decision
 
 - Terminal states use `Outcome`.

@@ -20,6 +20,7 @@ struct ContentView: View {
         notificationPlansTab
         mutationFlowTab
         routeExecutionTab
+        loggingTab
         reviewPolicyTab
         persistenceMaintenanceTab
     }
@@ -77,6 +78,13 @@ struct ContentView: View {
         RouteExecutionDemoView()
             .tabItem {
                 Label("Route Execution", systemImage: "map")
+            }
+    }
+
+    private var loggingTab: some View {
+        LoggingDemoView()
+            .tabItem {
+                Label("Logging", systemImage: "list.bullet.clipboard")
             }
     }
 

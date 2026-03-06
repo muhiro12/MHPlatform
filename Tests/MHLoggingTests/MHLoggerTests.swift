@@ -1,0 +1,69 @@
+import Foundation
+import MHLogging
+import Testing
+
+struct MHLoggerTests {
+    @Test
+    func logger_policy_filters_lower_severity() async {
+        let store = MHLogStore(
+            policy: .init(
+                minimumLevel: .debug,
+                persistsToDisk: false,
+                maximumInMemoryEvents: 20,
+                maximumDiskBytes: 1_000
+            )
+        )
+        let logger = MHLogger(
+            "Tests/MHLoggerTests.swift",
+            store: store,
+            subsystem: "tests.logger",
+            policy: .init(
+                minimumLevel: .warning,
+                persistsToDisk: false,
+                maximumInMemoryEvents: 20,
+                maximumDiskBytes: 1_000
+            )
+        )
+
+        await logger.logImmediately(.info, "skip-info")
+        await logger.logImmediately(.error, "keep-error")
+
+        let events = await store.events()
+        #expect(events.count == 1)
+        #expect(events.first?.level == .error)
+        #expect(events.first?.message == "keep-error")
+    }
+
+    @Test
+    func logImmediately_captures_source_metadata() async {
+        let store = MHLogStore(
+            policy: .init(
+                minimumLevel: .debug,
+                persistsToDisk: false,
+                maximumInMemoryEvents: 20,
+                maximumDiskBytes: 1_000
+            )
+        )
+        let logger = MHLogger(
+            "Tests/MHLoggerTests.swift",
+            store: store,
+            subsystem: "tests.logger",
+            )
+
+        await logger.logImmediately(
+            .warning,
+            "source-check",
+            metadata: ["code": "W1001"],
+            file: "CustomFile.swift",
+            function: "customFunction()",
+            line: 88
+        )
+
+        let event = await store.events().first
+        #expect(event?.source.file == "CustomFile.swift")
+        #expect(event?.source.function == "customFunction()")
+        #expect(event?.source.line == 88)
+        #expect(event?.metadata["code"] == "W1001")
+        #expect(event?.category == "Tests/MHLoggerTests.swift")
+    }
+}

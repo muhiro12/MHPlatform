@@ -223,6 +223,37 @@ let policy = MHReviewPolicy(
 let outcome = await MHReviewRequester.requestIfNeeded(policy: policy)
 ```
 
+## MHLogging
+
+`MHLogging` provides a structured logging surface with in-memory query support, JSONL persistence, and reusable console UI.
+
+Integration contract:
+[`MHLogging`](Designs/Architecture/integration-contracts.md#mhlogging)
+
+```swift
+import MHLogging
+
+let policy = MHLogPolicy.default
+let jsonSink = MHJSONLLogSink(
+    fileURL: FileManager.default.temporaryDirectory.appendingPathComponent("app.logs.jsonl"),
+    maximumFileSizeBytes: policy.maximumDiskBytes
+)
+let store = MHLogStore(
+    policy: policy,
+    sinks: [
+        MHOSLogSink(),
+        jsonSink
+    ]
+)
+let logger = MHLogger(
+    #fileID,
+    subsystem: "com.example.app",
+    store: store,
+    policy: policy
+)
+logger.info("App started")
+```
+
 ## Example App
 
 `MHPlatformExample` demonstrates all modules with app-local sample data in `Example/`.
@@ -232,3 +263,4 @@ It includes cross-module demos for:
 - DeepLinking + RouteExecution pipeline
 - NotificationPlans + NotificationPayloads pipeline
 - MutationOutcome-driven ReviewPolicy trigger
+- Structured logging + JSONL analysis workflow
