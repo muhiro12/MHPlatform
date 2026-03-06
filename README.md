@@ -14,6 +14,44 @@ Minimum supported platforms:
 - [Architecture](Designs/Architecture/architecture.md)
 - [Runtime-start Design](Designs/Architecture/runtime-start.md)
 
+## Adoption
+
+MHPlatform supports two integration styles:
+
+- Use the umbrella `MHPlatform` product for app adoption convenience.
+- Use individual module products when the app wants a narrower dependency set.
+
+Umbrella adoption:
+
+```swift
+.product(name: "MHPlatform", package: "MHPlatform")
+```
+
+```swift
+import MHPlatform
+
+let store = MHPreferenceStore()
+let policy = MHReviewPolicy(
+    lotteryMaxExclusive: 10,
+    requestDelay: .seconds(2)
+)
+```
+
+The umbrella module is intentionally thin and re-exports the common public
+modules with `@_exported import`.
+
+Granular adoption:
+
+```swift
+.product(name: "MHDeepLinking", package: "MHPlatform")
+.product(name: "MHRouteExecution", package: "MHPlatform")
+```
+
+```swift
+import MHDeepLinking
+import MHRouteExecution
+```
+
 ## MHAppRuntime
 
 `MHAppRuntime` provides a unified runtime-start surface for app startup side

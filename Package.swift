@@ -11,6 +11,10 @@ let package = Package(
     ],
     products: [
         .library(
+            name: "MHPlatform",
+            targets: ["MHPlatform"]
+        ),
+        .library(
             name: "MHAppRuntime",
             targets: ["MHAppRuntime"]
         ),
@@ -67,6 +71,21 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "MHPlatform",
+            dependencies: [
+                "MHAppRuntime",
+                "MHDeepLinking",
+                "MHNotificationPlans",
+                "MHNotificationPayloads",
+                "MHMutationFlow",
+                "MHRouteExecution",
+                "MHPersistenceMaintenance",
+                "MHPreferences",
+                "MHReviewPolicy",
+                "MHLogging"
+            ]
+        ),
+        .target(
             name: "MHAppRuntime",
             dependencies: [
                 "MHPreferences",
@@ -112,6 +131,10 @@ let package = Package(
         ),
         .target(
             name: "MHLogging"
+        ),
+        .testTarget(
+            name: "MHPlatformTests",
+            dependencies: ["MHPlatform"]
         ),
         .testTarget(
             name: "MHAppRuntimeTests",

@@ -1,5 +1,12 @@
 # MHPlatform Architecture
 
+## Public Products
+
+- `MHPlatform`
+
+`MHPlatform` is a convenience umbrella product that re-exports the public
+surfaces of the concrete modules for app adoption.
+
 ## Public Modules
 
 - `MHAppRuntime`
@@ -13,7 +20,8 @@
 - `MHReviewPolicy`
 - `MHLogging`
 
-The package name is `MHPlatform`, but consumers import concrete module names instead of a single umbrella module.
+Consumers may either `import MHPlatform` for the common umbrella surface or
+import concrete module names directly for granular adoption.
 MHPlatform is maintained as an internal app platform foundation for reusable non-domain app infrastructure.
 
 ## Platform Baseline
@@ -143,6 +151,8 @@ Integration contract:
 ## Dependency Rules
 
 - Module dependencies are intentionally flat for v1.
+- `MHPlatform` depends on every public module and must stay a thin aggregation
+  layer without independent runtime logic.
 - `MHAppRuntime` depends on `MHPreferences`, `StoreKitWrapper`,
   `GoogleMobileAdsWrapper` (iOS), and `LicenseList` (iOS).
 - `MHDeepLinking` has no dependency on the other modules.
@@ -154,7 +164,8 @@ Integration contract:
 - `MHPreferences` has no dependency on the other modules.
 - `MHReviewPolicy` has no dependency on the other modules.
 - `MHLogging` has no dependency on the other modules.
-- ExampleApp may import all public modules, but package targets must stay independent.
+- ExampleApp may import all public modules or the umbrella product, but package
+  targets must stay independent.
 
 ## Why No Generic Core Layer
 
@@ -168,7 +179,7 @@ Integration contract:
 - SwiftUI navigation-state executors
 - shared migration policy for existing app preference formats
 - remote config
-- a generic umbrella `MHPlatform` product
+- collapsing all shared infrastructure into a monolithic implementation target
 
 ## Verification Expectations
 
