@@ -126,7 +126,10 @@ This document is normative for integration design.
 - `MHMutation<Value>` (named operation unit)
 - Optional `MHMutationRetryPolicy`
 - Optional `MHCancellationHandle`
-- Optional post-success steps (`[MHMutationStep]`)
+- Optional post-success bridge:
+  - `MHMutationAdapter<Value>` for deriving ordered steps from a successful
+    app-owned mutation value
+  - `[MHMutationStep]` through `afterSuccess` for fixed ordered steps
 - Optional injected sleep for deterministic retry testing (`MHMutationRunner.Sleep`)
 
 ### Outputs
@@ -151,8 +154,17 @@ This document is normative for integration design.
 ### Intended Call Sites
 
 - Save/update/delete orchestration in app workflow services
+- Mutation services whose success values already carry app-owned follow-up
+  hints or effect metadata
 - Retriable network + local side-effect flows
 - Outcome-driven app side effects (review policy, analytics, etc.)
+
+### Boundary Rule (Normative)
+
+- `MHMutationAdapter` only maps a successful mutation value into ordered
+  `MHMutationStep`s.
+- MHPlatform does not define a shared cross-app mutation outcome, hint, or
+  effect model.
 
 ## MHNotificationPlans
 

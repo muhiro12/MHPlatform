@@ -1,6 +1,6 @@
 # MHPlatform
 
-MHPlatform is an internal app platform foundation delivered as a Swift package workspace for shared infrastructure extracted from real usage in Incomes and Cookle. The current v1 baseline focuses on deep-link handling, deterministic notification planning, post-mutation side-effect orchestration, and persistence maintenance primitives.
+MHPlatform is an internal app platform foundation delivered as a Swift package workspace for shared infrastructure extracted from real usage in Incomes and Cookle. It ships both an umbrella `MHPlatform` product for app-side convenience and granular module products for narrower adoption. The current v1 baseline focuses on runtime startup, deep-link handling, deterministic notification planning, post-mutation side-effect orchestration, and persistence maintenance primitives.
 
 Minimum supported platforms:
 - iOS 18.0+
@@ -52,10 +52,23 @@ import MHDeepLinking
 import MHRouteExecution
 ```
 
+## Current Adoption Snapshot
+
+- Incomes and Cookle currently adopt MHPlatform primarily through the umbrella
+  `MHPlatform` product.
+- `MHAppRuntime` is the main shared runtime-start surface already used in both
+  apps for startup, premium/ad availability state, and runtime-owned views.
+- `MHReviewPolicy` is already shared, but the surrounding workflow triggers stay
+  app-specific.
+- Domain mutation result models, follow-up metadata, and concrete side effects
+  still belong to each app. `MHMutationFlow` now provides a bridge for future
+  adoption without standardizing those app-specific schemas.
+
 ## MHAppRuntime
 
-`MHAppRuntime` provides a unified runtime-start surface for app startup side
-effects and shared infrastructure state.
+`MHAppRuntime` provides the current shared runtime-start surface for app startup
+side effects and shared infrastructure state. It is already adopted by both
+Incomes and Cookle via the umbrella `MHPlatform` product.
 
 Integration contract:
 [`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)
@@ -151,7 +164,10 @@ let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
 
 ## MHMutationFlow
 
-`MHMutationFlow` runs a mutation with retry, cancellation, and ordered post-success side effects.
+`MHMutationFlow` runs a mutation with retry, cancellation, and ordered
+post-success side effects. `MHMutationAdapter` lets an app map its own success
+value metadata or effect hints into ordered steps without introducing a shared
+cross-app mutation outcome model.
 
 Integration contract:
 [`MHMutationFlow`](Designs/Architecture/integration-contracts.md#mhmutationflow)
@@ -159,15 +175,39 @@ Integration contract:
 ```swift
 import MHMutationFlow
 
-let mutation = MHMutation<String>(
+struct SaveItemResult: Sendable {
+    let shouldReloadWidgets: Bool
+    let shouldRequestReview: Bool
+}
+
+let mutation = MHMutation<SaveItemResult>(
     name: "save-item",
-    operation: { "saved" }
+    operation: {
+        .init(
+            shouldReloadWidgets: true,
+            shouldRequestReview: true
+        )
+    }
 )
+
+let adapter = MHMutationAdapter<SaveItemResult> { result in
+    var steps = [MHMutationStep]()
+
+    if result.shouldReloadWidgets {
+        steps.append(.init(name: "reloadWidgets") {})
+    }
+
+    if result.shouldRequestReview {
+        steps.append(.init(name: "requestReview") {})
+    }
+
+    return steps
+}
 
 let outcome = await MHMutationRunner.run(
     mutation: mutation,
-    retryPolicy: .default,
-    afterSuccess: [.init(name: "syncNotifications") {}]
+    adapter: adapter,
+    retryPolicy: .default
 )
 ```
 
