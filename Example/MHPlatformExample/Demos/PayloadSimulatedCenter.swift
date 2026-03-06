@@ -3,7 +3,8 @@ import MHNotificationPayloads
 import Foundation
 import UserNotifications
 
-nonisolated final class PayloadSimulatedCenter: MHNotificationCentering {
+@MainActor
+final class PayloadSimulatedCenter: MHNotificationCentering {
     private static let authorizationDeniedCode = 1
     private static let addFailureCode = 2
 

@@ -3,7 +3,8 @@ import SwiftUI
 #if canImport(UserNotifications)
 import UserNotifications
 
-nonisolated private enum NotificationPayloadOrchestrationFixture {
+@MainActor
+private enum NotificationPayloadOrchestrationFixture {
     private static var codec: MHNotificationPayloadCodec {
         MHNotificationPayloadCodec(
             configuration: .init(
@@ -30,7 +31,12 @@ nonisolated private enum NotificationPayloadOrchestrationFixture {
         let payload = payload(for: scenario)
         let actionIdentifier = actionIdentifier(for: actionSelection, scenario: scenario)
         let isManagedIdentifier: @Sendable (String) -> Bool = { identifier in
-            Self.isManagedIdentifier(identifier: identifier, for: scenario)
+            switch scenario {
+            case .incomes:
+                return identifier.hasPrefix("upcoming-payment:")
+            case .cookle:
+                return identifier.hasPrefix("daily-suggestion:")
+            }
         }
 
         MHNotificationOrchestrator.registerCategories([descriptor], center: center)
@@ -145,18 +151,6 @@ nonisolated private enum NotificationPayloadOrchestrationFixture {
             return []
         case .cookle:
             return ["daily-suggestion:fail"]
-        }
-    }
-
-    private static func isManagedIdentifier(
-        identifier: String,
-        for scenario: NotificationPayloadsDemoView.Scenario
-    ) -> Bool {
-        switch scenario {
-        case .incomes:
-            return identifier.hasPrefix("upcoming-payment:")
-        case .cookle:
-            return identifier.hasPrefix("daily-suggestion:")
         }
     }
 

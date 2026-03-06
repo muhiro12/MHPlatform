@@ -5,6 +5,7 @@ import UserNotifications
 /// Shared orchestration helpers for notification-center workflows.
 public enum MHNotificationOrchestrator {
     /// Registers categories on the notification center.
+    @MainActor
     @preconcurrency
     public static func registerCategories(
         _ categoryDescriptors: [MHNotificationCategoryDescriptor],
@@ -18,6 +19,7 @@ public enum MHNotificationOrchestrator {
     }
 
     /// Requests authorization only when current status is `.notDetermined`.
+    @MainActor
     @preconcurrency
     public static func requestAuthorizationIfNeeded(
         center: any MHNotificationCentering,
@@ -34,6 +36,7 @@ public enum MHNotificationOrchestrator {
     }
 
     /// Syncs managed pending requests and returns partial success details.
+    @MainActor
     @preconcurrency
     public static func replaceManagedPendingRequests(
         center: any MHNotificationCentering,

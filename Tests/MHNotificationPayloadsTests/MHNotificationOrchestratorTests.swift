@@ -4,6 +4,7 @@ import MHNotificationPayloads
 import Testing
 import UserNotifications
 
+@MainActor
 struct MHNotificationOrchestratorTests {
     @Test
     func registerCategories_registers_all_descriptors() {
