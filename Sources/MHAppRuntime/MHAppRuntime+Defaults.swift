@@ -1,6 +1,9 @@
 import Foundation
-import StoreKitWrapper
 import SwiftUI
+
+#if canImport(StoreKitWrapper)
+import StoreKitWrapper
+#endif
 
 #if canImport(GoogleMobileAdsWrapper)
 import GoogleMobileAdsWrapper
@@ -56,6 +59,7 @@ extension MHAppRuntime {
         ) -> Void,
         subscriptionSection: SubscriptionSectionViewBuilder
     ) {
+        #if canImport(StoreKitWrapper)
         let store = Store()
 
         func start(
@@ -80,6 +84,16 @@ extension MHAppRuntime {
             start: start,
             subscriptionSection: subscriptionSection
         )
+        #else
+        return (
+            start: { _, _, _ in
+                // StoreKit is unavailable on this platform.
+            },
+            subscriptionSection: {
+                AnyView(EmptyView())
+            }
+        )
+        #endif
     }
 
     static func makeAdsBridge(nativeAdUnitID: String?) -> (

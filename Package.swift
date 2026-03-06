@@ -7,7 +7,8 @@ let package = Package(
     name: "MHPlatform",
     platforms: [
         .iOS(.v18),
-        .macOS(.v15)
+        .macOS(.v15),
+        .watchOS(.v11)
     ],
     products: [
         .library(
@@ -91,7 +92,8 @@ let package = Package(
                 "MHPreferences",
                 .product(
                     name: "StoreKitWrapper",
-                    package: "StoreKitWrapper"
+                    package: "StoreKitWrapper",
+                    condition: .when(platforms: [.iOS, .macOS])
                 ),
                 .product(
                     name: "GoogleMobileAdsWrapper",
