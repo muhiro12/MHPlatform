@@ -124,6 +124,24 @@ public actor MHRouteCoordinator<Route: Sendable, Outcome: Sendable> {
     }
 }
 
+public extension MHRouteCoordinator where Route == Outcome {
+    /// Creates a coordinator for routes that are already the final outcome and
+    /// will be applied by the submit/applyPending override closure.
+    @preconcurrency
+    init(
+        initialReadiness: Bool = false,
+        isDuplicate: @escaping DuplicatePredicate = { _, _ in
+            false
+        }
+    ) {
+        self.init(
+            executor: .identity,
+            initialReadiness: initialReadiness,
+            isDuplicate: isDuplicate
+        )
+    }
+}
+
 private extension MHRouteCoordinator {
     var canExecuteNow: Bool {
         readiness && isExecuting == false
