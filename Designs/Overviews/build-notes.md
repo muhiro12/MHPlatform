@@ -2,7 +2,7 @@
 
 ## Start State
 
-- Workspace root: `/Users/Hiromu/Repositories/MKKitFactory`
+- Workspace root: `<workspace-root>` (contains `MHPlatform/`, `Incomes/`, and `Cookle/`)
 - Git repository used for all git operations: `MHPlatform/`
 - Initial branch: `main`
 - Initial working tree status: not clean (the ongoing MHPlatform refactor edits were already in progress)
@@ -22,10 +22,10 @@ All build and lint commands below were run inside `MHPlatform/`:
 
 Workspace-root read-only verification commands:
 
-1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_incomes_after.sha256`
-2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_cookle_after.sha256`
-3. `diff -u /tmp/mhplatform_incomes_before.sha256 /tmp/mhplatform_incomes_after.sha256`
-4. `diff -u /tmp/mhplatform_cookle_before.sha256 /tmp/mhplatform_cookle_after.sha256`
+1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > <temporary-directory>/mhplatform_incomes_after.sha256`
+2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > <temporary-directory>/mhplatform_cookle_after.sha256`
+3. `diff -u <temporary-directory>/mhplatform_incomes_before.sha256 <temporary-directory>/mhplatform_incomes_after.sha256`
+4. `diff -u <temporary-directory>/mhplatform_cookle_before.sha256 <temporary-directory>/mhplatform_cookle_after.sha256`
 
 ## Results
 
@@ -70,10 +70,10 @@ All commands below were run inside `MHPlatform/`:
 
 Workspace-root read-only verification commands:
 
-1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_incomes_after.sha256`
-2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_cookle_after.sha256`
-3. `diff -u /tmp/mhplatform_incomes_before.sha256 /tmp/mhplatform_incomes_after.sha256`
-4. `diff -u /tmp/mhplatform_cookle_before.sha256 /tmp/mhplatform_cookle_after.sha256`
+1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > <temporary-directory>/mhplatform_incomes_after.sha256`
+2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > <temporary-directory>/mhplatform_cookle_after.sha256`
+3. `diff -u <temporary-directory>/mhplatform_incomes_before.sha256 <temporary-directory>/mhplatform_incomes_after.sha256`
+4. `diff -u <temporary-directory>/mhplatform_cookle_before.sha256 <temporary-directory>/mhplatform_cookle_after.sha256`
 
 ### Results
 
@@ -115,8 +115,8 @@ All commands below were run inside `MHPlatform/`:
 
 Workspace-root read-only verification commands:
 
-1. `find /Users/Hiromu/Repositories/MKKitFactory/Incomes -type f -newermt '2026-03-05 09:00:00' | head`
-2. `find /Users/Hiromu/Repositories/MKKitFactory/Cookle -type f -newermt '2026-03-05 09:00:00' | head`
+1. `find <workspace-root>/Incomes -type f -newermt '2026-03-05 09:00:00' | head`
+2. `find <workspace-root>/Cookle -type f -newermt '2026-03-05 09:00:00' | head`
 3. `find MHPlatform Incomes Cookle -type f -newermt '2026-03-05 09:00:00' | awk -F/ '{print $1}' | sort -u`
 
 ### Results
@@ -158,12 +158,12 @@ All commands below were run inside `MHPlatform/`:
 
 Workspace-root read-only verification commands:
 
-1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_incomes_before.sha256`
-2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_cookle_before.sha256`
-3. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_incomes_after.sha256`
-4. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > /tmp/mhplatform_cookle_after.sha256`
-5. `diff -u /tmp/mhplatform_incomes_before.sha256 /tmp/mhplatform_incomes_after.sha256`
-6. `diff -u /tmp/mhplatform_cookle_before.sha256 /tmp/mhplatform_cookle_after.sha256`
+1. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > <temporary-directory>/mhplatform_incomes_before.sha256`
+2. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > <temporary-directory>/mhplatform_cookle_before.sha256`
+3. `find Incomes -type f -print0 | sort -z | xargs -0 shasum -a 256 > <temporary-directory>/mhplatform_incomes_after.sha256`
+4. `find Cookle -type f -print0 | sort -z | xargs -0 shasum -a 256 > <temporary-directory>/mhplatform_cookle_after.sha256`
+5. `diff -u <temporary-directory>/mhplatform_incomes_before.sha256 <temporary-directory>/mhplatform_incomes_after.sha256`
+6. `diff -u <temporary-directory>/mhplatform_cookle_before.sha256 <temporary-directory>/mhplatform_cookle_after.sha256`
 
 ### Results
 
