@@ -1,7 +1,6 @@
 import Combine
 import Foundation
-import MHDeepLinking
-import MHRouteExecution
+import MHPlatform
 
 @MainActor
 final class DeepLinkRoutePipelineDemoModel: ObservableObject {

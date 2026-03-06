@@ -7,16 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B10000000000000000000012 /* MHAppRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000013 /* MHAppRuntime */; };
-		B10000000000000000000001 /* MHDeepLinking in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000005 /* MHDeepLinking */; };
-		B10000000000000000000002 /* MHNotificationPlans in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000006 /* MHNotificationPlans */; };
-		B10000000000000000000003 /* MHMutationFlow in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000007 /* MHMutationFlow */; };
-		B10000000000000000000008 /* MHPreferences in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000009 /* MHPreferences */; };
-		B1000000000000000000000A /* MHNotificationPayloads in Frameworks */ = {isa = PBXBuildFile; productRef = B1000000000000000000000B /* MHNotificationPayloads */; };
-		B1000000000000000000000C /* MHRouteExecution in Frameworks */ = {isa = PBXBuildFile; productRef = B1000000000000000000000D /* MHRouteExecution */; };
-		B1000000000000000000000E /* MHPersistenceMaintenance in Frameworks */ = {isa = PBXBuildFile; productRef = B1000000000000000000000F /* MHPersistenceMaintenance */; };
-		B10000000000000000000010 /* MHReviewPolicy in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000011 /* MHReviewPolicy */; };
-		B10000000000000000000015 /* MHLogging in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000014 /* MHLogging */; };
+		B10000000000000000000016 /* MHPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000017 /* MHPlatform */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,16 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B10000000000000000000012 /* MHAppRuntime in Frameworks */,
-				B10000000000000000000001 /* MHDeepLinking in Frameworks */,
-				B10000000000000000000002 /* MHNotificationPlans in Frameworks */,
-				B1000000000000000000000A /* MHNotificationPayloads in Frameworks */,
-				B10000000000000000000003 /* MHMutationFlow in Frameworks */,
-				B1000000000000000000000C /* MHRouteExecution in Frameworks */,
-				B1000000000000000000000E /* MHPersistenceMaintenance in Frameworks */,
-				B10000000000000000000008 /* MHPreferences in Frameworks */,
-				B10000000000000000000010 /* MHReviewPolicy in Frameworks */,
-				B10000000000000000000015 /* MHLogging in Frameworks */,
+				B10000000000000000000016 /* MHPlatform in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,16 +70,7 @@
 			);
 			name = MHPlatformExample;
 			packageProductDependencies = (
-				B10000000000000000000013 /* MHAppRuntime */,
-				B10000000000000000000005 /* MHDeepLinking */,
-				B10000000000000000000006 /* MHNotificationPlans */,
-				B1000000000000000000000B /* MHNotificationPayloads */,
-				B10000000000000000000007 /* MHMutationFlow */,
-				B1000000000000000000000D /* MHRouteExecution */,
-				B1000000000000000000000F /* MHPersistenceMaintenance */,
-				B10000000000000000000009 /* MHPreferences */,
-				B10000000000000000000011 /* MHReviewPolicy */,
-				B10000000000000000000014 /* MHLogging */,
+				B10000000000000000000017 /* MHPlatform */,
 			);
 			productName = MHPlatformExample;
 			productReference = ADC37BA02F5869FF000178F8 /* MHPlatformExample.app */;
@@ -396,55 +369,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		B10000000000000000000013 /* MHAppRuntime */ = {
+		B10000000000000000000017 /* MHPlatform */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHAppRuntime;
-		};
-		B10000000000000000000005 /* MHDeepLinking */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHDeepLinking;
-		};
-		B10000000000000000000006 /* MHNotificationPlans */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHNotificationPlans;
-		};
-		B10000000000000000000007 /* MHMutationFlow */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHMutationFlow;
-		};
-		B10000000000000000000009 /* MHPreferences */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHPreferences;
-		};
-		B1000000000000000000000B /* MHNotificationPayloads */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHNotificationPayloads;
-		};
-		B1000000000000000000000D /* MHRouteExecution */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHRouteExecution;
-		};
-		B1000000000000000000000F /* MHPersistenceMaintenance */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHPersistenceMaintenance;
-		};
-		B10000000000000000000011 /* MHReviewPolicy */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHReviewPolicy;
-		};
-		B10000000000000000000014 /* MHLogging */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B10000000000000000000004 /* XCLocalSwiftPackageReference ".." */;
-			productName = MHLogging;
+			productName = MHPlatform;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

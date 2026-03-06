@@ -1,4 +1,4 @@
-import MHLogging
+import MHPlatform
 import SwiftUI
 
 #if canImport(UIKit)

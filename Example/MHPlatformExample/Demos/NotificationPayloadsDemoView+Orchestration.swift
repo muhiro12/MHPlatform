@@ -1,4 +1,4 @@
-import MHNotificationPayloads
+import MHPlatform
 import SwiftUI
 #if canImport(UserNotifications)
 import UserNotifications

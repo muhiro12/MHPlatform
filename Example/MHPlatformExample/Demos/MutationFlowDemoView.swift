@@ -1,4 +1,4 @@
-import MHMutationFlow
+import MHPlatform
 import SwiftUI
 
 struct MutationFlowDemoView: View {
@@ -12,6 +12,27 @@ struct MutationFlowDemoView: View {
         let failFirstAttempt: Bool
         let failSideEffect: Bool
         let cancelBeforeStepTwo: Bool
+
+        let followUpSignals: [FollowUpSignal] = [
+            .reloadWidgets,
+            .syncNotifications,
+            .requestReview
+        ]
+    }
+
+    nonisolated private struct SaveDraftResult: Sendable {
+        let message: String
+        let followUpSignals: [FollowUpSignal]
+    }
+
+    nonisolated private enum FollowUpSignal: String, Sendable {
+        case reloadWidgets
+        case syncNotifications
+        case requestReview
+
+        var stepName: String {
+            rawValue
+        }
     }
 
     private actor MutationAttemptState {
@@ -87,6 +108,66 @@ struct MutationFlowDemoView: View {
         }
     }
 
+    private static func makeMutation(
+        attempts: MutationAttemptState,
+        scenario: MutationScenario
+    ) -> MHMutation<SaveDraftResult> {
+        .init(
+            name: "saveDraft"
+        ) {
+            let attempt = await attempts.nextAttempt()
+            if scenario.failFirstAttempt,
+               attempt == Constants.firstAttempt {
+                throw MutationDemoError.operationFailed
+            }
+
+            return .init(
+                message: "Saved sample draft",
+                followUpSignals: scenario.followUpSignals
+            )
+        }
+    }
+
+    private static func makeAdapter(
+        scenario: MutationScenario,
+        cancellationHandle: MHCancellationHandle
+    ) -> MHMutationAdapter<SaveDraftResult> {
+        .init { result in
+            result.followUpSignals.map { signal in
+                makeFollowUpStep(
+                    for: signal,
+                    scenario: scenario,
+                    cancellationHandle: cancellationHandle
+                )
+            }
+        }
+    }
+
+    private static func makeFollowUpStep(
+        for signal: FollowUpSignal,
+        scenario: MutationScenario,
+        cancellationHandle: MHCancellationHandle
+    ) -> MHMutationStep {
+        switch signal {
+        case .reloadWidgets:
+            return .init(name: signal.stepName) {
+                if scenario.cancelBeforeStepTwo {
+                    cancellationHandle.cancel()
+                }
+            }
+        case .syncNotifications:
+            return .init(name: signal.stepName) {
+                if scenario.failSideEffect {
+                    throw MutationDemoError.sideEffectFailed
+                }
+            }
+        case .requestReview:
+            return .init(name: signal.stepName) {
+                // Intentionally empty.
+            }
+        }
+    }
+
     private func runFlow() {
         let scenario = MutationScenario(
             failFirstAttempt: failFirstAttempt,
@@ -106,40 +187,23 @@ struct MutationFlowDemoView: View {
     private func runFlowTask(scenario: MutationScenario) async {
         let cancellationHandle = MHCancellationHandle()
         let attempts = MutationAttemptState()
-
-        let mutation = MHMutation<String>(
-            name: "saveDraft"
-        ) {
-            let attempt = await attempts.nextAttempt()
-            if scenario.failFirstAttempt,
-               attempt == Constants.firstAttempt {
-                throw MutationDemoError.operationFailed
-            }
-            return "Saved sample draft"
-        }
+        let mutation = Self.makeMutation(
+            attempts: attempts,
+            scenario: scenario
+        )
+        let adapter = Self.makeAdapter(
+            scenario: scenario,
+            cancellationHandle: cancellationHandle
+        )
 
         let runHandle = MHMutationRunner.start(
             mutation: mutation,
+            adapter: adapter,
             retryPolicy: .init(
                 maximumAttempts: Constants.retryMaximumAttempts,
                 backoff: .immediate
             ),
-            cancellationHandle: cancellationHandle,
-            afterSuccess: [
-                .init(name: "reloadWidgets") {
-                    if scenario.cancelBeforeStepTwo {
-                        cancellationHandle.cancel()
-                    }
-                },
-                .init(name: "syncNotifications") {
-                    if scenario.failSideEffect {
-                        throw MutationDemoError.sideEffectFailed
-                    }
-                },
-                .init(name: "requestReview") {
-                    // Intentionally empty.
-                }
-            ]
+            cancellationHandle: cancellationHandle
         )
 
         async let eventLogTask = collectEventLog(from: runHandle.events)
@@ -154,7 +218,7 @@ struct MutationFlowDemoView: View {
     }
 
     private func collectEventLog(
-        from events: AsyncStream<MHMutationEvent<String>>
+        from events: AsyncStream<MHMutationEvent<SaveDraftResult>>
     ) async -> [String] {
         var values = [String]()
 
@@ -165,14 +229,18 @@ struct MutationFlowDemoView: View {
         return values
     }
 
-    private func eventTitle(_ event: MHMutationEvent<String>) -> String {
+    private func eventTitle(_ event: MHMutationEvent<SaveDraftResult>) -> String {
         switch event {
         case let .started(mutation, attempt):
             return "started(\(mutation), attempt=\(attempt))"
         case .progress(let progress):
             return progressTitle(progress)
-        case let .succeeded(_, attempts, completedSteps):
-            return "succeeded(attempts=\(attempts), completed=\(completedSteps))"
+        case let .succeeded(value, attempts, completedSteps):
+            return [
+                "succeeded(value=\(value.message)",
+                "attempts=\(attempts)",
+                "completed=\(completedSteps))"
+            ].joined(separator: ", ")
         case let .failed(errorDescription, attempts, completedSteps, isRecoverable):
             return [
                 "failed(attempts=\(attempts)",
@@ -196,11 +264,11 @@ struct MutationFlowDemoView: View {
         }
     }
 
-    private func summarize(_ outcome: MHMutationOutcome<String>) -> String {
+    private func summarize(_ outcome: MHMutationOutcome<SaveDraftResult>) -> String {
         switch outcome {
         case let .succeeded(value, attempts, completedSteps):
             return [
-                "Succeeded after \(attempts) attempt(s): \(value)",
+                "Succeeded after \(attempts) attempt(s): \(value.message)",
                 "steps \(completedSteps.joined(separator: ", "))"
             ].joined(separator: " | ")
         case let .failed(failure, attempts, completedSteps, isRecoverable):
