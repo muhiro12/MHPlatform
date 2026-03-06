@@ -15,9 +15,10 @@ struct MHPlatformTests {
             MHStoreMigrationPlan.self,
             MHPreferenceStore.self,
             MHReviewPolicy.self,
-            MHLogPolicy.self
+            MHLogPolicy.self,
+            MHLoggerFactory.self
         ]
 
-        #expect(exportedTypes.count == 11)
+        #expect(exportedTypes.count == 12)
     }
 }
