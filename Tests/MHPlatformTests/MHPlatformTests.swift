@@ -9,6 +9,7 @@ struct MHPlatformTests {
             MHDeepLinkConfiguration.self,
             MHReminderPolicy.self,
             MHNotificationPayload.self,
+            MHMutationAdapter<String>.self,
             MHMutationRetryPolicy.self,
             MHRouteExecutionOutcome<Int>.self,
             MHStoreMigrationPlan.self,
@@ -17,6 +18,6 @@ struct MHPlatformTests {
             MHLogPolicy.self
         ]
 
-        #expect(exportedTypes.count == 10)
+        #expect(exportedTypes.count == 11)
     }
 }
