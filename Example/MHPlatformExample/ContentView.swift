@@ -10,6 +10,7 @@ struct ContentView: View {
     }
 
     @ViewBuilder private var tabs: some View {
+        appRuntimeTab
         deepLinkRoutePipelineTab
         notificationPipelineTab
         mutationReviewPipelineTab
@@ -21,6 +22,13 @@ struct ContentView: View {
         routeExecutionTab
         reviewPolicyTab
         persistenceMaintenanceTab
+    }
+
+    private var appRuntimeTab: some View {
+        AppRuntimeDemoView()
+            .tabItem {
+                Label("Runtime", systemImage: "bolt.horizontal.circle")
+            }
     }
 
     private var deepLinkRoutePipelineTab: some View {

@@ -11,6 +11,44 @@ Each module contract is defined with four fields:
 
 This document is normative for integration design.
 
+## MHAppRuntime
+
+### Required Inputs
+
+- `MHAppConfiguration`
+  - `subscriptionProductIDs`
+  - `subscriptionGroupID`
+  - `nativeAdUnitID`
+  - `preferencesSuiteName`
+  - `showsLicenses`
+
+### Outputs
+
+- Startup APIs:
+  - `startIfNeeded()`
+  - `start()`
+- Runtime state:
+  - `hasStarted`
+  - `premiumStatus`
+  - `adsAvailability`
+- Runtime-owned views:
+  - `subscriptionSectionView()`
+  - `nativeAdView(size:)`
+  - `licensesView()`
+- Preferences helper:
+  - `preferenceStore`
+
+### Threading / Actor
+
+- `MHAppRuntime` is `@MainActor` and `@Observable`.
+- Startup side effects and runtime state transitions are serialized on main actor.
+
+### Intended Call Sites
+
+- App launch bootstrap (`.task`)
+- App foreground transitions (`scenePhase == .active`)
+- SwiftUI environment injection for app-wide runtime access
+
 ## MHDeepLinking
 
 ### Required Inputs

@@ -12,6 +12,31 @@ Minimum supported platforms:
 - [Integration Contracts](Designs/Architecture/integration-contracts.md)
 - [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
 - [Architecture](Designs/Architecture/architecture.md)
+- [Runtime-start Design](Designs/Architecture/runtime-start.md)
+
+## MHAppRuntime
+
+`MHAppRuntime` provides a unified runtime-start surface for app startup side
+effects and shared infrastructure state.
+
+Integration contract:
+[`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)
+
+```swift
+import MHAppRuntime
+
+let runtime = MHAppRuntime(
+    configuration: .init(
+        subscriptionProductIDs: ["com.example.app.premium.monthly"],
+        subscriptionGroupID: "12345678",
+        nativeAdUnitID: "ca-app-pub-xxxxxxxx/yyyyyyyy",
+        preferencesSuiteName: "group.com.example.app",
+        showsLicenses: true
+    )
+)
+
+runtime.startIfNeeded()
+```
 
 ## MHDeepLinking
 
@@ -200,7 +225,7 @@ let outcome = await MHReviewRequester.requestIfNeeded(policy: policy)
 
 ## Example App
 
-`MHPlatformExample` demonstrates all eight modules with app-local sample data in `Example/`.
+`MHPlatformExample` demonstrates all modules with app-local sample data in `Example/`.
 
 It includes cross-module demos for:
 

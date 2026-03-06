@@ -11,6 +11,10 @@ let package = Package(
     ],
     products: [
         .library(
+            name: "MHAppRuntime",
+            targets: ["MHAppRuntime"]
+        ),
+        .library(
             name: "MHDeepLinking",
             targets: ["MHDeepLinking"]
         ),
@@ -43,7 +47,41 @@ let package = Package(
             targets: ["MHReviewPolicy"]
         )
     ],
+    dependencies: [
+        .package(
+            url: "https://github.com/muhiro12/StoreKitWrapper.git",
+            "1.1.0"..<"2.0.0"
+        ),
+        .package(
+            url: "https://github.com/muhiro12/GoogleMobileAdsWrapper.git",
+            "1.3.0"..<"2.0.0"
+        ),
+        .package(
+            url: "https://github.com/cybozu/LicenseList.git",
+            "2.0.0"..<"3.0.0"
+        )
+    ],
     targets: [
+        .target(
+            name: "MHAppRuntime",
+            dependencies: [
+                "MHPreferences",
+                .product(
+                    name: "StoreKitWrapper",
+                    package: "StoreKitWrapper"
+                ),
+                .product(
+                    name: "GoogleMobileAdsWrapper",
+                    package: "GoogleMobileAdsWrapper",
+                    condition: .when(platforms: [.iOS])
+                ),
+                .product(
+                    name: "LicenseList",
+                    package: "LicenseList",
+                    condition: .when(platforms: [.iOS])
+                )
+            ]
+        ),
         .target(
             name: "MHDeepLinking"
         ),
@@ -67,6 +105,13 @@ let package = Package(
         ),
         .target(
             name: "MHReviewPolicy"
+        ),
+        .testTarget(
+            name: "MHAppRuntimeTests",
+            dependencies: [
+                "MHAppRuntime",
+                "MHPreferences"
+            ]
         ),
         .testTarget(
             name: "MHDeepLinkingTests",

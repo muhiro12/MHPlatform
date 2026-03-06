@@ -2,6 +2,7 @@
 
 ## Public Modules
 
+- `MHAppRuntime`
 - `MHDeepLinking`
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
@@ -20,6 +21,19 @@ MHPlatform is maintained as an internal app platform foundation for reusable non
 - macOS 15.0+
 
 ## Module Boundaries
+
+### `MHAppRuntime`
+
+Integration contract:
+[`MHAppRuntime`](integration-contracts.md#mhappruntime)
+
+- Owns runtime-start orchestration and idempotent startup entry point:
+  `MHAppRuntime.startIfNeeded()`
+- Owns app-facing platform configuration and shared status surfaces:
+  `MHAppConfiguration`, `MHPremiumStatus`, `MHAdsAvailability`
+- Owns app-facing SwiftUI runtime surfaces:
+  paywall section, native ad view, license view
+- Does not own domain policy, app-specific route state, or persistence model rules
 
 ### `MHDeepLinking`
 
@@ -113,6 +127,8 @@ Integration contract:
 ## Dependency Rules
 
 - Module dependencies are intentionally flat for v1.
+- `MHAppRuntime` depends on `MHPreferences`, `StoreKitWrapper`,
+  `GoogleMobileAdsWrapper` (iOS), and `LicenseList` (iOS).
 - `MHDeepLinking` has no dependency on the other modules.
 - `MHNotificationPlans` has no dependency on the other modules.
 - `MHNotificationPayloads` has no dependency on the other modules.
