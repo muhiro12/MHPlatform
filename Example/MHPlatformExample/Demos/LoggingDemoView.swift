@@ -33,20 +33,18 @@ struct LoggingDemoView: View {
         maximumFileSizeBytes: policy.maximumDiskBytes
     )
 
-    private static let store = MHLogStore(
+    private static let loggerFactory = MHLoggerFactory(
         policy: policy,
+        subsystem: Constants.subsystem,
         sinks: [
             MHOSLogSink(),
             jsonSink
         ]
     )
 
-    private let logger = MHLogger(
-        #fileID,
-        store: Self.store,
-        subsystem: Constants.subsystem,
+    private let logger = Self.loggerFactory.logger(
         category: Constants.category,
-        policy: policy
+        source: #fileID
     )
 
     @State private var previewText = "No persisted JSONL yet."
@@ -116,7 +114,7 @@ struct LoggingDemoView: View {
     private var consoleSection: some View {
         Section("Console") {
             NavigationLink("Open MHLogConsoleView") {
-                MHLogConsoleView(store: Self.store)
+                MHLogConsoleView(store: Self.loggerFactory.store)
             }
             Text("Use level/category/search filters in the console.")
                 .foregroundStyle(.secondary)
@@ -186,7 +184,7 @@ struct LoggingDemoView: View {
     }
 
     private func exportLatestEvents() async {
-        let jsonLines = await Self.store.exportJSONLines(
+        let jsonLines = await Self.loggerFactory.store.exportJSONLines(
             matching: .init(limit: Constants.exportLimit)
         )
         let copied = copyToClipboard(jsonLines)
@@ -198,7 +196,7 @@ struct LoggingDemoView: View {
     }
 
     private func clearAllLogs() async {
-        await Self.store.clear()
+        await Self.loggerFactory.store.clear()
         await Self.jsonSink.clear()
         await refreshPreview()
         await MainActor.run {
