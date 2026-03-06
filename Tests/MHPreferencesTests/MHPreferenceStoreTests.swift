@@ -219,6 +219,36 @@ struct MHPreferenceStoreTests {
         #expect(userDefaults.object(forKey: secondaryKey.storageKey) == nil)
     }
 
+    @Test
+    func explicit_storage_key_preserves_legacy_key_names() {
+        let boolKey = MHBoolPreferenceKey(storageKey: "opaque-bool")
+        let intKey = MHIntPreferenceKey(storageKey: "opaque-int")
+        let stringKey = MHStringPreferenceKey(storageKey: "opaque-string")
+        let codableKey = MHCodablePreferenceKey<DemoPayload>(storageKey: "opaque-codable")
+
+        #expect(boolKey.storageKey == "opaque-bool")
+        #expect(intKey.storageKey == "opaque-int")
+        #expect(stringKey.storageKey == "opaque-string")
+        #expect(codableKey.storageKey == "opaque-codable")
+    }
+
+    @Test
+    func contains_tracks_presence_changes() throws {
+        let (store, _) = try makeStore(suiteName: "contains")
+        let key = MHBoolPreferenceKey(
+            namespace: Constants.namespace,
+            name: "contains-key"
+        )
+
+        #expect(!store.contains(key))
+
+        store.set(true, for: key)
+        #expect(store.contains(key))
+
+        store.remove(key)
+        #expect(!store.contains(key))
+    }
+
     private func makeStore(
         suiteName: String
     ) throws -> (MHPreferenceStore, UserDefaults) {

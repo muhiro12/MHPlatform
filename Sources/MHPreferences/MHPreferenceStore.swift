@@ -87,6 +87,11 @@ public struct MHPreferenceStore {
         userDefaults.set(encodedData, forKey: key.storageKey)
     }
 
+    /// Returns whether the supplied preference key currently has a stored value.
+    public func contains<Key: MHPreferenceKeyProtocol>(_ key: Key) -> Bool {
+        userDefaults.object(forKey: key.storageKey) != nil
+    }
+
     /// Removes a value for the supplied preference key.
     public func remove<Key: MHPreferenceKeyProtocol>(_ key: Key) {
         userDefaults.removeObject(forKey: key.storageKey)

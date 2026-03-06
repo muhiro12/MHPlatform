@@ -83,6 +83,61 @@ struct AppStorageBridgeTests {
         }
     }
 
+    private struct RequiredStringHarness {
+        @AppStorage private var value: String
+
+        var wrappedValue: String {
+            get {
+                value
+            }
+            set {
+                value = newValue
+            }
+        }
+
+        init(
+            key: MHStringPreferenceKey,
+            default defaultValue: String,
+            store: UserDefaults
+        ) {
+            _value = AppStorage(
+                key,
+                default: defaultValue,
+                store: store
+            )
+        }
+    }
+
+    private enum DemoRawStringValue: String {
+        case first
+        case second
+    }
+
+    private struct RawStringHarness {
+        @AppStorage private var value: DemoRawStringValue
+
+        var wrappedValue: DemoRawStringValue {
+            get {
+                value
+            }
+            set {
+                value = newValue
+            }
+        }
+
+        init(
+            key: MHStringPreferenceKey,
+            default defaultValue: DemoRawStringValue,
+            store: UserDefaults
+        ) {
+            _value = AppStorage(
+                key,
+                default: defaultValue,
+                store: store
+            )
+        }
+    }
+
     @Test
     func bool_bridge_uses_default_value() throws {
         let userDefaults = try makeUserDefaults(suiteName: "bool-default")
@@ -162,6 +217,45 @@ struct AppStorageBridgeTests {
 
         #expect(userDefaults.bool(forKey: key.storageKey) == Constants.injectedBoolValue)
         #expect(userDefaults.integer(forKey: intKey.storageKey) == Constants.intStoredValue)
+    }
+
+    @Test
+    func string_bridge_with_default_uses_default_then_round_trips() throws {
+        let userDefaults = try makeUserDefaults(suiteName: "required-string")
+        let key = MHStringPreferenceKey(
+            namespace: Constants.namespace,
+            name: "required-string-key"
+        )
+        var harness = RequiredStringHarness(
+            key: key,
+            default: "fallback",
+            store: userDefaults
+        )
+
+        #expect(harness.wrappedValue == "fallback")
+
+        harness.wrappedValue = "stored"
+        #expect(userDefaults.string(forKey: key.storageKey) == "stored")
+    }
+
+    @Test
+    func raw_string_bridge_round_trips_existing_storage() throws {
+        let userDefaults = try makeUserDefaults(suiteName: "raw-string")
+        let key = MHStringPreferenceKey(
+            namespace: Constants.namespace,
+            name: "raw-string-key"
+        )
+        userDefaults.set("second", forKey: key.storageKey)
+        var harness = RawStringHarness(
+            key: key,
+            default: .first,
+            store: userDefaults
+        )
+
+        #expect(harness.wrappedValue == .second)
+
+        harness.wrappedValue = .first
+        #expect(userDefaults.string(forKey: key.storageKey) == DemoRawStringValue.first.rawValue)
     }
 
     private func makeUserDefaults(suiteName: String) throws -> UserDefaults {

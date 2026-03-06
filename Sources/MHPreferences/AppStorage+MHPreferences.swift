@@ -37,5 +37,31 @@ public extension AppStorage {
             store: store
         )
     }
+
+    /// Creates a string app-storage binding using a typed preference key.
+    init(
+        _ key: MHStringPreferenceKey,
+        default defaultValue: String,
+        store: UserDefaults = .standard
+    ) where Value == String {
+        self.init(
+            wrappedValue: defaultValue,
+            key.storageKey,
+            store: store
+        )
+    }
+
+    /// Creates a raw-string app-storage binding using a typed preference key.
+    init(
+        _ key: MHStringPreferenceKey,
+        default defaultValue: Value,
+        store: UserDefaults = .standard
+    ) where Value: RawRepresentable, Value.RawValue == String {
+        self.init(
+            wrappedValue: defaultValue,
+            key.storageKey,
+            store: store
+        )
+    }
 }
 #endif

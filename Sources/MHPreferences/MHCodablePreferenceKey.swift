@@ -5,6 +5,9 @@ public struct MHCodablePreferenceKey<StoredValue: Codable & Sendable>: Hashable,
     /// The value type associated with this key.
     public typealias Value = StoredValue
 
+    /// Fully composed storage key name used by `UserDefaults`.
+    public let storageKey: String
+
     /// Namespace segment used for collision-safe key composition.
     public let namespace: String
 
@@ -18,7 +21,16 @@ public struct MHCodablePreferenceKey<StoredValue: Codable & Sendable>: Hashable,
     ) {
         precondition(namespace.isEmpty == false)
         precondition(name.isEmpty == false)
+        storageKey = "\(namespace).\(name)"
         self.namespace = namespace
         self.name = name
+    }
+
+    /// Creates a codable preference key using an explicit storage key.
+    public init(storageKey: String) {
+        precondition(storageKey.isEmpty == false)
+        self.storageKey = storageKey
+        namespace = storageKey
+        name = storageKey
     }
 }
