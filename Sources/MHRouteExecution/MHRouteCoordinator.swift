@@ -49,6 +49,23 @@ public actor MHRouteCoordinator<Route: Sendable, Outcome: Sendable> {
         return .applied(outcome)
     }
 
+    /// Submits a route for execution, applying the resolved outcome on the main actor.
+    @preconcurrency
+    public func submit(
+        _ route: Route,
+        applyOnMainActor: @escaping @MainActor @Sendable (Outcome) async throws -> Void
+    ) async throws -> MHRouteExecutionOutcome<Outcome> {
+        guard canExecuteNow else {
+            return enqueue(route)
+        }
+
+        let outcome = try await execute(
+            route,
+            applyOnMainActor: applyOnMainActor
+        )
+        return .applied(outcome)
+    }
+
     /// Applies the latest pending route when execution is currently possible.
     public func applyPendingIfReady() async throws -> MHRouteExecutionOutcome<Outcome>? {
         guard let pendingRoute else {
@@ -63,6 +80,35 @@ public actor MHRouteCoordinator<Route: Sendable, Outcome: Sendable> {
 
         do {
             let outcome = try await execute(pendingRoute)
+            return .applied(outcome)
+        } catch {
+            if self.pendingRoute == nil {
+                self.pendingRoute = pendingRoute
+            }
+            throw error
+        }
+    }
+
+    /// Applies the latest pending route using a main-actor outcome applier.
+    @preconcurrency
+    public func applyPendingIfReady(
+        applyOnMainActor: @escaping @MainActor @Sendable (Outcome) async throws -> Void
+    ) async throws -> MHRouteExecutionOutcome<Outcome>? {
+        guard let pendingRoute else {
+            return nil
+        }
+
+        guard canExecuteNow else {
+            return .queued
+        }
+
+        self.pendingRoute = nil
+
+        do {
+            let outcome = try await execute(
+                pendingRoute,
+                applyOnMainActor: applyOnMainActor
+            )
             return .applied(outcome)
         } catch {
             if self.pendingRoute == nil {
@@ -99,5 +145,19 @@ private extension MHRouteCoordinator {
             isExecuting = false
         }
         return try await executor.execute(route)
+    }
+
+    func execute(
+        _ route: Route,
+        applyOnMainActor: @escaping @MainActor @Sendable (Outcome) async throws -> Void
+    ) async throws -> Outcome {
+        isExecuting = true
+        defer {
+            isExecuting = false
+        }
+        return try await executor.execute(
+            route,
+            applyOnMainActor: applyOnMainActor
+        )
     }
 }

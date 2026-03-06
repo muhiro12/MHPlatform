@@ -20,4 +20,16 @@ public struct MHRouteExecutor<Route: Sendable, Outcome: Sendable>: Sendable {
         try await apply(outcome)
         return outcome
     }
+
+    /// Resolves a route and applies the outcome on the main actor.
+    @discardableResult
+    @preconcurrency
+    public func execute(
+        _ route: Route,
+        applyOnMainActor: @MainActor @Sendable (Outcome) async throws -> Void
+    ) async throws -> Outcome {
+        let outcome = try await resolve(route)
+        try await applyOnMainActor(outcome)
+        return outcome
+    }
 }
