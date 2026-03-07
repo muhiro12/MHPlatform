@@ -34,4 +34,10 @@ public final class MHObservableDeepLinkInbox {
         await inbox.clear()
         pendingURL = nil
     }
+
+    /// Replaces the pending URL, or clears it when `nil` is provided.
+    public func replacePendingURL(_ url: URL?) async {
+        await inbox.replacePendingURL(url)
+        pendingURL = url
+    }
 }

@@ -98,5 +98,70 @@ public enum MHNotificationOrchestrator {
             )
         )
     }
+
+    /// Resolves a route URL, applies app-specific fallback policy, and delivers it.
+    @preconcurrency
+    public static func deliverRouteURL(
+        userInfo: [AnyHashable: Any],
+        actionIdentifier: String,
+        deliver: @MainActor @Sendable (URL?) async -> Void,
+        codec: MHNotificationPayloadCodec = .init(),
+        clearPendingURLWhenNoRoute: Bool = false,
+        fallbackRouteURL: @Sendable ([AnyHashable: Any], String) -> URL? = { _, _ in nil },
+        defaultActionIdentifier: String = "com.apple.UNNotificationDefaultActionIdentifier",
+        dismissActionIdentifier: String = "com.apple.UNNotificationDismissActionIdentifier"
+    ) async -> MHNotificationRouteDeliveryOutcome {
+        let outcome = routeDeliveryOutcome(
+            userInfo: userInfo,
+            response: .init(
+                actionIdentifier: actionIdentifier,
+                defaultActionIdentifier: defaultActionIdentifier,
+                dismissActionIdentifier: dismissActionIdentifier
+            ),
+            codec: codec,
+            fallbackRouteURL: fallbackRouteURL
+        )
+
+        if clearPendingURLWhenNoRoute || outcome.routeURL != nil {
+            await deliver(outcome.routeURL)
+        }
+
+        return outcome
+    }
+
+    private static func routeDeliveryOutcome(
+        userInfo: [AnyHashable: Any],
+        response: MHNotificationResponseContext,
+        codec: MHNotificationPayloadCodec,
+        fallbackRouteURL: @Sendable ([AnyHashable: Any], String) -> URL?
+    ) -> MHNotificationRouteDeliveryOutcome {
+        if let routeURL = resolveRouteURL(
+            userInfo: userInfo,
+            actionIdentifier: response.actionIdentifier,
+            codec: codec,
+            defaultActionIdentifier: response.defaultActionIdentifier,
+            dismissActionIdentifier: response.dismissActionIdentifier
+        ) {
+            return .init(
+                routeURL: routeURL,
+                source: .payload
+            )
+        }
+
+        if let routeURL = fallbackRouteURL(
+            userInfo,
+            response.actionIdentifier
+        ) {
+            return .init(
+                routeURL: routeURL,
+                source: .fallback
+            )
+        }
+
+        return .init(
+            routeURL: nil,
+            source: .noRoute
+        )
+    }
 }
 #endif

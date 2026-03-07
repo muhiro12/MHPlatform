@@ -25,6 +25,11 @@ public actor MHDeepLinkInbox {
     public func clear() {
         pendingURL = nil
     }
+
+    /// Replaces the pending URL, or clears it when `nil` is provided.
+    public func replacePendingURL(_ url: URL?) {
+        pendingURL = url
+    }
 }
 
 public extension MHDeepLinkInbox {
