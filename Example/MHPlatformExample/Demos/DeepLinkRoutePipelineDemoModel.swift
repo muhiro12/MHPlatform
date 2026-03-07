@@ -66,7 +66,6 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
     }
 
     @Published private(set) var isReady = false
-    @Published private(set) var hasPendingDeepLink = false
     @Published private(set) var hasPendingRoute = false
     @Published private(set) var logs = [String]()
 
@@ -81,11 +80,12 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
             preferredTransport: .customScheme
         )
     )
-    private let inbox = MHDeepLinkInbox()
+    private let inbox: MHObservableDeepLinkInbox
     private let routeLifecycle: MHRouteLifecycle<AppRoute>
     private var sequence = 0
 
-    init() {
+    init(inbox: MHObservableDeepLinkInbox = .init()) {
+        self.inbox = inbox
         routeLifecycle = .init(
             logger: Self.loggerFactory.logger(
                 category: "DeepLinkRoutePipelineDemo",
@@ -97,10 +97,9 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
     }
 
     func setReadiness(_ isReady: Bool) {
-        self.isReady = isReady
-
         Task {
             await routeLifecycle.setReadiness(isReady)
+            await refreshLifecycleState()
             append("readiness=\(isReady)")
         }
     }
@@ -115,24 +114,18 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
                 return
             }
 
-            hasPendingDeepLink = true
             append("ingest: \(url.absoluteString)")
         }
     }
 
     func drainInbox() {
         Task {
-            guard let url = await inbox.consumeLatest() else {
-                append("drainInbox: no pending URL")
-                return
-            }
-
-            hasPendingDeepLink = false
+            let hadPendingURL = inbox.pendingURL != nil
             let codec = self.codec
 
             do {
-                let outcome = try await routeLifecycle.submit(
-                    url,
+                let outcome = try await routeLifecycle.submitLatest(
+                    from: inbox,
                     parse: { incomingURL in
                         codec.parse(incomingURL)
                     },
@@ -140,15 +133,18 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
                         try await apply(route)
                     }
                 )
+                await refreshLifecycleState()
                 guard let outcome else {
-                    append("drainInbox: ignored invalid URL")
+                    let message = hadPendingURL
+                        ? "drainInbox: ignored invalid URL"
+                        : "drainInbox: no pending URL"
+                    append(message)
                     return
                 }
 
-                updatePendingRouteState(for: outcome)
                 append("drainInbox: \(description(for: outcome))")
             } catch {
-                hasPendingRoute = false
+                await refreshLifecycleState()
                 append("drainInbox: error \(describe(error: error))")
             }
         }
@@ -162,15 +158,15 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
                         try await apply(route)
                     }
                 ) else {
-                    hasPendingRoute = false
+                    await refreshLifecycleState()
                     append("applyPendingIfReady: no pending route")
                     return
                 }
 
-                updatePendingRouteState(for: outcome)
+                await refreshLifecycleState()
                 append("applyPendingIfReady: \(description(for: outcome))")
             } catch {
-                hasPendingRoute = true
+                await refreshLifecycleState()
                 append("applyPendingIfReady: error \(describe(error: error))")
             }
         }
@@ -184,16 +180,9 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
         append("apply: \(destination(for: route))")
     }
 
-    private func updatePendingRouteState(
-        for outcome: MHRouteExecutionOutcome<AppRoute>
-    ) {
-        switch outcome {
-        case .queued,
-             .deduplicated:
-            hasPendingRoute = true
-        case .applied:
-            hasPendingRoute = false
-        }
+    private func refreshLifecycleState() async {
+        isReady = await routeLifecycle.isReady
+        hasPendingRoute = await routeLifecycle.hasPendingRoute
     }
 
     private func description(

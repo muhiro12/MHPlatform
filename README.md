@@ -76,11 +76,11 @@ import MHRouteExecution
   can converge on a shared workflow shape without standardizing those
   app-specific schemas.
 - Recent MHPlatform-first additions focus on thinner app integration:
-  `MHRouteLifecycle`, `MHRouteExecution` identity helpers, codec-backed
-  deep-link inbox/store helpers, `MHLoggerFactory`, `MHMutationAdapter`
-  composition, and `MHMutationWorkflow`. These reduce app-side boilerplate
-  without moving route enums, effect models, or concrete side effects into
-  MHPlatform.
+  `MHRouteLifecycle`, `MHRouteExecution` identity helpers, lifecycle
+  deep-link handoff helpers, codec-backed deep-link inbox/store/observable
+  inbox helpers, `MHLoggerFactory`, `MHMutationAdapter` composition, and
+  `MHMutationWorkflow`. These reduce app-side boilerplate without moving
+  route enums, effect models, or concrete side effects into MHPlatform.
 
 ## MHAppRuntime
 
@@ -110,8 +110,9 @@ runtime.startIfNeeded()
 ## MHDeepLinking
 
 `MHDeepLinking` handles route URL building, parsing, and pending-route handoff
-without owning app-specific route enums. Inbox/store helpers can also round-trip
-app-owned routes through a codec while keeping the stored payload as a `URL`.
+without owning app-specific route enums. Inbox, observable inbox, and store
+helpers can round-trip app-owned routes through a codec while keeping the
+stored payload as a `URL`.
 
 Integration contract:
 [`MHDeepLinking`](Designs/Architecture/integration-contracts.md#mhdeeplinking)
@@ -128,7 +129,7 @@ let codec = MHDeepLinkCodec<MyRoute>(
         preferredTransport: .customScheme
     )
 )
-let inbox = MHDeepLinkInbox()
+let inbox = MHObservableDeepLinkInbox()
 
 await inbox.ingest(.settings, using: codec)
 let pendingRoute = await inbox.consumeLatest(using: codec)
@@ -248,9 +249,9 @@ retry policy, cancellation handles, or observable event streams.
 
 `MHRouteExecution` supports two adoption levels. Reach for
 `MHRouteLifecycle` when the app wants a logger-backed helper around parsed
-URLs, readiness gating, and queued-route replay. Drop to `MHRouteCoordinator`
-directly only when the app needs explicit resolve/apply separation or direct
-pending-queue introspection.
+URLs, pending-source drain, readiness gating, and queued-route replay. Drop to
+`MHRouteCoordinator` directly only when the app needs explicit resolve/apply
+separation or direct pending-queue introspection.
 
 Integration contract:
 [`MHRouteExecution`](Designs/Architecture/integration-contracts.md#mhrouteexecution)
@@ -269,7 +270,7 @@ let codec = MHDeepLinkCodec<AppRoute>(
         preferredTransport: .customScheme
     )
 )
-let inbox = MHDeepLinkInbox()
+let inbox = MHObservableDeepLinkInbox()
 let logger = MHLoggerFactory.osLogDefault.logger(
     category: "route",
     source: #fileID
@@ -281,18 +282,20 @@ let routeLifecycle = MHRouteLifecycle<AppRoute>(
 )
 await routeLifecycle.setReadiness(hasLoadedInitialState)
 
-if let incomingURL = await inbox.consumeLatest() {
-    _ = try await routeLifecycle.submit(
-        incomingURL,
-        parse: { url in
-            codec.parse(url)
-        },
-        applyOnMainActor: { route in
-            try await applyRoute(route)
-        }
-    )
-}
+_ = try await routeLifecycle.submitLatest(
+    from: inbox,
+    parse: { url in
+        codec.parse(url)
+    },
+    applyOnMainActor: { route in
+        try await applyRoute(route)
+    }
+)
 ```
+
+Use `MHObservableDeepLinkInbox` when SwiftUI needs to observe the pending URL,
+swap in `MHDeepLinkInbox` for actor-only handoff, and use `MHDeepLinkStore`
+when the pending URL must survive process restarts.
 
 The lower-level `MHRouteCoordinator` and identity-route apply path remain
 available for flows that need a custom resolve/apply split or direct pending

@@ -73,9 +73,9 @@ Integration contract:
 - Owns URL grammar primitives:
   `MHDeepLinkConfiguration`, `MHDeepLinkDescriptor`, `MHDeepLinkCodec`
 - Owns pending-route handoff primitives:
-  `MHDeepLinkInbox`, `MHDeepLinkStore`
-- Owns codec-backed route handoff helpers on inbox/store while keeping URL
-  storage as the persisted representation
+  `MHDeepLinkInbox`, `MHObservableDeepLinkInbox`, `MHDeepLinkStore`
+- Owns codec-backed route handoff helpers on inbox, observable inbox, and
+  store while keeping URL storage as the persisted representation
 - Does not own app navigation state or route execution
 
 ### `MHNotificationPlans`
@@ -129,7 +129,8 @@ Integration contract:
 - Owns route execution orchestration primitives:
   `MHRouteExecutor`, `MHRouteCoordinator`, `MHRouteExecutionOutcome`
 - Owns readiness-aware pending queue behavior with latest-wins semantics
-- Owns a logger-backed helper path for parsed URLs and replaying queued routes
+- Owns a logger-backed helper path for parsed URLs, pending-source drain, and
+  replaying queued routes
 - Owns an identity-route convenience path for `Route == Outcome` flows while
   leaving route application in app-owned closures
 - Does not own URL parsing, route type definitions, persistence access, or UI state models
@@ -197,8 +198,8 @@ Integration contract:
 - `MHNotificationPlans` has no dependency on the other modules.
 - `MHNotificationPayloads` has no dependency on the other modules.
 - `MHMutationFlow` has no dependency on the other modules.
-- `MHRouteExecution` depends on `MHLogging` for `MHRouteLifecycle` outcome
-  logging and has no other MHPlatform module dependencies.
+- `MHRouteExecution` depends on `MHDeepLinking` for pending-source handoff
+  helpers and on `MHLogging` for `MHRouteLifecycle` outcome logging.
 - `MHPersistenceMaintenance` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
 - `MHReviewPolicy` depends on `MHLogging` for requester outcome logging and

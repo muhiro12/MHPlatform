@@ -2,7 +2,7 @@
 
 This cookbook focuses on composable end-to-end integration patterns.
 
-## Recipe 1: DeepLink -> Inbox -> RouteLifecycle
+## Recipe 1: DeepLink -> ObservableInbox -> RouteLifecycle
 
 Use this pipeline when URLs can arrive before UI/bootstrap readiness.
 
@@ -11,9 +11,10 @@ import MHDeepLinking
 import MHLogging
 import MHRouteExecution
 
-actor AppRoutePipeline {
+@MainActor
+final class AppRoutePipeline {
     private let codec: MHDeepLinkCodec<AppRoute>
-    private let inbox = MHDeepLinkInbox()
+    let inbox: MHObservableDeepLinkInbox
     private let routeLifecycle: MHRouteLifecycle<AppRoute>
 
     init(logger: MHLogger) {
@@ -24,6 +25,7 @@ actor AppRoutePipeline {
             universalLinkPathPrefix: "MyApp",
             preferredTransport: .customScheme
         ))
+        inbox = .init()
 
         routeLifecycle = .init(
             logger: logger,
@@ -47,13 +49,9 @@ actor AppRoutePipeline {
         }
     }
 
-    func drainInboxOnce() async {
-        guard let url = await inbox.consumeLatest() else {
-            return
-        }
-
-        _ = try? await routeLifecycle.submit(
-            url,
+    func drainPendingURL() async {
+        _ = try? await routeLifecycle.submitLatest(
+            from: inbox,
             parse: { incomingURL in
                 codec.parse(incomingURL)
             },
@@ -64,6 +62,9 @@ actor AppRoutePipeline {
     }
 }
 ```
+
+Swap in `MHDeepLinkInbox` when SwiftUI observation is unnecessary, or
+`MHDeepLinkStore` when the pending URL needs persistence across launches.
 
 Use `MHRouteCoordinator` directly when the app needs a separate resolve/apply
 pipeline or direct access to pending-queue introspection.

@@ -1,7 +1,9 @@
+import MHPlatform
 import SwiftUI
 
 struct DeepLinkRoutePipelineDemoView: View {
-    @StateObject private var model = DeepLinkRoutePipelineDemoModel()
+    @State private var inbox: MHObservableDeepLinkInbox
+    @StateObject private var model: DeepLinkRoutePipelineDemoModel
 
     var body: some View {
         NavigationStack {
@@ -28,9 +30,10 @@ struct DeepLinkRoutePipelineDemoView: View {
                     }
                 )
             )
-            LabeledContent("Has pending inbox URL") {
-                Text(model.hasPendingDeepLink ? "Yes" : "No")
+            LabeledContent("Pending inbox URL") {
+                Text(inbox.pendingURL?.absoluteString ?? "None")
                     .font(.caption.monospaced())
+                    .textSelection(.enabled)
             }
             LabeledContent("Has queued route") {
                 Text(model.hasPendingRoute ? "Yes" : "No")
@@ -40,7 +43,7 @@ struct DeepLinkRoutePipelineDemoView: View {
     }
 
     private var ingestSection: some View {
-        Section("DeepLink -> Inbox") {
+        Section("DeepLink -> ObservableInbox") {
             ForEach(DeepLinkRoutePipelineDemoModel.AppRoute.allCases) { route in
                 Button("Ingest \(route.title)") {
                     model.ingestDeepLink(route)
@@ -50,8 +53,8 @@ struct DeepLinkRoutePipelineDemoView: View {
     }
 
     private var executionSection: some View {
-        Section("Inbox -> MHRouteLifecycle") {
-            Button("Drain Inbox") {
+        Section("ObservableInbox -> MHRouteLifecycle") {
+            Button("Submit Latest Pending URL") {
                 model.drainInbox()
             }
             Button("Apply Pending Route") {
@@ -73,5 +76,13 @@ struct DeepLinkRoutePipelineDemoView: View {
                 }
             }
         }
+    }
+
+    init() {
+        let inbox = MHObservableDeepLinkInbox()
+        _inbox = .init(initialValue: inbox)
+        _model = .init(
+            wrappedValue: DeepLinkRoutePipelineDemoModel(inbox: inbox)
+        )
     }
 }

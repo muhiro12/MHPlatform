@@ -4,8 +4,12 @@
 
 - Added identity-route helpers in `MHRouteExecution` so `Route == Outcome`
   flows can keep app-owned apply logic without dummy resolve/apply closures.
-- Added codec-backed route helpers in `MHDeepLinking` so inbox/store handoff
-  can ingest and consume app-owned routes while still storing `URL` values.
+- Added codec-backed route helpers in `MHDeepLinking` so inbox, observable
+  inbox, and store handoff can ingest and consume app-owned routes while still
+  storing `URL` values.
+- Added `MHRouteLifecycle.submitLatest(...)` helpers and lifecycle state
+  passthrough so apps can drain pending deep-link sources without hand-written
+  bridging.
 - Refreshed the route pipeline demo and docs so `MHRouteLifecycle` is the
   current helper-first adoption path, while `MHRouteCoordinator` remains the
   low-level execution surface.
@@ -32,10 +36,11 @@
 - `MHAppRuntime` as the shared runtime/startup surface already used by app
   targets.
 - `MHReviewPolicy` as the shared review-request policy surface.
-- `MHDeepLinking` with URL grammar primitives plus codec-backed inbox/store
-  helpers for app-owned route handoff.
-- `MHRouteExecution` with readiness-aware execution, `MHRouteLifecycle`, and
-  an identity-route path for `Route == Outcome` flows.
+- `MHDeepLinking` with URL grammar primitives plus codec-backed inbox,
+  observable inbox, and store helpers for app-owned route handoff.
+- `MHRouteExecution` with readiness-aware execution, `MHRouteLifecycle`,
+  pending-source handoff helpers, and an identity-route path for
+  `Route == Outcome` flows.
 - `MHLogging` with structured logging, query/export surfaces, and
   `MHLoggerFactory` for shared setup ergonomics.
 - `MHMutationFlow` with retry, cancellation, fixed `afterSuccess` steps, and

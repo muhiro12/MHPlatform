@@ -58,6 +58,7 @@ This document is normative for integration design.
 - Incoming `URL` values from app lifecycle and external entry points
 - Optional handoff primitive:
   - `MHDeepLinkInbox` (consume-once, in-memory)
+  - `MHObservableDeepLinkInbox` (consume-once, main-actor observable)
   - `MHDeepLinkStore` (consume-once, persistent)
 
 ### Outputs
@@ -72,6 +73,8 @@ This document is normative for integration design.
 
 - `MHDeepLinkCodec` is value-typed and actor-agnostic.
 - `MHDeepLinkInbox` is an `actor` and serializes latest-pending state.
+- `MHObservableDeepLinkInbox` is `@MainActor` and `@Observable` while mirroring
+  the latest pending URL from an underlying `MHDeepLinkInbox`.
 - `MHDeepLinkStore` is `UserDefaults` backed; caller owns cross-thread usage policy.
 
 ### Intended Call Sites
@@ -84,7 +87,8 @@ This document is normative for integration design.
 
 ### Boundary Rule (Normative)
 
-- Route-aware helpers remain codec-backed bridges over URL storage/inbox state.
+- Route-aware helpers remain codec-backed bridges over URL storage/inbox
+  state, including the main-actor observable inbox mirror.
 - MHPlatform does not persist app route values directly outside their encoded
   `URL` representation.
 
@@ -105,9 +109,12 @@ This document is normative for integration design.
 ### Outputs
 
 - Higher-level lifecycle helper:
+  - `hasPendingRoute`
+  - `isReady`
   - `setReadiness(_:)`
   - `submit(_:applyOnMainActor:)`
   - `submit(_:parse:applyOnMainActor:)`
+  - `submitLatest(from:parse:applyOnMainActor:)`
   - `applyPendingIfReady(applyOnMainActor:)`
 - `MHRouteExecutionOutcome<Outcome>`:
   - `.applied(Outcome)`
@@ -131,6 +138,8 @@ This document is normative for integration design.
   `MHRouteLifecycle`
 - App navigation routers/services that want logger-backed readiness gating
   without wiring `MHRouteExecutor` manually
+- Pending deep-link source drain from `MHDeepLinkInbox`,
+  `MHObservableDeepLinkInbox`, or `MHDeepLinkStore`
 - Bootstrap/readiness transitions via `setReadiness(_:)`
 - Replay hook via `applyPendingIfReady()` after app state becomes ready
 - Low-level coordinator usage when the app needs explicit resolve/apply
@@ -149,7 +158,7 @@ This document is normative for integration design.
 ### Boundary Rule (Normative)
 
 - `MHRouteLifecycle` is a thin logger-backed shell over route parsing,
-  readiness gating, and replay.
+  pending-source drain, readiness gating, and replay.
 - Identity helpers only remove dummy resolve/apply boilerplate.
 - Apps still own route definitions, route parsers, readiness decisions, and
   concrete route application logic.
