@@ -18,6 +18,35 @@ public enum MHMutationWorkflow {
         let resultValue: ResultValue
     }
 
+    private struct AdapterValueProjection<OperationValue, AdapterValue: Sendable>: @unchecked Sendable {
+        let keyPath: KeyPath<OperationValue, AdapterValue>
+
+        func project(_ operationValue: OperationValue) -> AdapterValue {
+            operationValue[keyPath: keyPath]
+        }
+    }
+
+    private struct ProjectedValueExtraction<
+        OperationValue,
+        AdapterValue: Sendable,
+        ResultValue: Sendable
+    >: @unchecked Sendable {
+        let adapterValue: KeyPath<OperationValue, AdapterValue>
+        let resultValue: KeyPath<OperationValue, ResultValue>
+
+        func projectedAdapterValue(
+            from operationValue: OperationValue
+        ) -> AdapterValue {
+            operationValue[keyPath: adapterValue]
+        }
+
+        func projectedResultValue(
+            from operationValue: OperationValue
+        ) -> ResultValue {
+            operationValue[keyPath: resultValue]
+        }
+    }
+
     @usableFromInline
     static func defaultOperationErrorDescription(
         _ error: any Error
@@ -66,6 +95,36 @@ public enum MHMutationWorkflow {
         )
     }
 
+    /// Runs a main-actor mutation while projecting adapter input through a key path
+    /// and returning the full successful operation value using the default workflow
+    /// error mapping.
+    @preconcurrency
+    public static func runThrowing<
+        OperationValue: Sendable,
+        AdapterValue: Sendable
+    >(
+        name: String,
+        operation: @escaping @MainActor @Sendable () throws -> OperationValue,
+        adapter: MHMutationAdapter<AdapterValue>,
+        adapterValue: KeyPath<OperationValue, AdapterValue>,
+        operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
+    ) async throws -> OperationValue {
+        let projection = AdapterValueProjection(keyPath: adapterValue)
+
+        return try await runThrowing(
+            name: name,
+            operation: operation,
+            adapter: adapter,
+            afterSuccess: { operationValue in
+                projection.project(operationValue)
+            },
+            returning: { operationValue in
+                operationValue
+            },
+            operationErrorDescription: operationErrorDescription
+        )
+    }
+
     // swiftlint:disable function_parameter_count
     /// Runs a main-actor mutation while projecting separate adapter input and return value
     /// using the default workflow error mapping.
@@ -89,6 +148,40 @@ public enum MHMutationWorkflow {
             afterSuccess: afterSuccess,
             returning: returning,
             mapFailure: defaultFailure(from:),
+            operationErrorDescription: operationErrorDescription
+        )
+    }
+
+    /// Runs a main-actor mutation while projecting adapter input and return value through
+    /// key paths using the default workflow error mapping.
+    @preconcurrency
+    public static func runThrowing<
+        OperationValue,
+        AdapterValue: Sendable,
+        ResultValue: Sendable
+    >(
+        name: String,
+        operation: @escaping @MainActor @Sendable () throws -> OperationValue,
+        adapter: MHMutationAdapter<AdapterValue>,
+        adapterValue: KeyPath<OperationValue, AdapterValue>,
+        resultValue: KeyPath<OperationValue, ResultValue>,
+        operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
+    ) async throws -> ResultValue {
+        let extraction = ProjectedValueExtraction(
+            adapterValue: adapterValue,
+            resultValue: resultValue
+        )
+
+        return try await runThrowing(
+            name: name,
+            operation: operation,
+            adapter: adapter,
+            afterSuccess: { operationValue in
+                extraction.projectedAdapterValue(from: operationValue)
+            },
+            returning: { operationValue in
+                extraction.projectedResultValue(from: operationValue)
+            },
             operationErrorDescription: operationErrorDescription
         )
     }

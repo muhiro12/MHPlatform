@@ -176,6 +176,9 @@ This document is normative for integration design.
   - `MHMutationAdapter<Value>` for deriving ordered steps from a successful
     app-owned mutation value
   - `[MHMutationStep]` through `afterSuccess` for fixed ordered steps
+- Optional success projection from an app-owned carrier value:
+  - closure-based `afterSuccess` / `returning`
+  - key-path-based `adapterValue` / `resultValue`
 - Optional adapter composition through `MHMutationAdapter.appending(_:)`
 - Optional injected sleep for deterministic retry testing (`MHMutationRunner.Sleep`)
 
@@ -210,6 +213,8 @@ This document is normative for integration design.
   post-success steps
 - Mutation services whose success values already carry app-owned follow-up
   hints or effect metadata
+- Mutation services that return an app-owned carrier value and only need
+  key-path projection into adapter input and result value
 - Retriable network + local side-effect flows
 - Outcome-driven app side effects (review policy, analytics, etc.)
 

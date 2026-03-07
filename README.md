@@ -205,22 +205,26 @@ Integration contract:
 ```swift
 import MHMutationFlow
 
-struct SaveItemResult: Sendable {
-    let value: String
+struct SaveItemFollowUp: Sendable {
     let shouldReloadWidgets: Bool
     let shouldSyncNotifications: Bool
 }
 
-let adapter = MHMutationAdapter<SaveItemResult> { result in
+struct SaveItemResult: Sendable {
+    let value: String
+    let followUp: SaveItemFollowUp
+}
+
+let adapter = MHMutationAdapter<SaveItemFollowUp> { followUp in
     var steps = [MHMutationStep]()
 
-    if result.shouldReloadWidgets {
+    if followUp.shouldReloadWidgets {
         steps.append(.mainActor(name: "reloadWidgets") {
             reloadWidgets()
         })
     }
 
-    if result.shouldSyncNotifications {
+    if followUp.shouldSyncNotifications {
         steps.append(.mainActor(name: "syncNotifications") {
             await syncNotifications()
         })
@@ -234,11 +238,15 @@ let result = try await MHMutationWorkflow.runThrowing(
     operation: {
         .init(
             value: "saved",
-            shouldReloadWidgets: true,
-            shouldSyncNotifications: true
+            followUp: .init(
+                shouldReloadWidgets: true,
+                shouldSyncNotifications: true
+            )
         )
     },
-    adapter: adapter
+    adapter: adapter,
+    adapterValue: \.followUp,
+    resultValue: \.value
 )
 ```
 
