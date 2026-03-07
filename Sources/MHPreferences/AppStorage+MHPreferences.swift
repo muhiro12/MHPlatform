@@ -63,5 +63,76 @@ public extension AppStorage {
             store: store
         )
     }
+
+    /// Creates a boolean app-storage binding using a representable typed key.
+    init(
+        _ key: some MHBoolPreferenceKeyRepresentable,
+        store: UserDefaults = .standard
+    ) where Value == Bool {
+        self.init(
+            key.preferenceKey,
+            store: store
+        )
+    }
+
+    /// Creates an integer app-storage binding using a representable typed key.
+    init(
+        _ key: some MHIntPreferenceKeyRepresentable,
+        store: UserDefaults = .standard
+    ) where Value == Int {
+        self.init(
+            key.preferenceKey(default: .zero),
+            store: store
+        )
+    }
+
+    /// Creates an optional-string app-storage binding using a representable typed key.
+    init(
+        _ key: some MHStringPreferenceKeyRepresentable,
+        store: UserDefaults = .standard
+    ) where Value == String? {
+        self.init(
+            key.preferenceKey,
+            store: store
+        )
+    }
+
+    /// Creates a string app-storage binding using a representable typed key.
+    init(
+        _ key: some MHStringPreferenceKeyRepresentable,
+        store: UserDefaults = .standard
+    ) where Value == String {
+        self.init(
+            wrappedValue: "",
+            key.preferenceKey.storageKey,
+            store: store
+        )
+    }
+
+    /// Creates a string app-storage binding using a representable typed key and an explicit default.
+    init(
+        _ key: some MHStringPreferenceKeyRepresentable,
+        default defaultValue: String,
+        store: UserDefaults = .standard
+    ) where Value == String {
+        self.init(
+            wrappedValue: defaultValue,
+            key.preferenceKey.storageKey,
+            store: store
+        )
+    }
+
+    /// Creates a raw-string app-storage binding using a representable typed key.
+    init(
+        _ key: some MHStringPreferenceKeyRepresentable,
+        default defaultValue: Value,
+        store: UserDefaults = .standard
+    ) where Value: RawRepresentable, Value.RawValue == String {
+        self.init(
+            wrappedValue: defaultValue,
+            key.preferenceKey.storageKey,
+            store: store
+        )
+    }
 }
 #endif
