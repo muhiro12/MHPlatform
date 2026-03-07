@@ -1,6 +1,4 @@
-import Foundation
-
-/// Shared factory for app-side logger bootstrapping.
+/// Lightweight factory for app-owned logging setup.
 public struct MHLoggerFactory: Sendable {
     /// Default app-side factory that emits to OSLog using the build-config policy.
     public static var osLogDefault: Self {
@@ -10,27 +8,40 @@ public struct MHLoggerFactory: Sendable {
         )
     }
 
-    let store: MHLogStore
-    let policy: MHLogPolicy
-    let subsystem: String?
+    public let store: MHLogStore
+    public let policy: MHLogPolicy
+    public let subsystem: String?
 
-    /// Creates a logger factory backed by a shared log store.
+    /// Creates a factory around an existing log store.
     public init(
+        store: MHLogStore,
         policy: MHLogPolicy = .default,
-        sinks: [any MHLogSink] = [],
         subsystem: String? = nil
     ) {
-        self.store = .init(
-            policy: policy,
-            sinks: sinks
-        )
+        self.store = store
         self.policy = policy
         self.subsystem = subsystem
     }
 
-    /// Creates a logger that shares the factory's store and policy.
+    /// Creates a factory that owns its log store configuration.
+    public init(
+        policy: MHLogPolicy = .default,
+        subsystem: String? = nil,
+        sinks: [any MHLogSink] = []
+    ) {
+        self.init(
+            store: .init(
+                policy: policy,
+                sinks: sinks
+            ),
+            policy: policy,
+            subsystem: subsystem
+        )
+    }
+
+    /// Creates a logger for the given category and source file identifier.
     public func logger(
-        category: String,
+        category: String? = nil,
         source: String = #fileID
     ) -> MHLogger {
         .init(

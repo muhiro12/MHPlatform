@@ -24,18 +24,18 @@ public enum MHMutationRunner {
         let mutation: MHMutation<Value>
         let retryPolicy: MHMutationRetryPolicy
         let cancellationHandle: MHCancellationHandle?
-        let afterSuccess: [MHMutationStep]
+        let adapter: MHMutationAdapter<Value>
         let sleep: Sleep
         let emit: @Sendable (MHMutationEvent<Value>) -> Void
     }
 
-    /// Starts a mutation run and returns a handle with event stream and terminal outcome.
+    /// Starts a mutation run and derives post-success side-effect steps from a successful value.
     @preconcurrency
     public static func start<Value: Sendable>(
         mutation: MHMutation<Value>,
+        adapter: MHMutationAdapter<Value>,
         retryPolicy: MHMutationRetryPolicy = .none,
         cancellationHandle: MHCancellationHandle? = nil,
-        afterSuccess: [MHMutationStep] = [],
         sleep: @escaping Sleep = { duration in
             if duration > .zero {
                 try await Task.sleep(for: duration)
@@ -51,7 +51,7 @@ public enum MHMutationRunner {
             mutation: mutation,
             retryPolicy: retryPolicy,
             cancellationHandle: cancellationHandle,
-            afterSuccess: afterSuccess,
+            adapter: adapter,
             sleep: sleep,
             emit: emit
         )
@@ -69,6 +69,52 @@ public enum MHMutationRunner {
         )
     }
 
+    /// Starts a mutation run and returns a handle with event stream and terminal outcome.
+    @preconcurrency
+    public static func start<Value: Sendable>(
+        mutation: MHMutation<Value>,
+        retryPolicy: MHMutationRetryPolicy = .none,
+        cancellationHandle: MHCancellationHandle? = nil,
+        afterSuccess: [MHMutationStep] = [],
+        sleep: @escaping Sleep = { duration in
+            if duration > .zero {
+                try await Task.sleep(for: duration)
+            }
+        }
+    ) -> MHMutationRun<Value> {
+        start(
+            mutation: mutation,
+            adapter: .fixed(afterSuccess),
+            retryPolicy: retryPolicy,
+            cancellationHandle: cancellationHandle,
+            sleep: sleep
+        )
+    }
+
+    /// Runs a mutation and waits for its terminal outcome using a value-driven adapter.
+    @preconcurrency
+    public static func run<Value: Sendable>(
+        mutation: MHMutation<Value>,
+        adapter: MHMutationAdapter<Value>,
+        retryPolicy: MHMutationRetryPolicy = .none,
+        cancellationHandle: MHCancellationHandle? = nil,
+        sleep: @escaping Sleep = { duration in
+            if duration > .zero {
+                try await Task.sleep(for: duration)
+            }
+        }
+    ) async -> MHMutationOutcome<Value> {
+        let runHandle = start(
+            mutation: mutation,
+            adapter: adapter,
+            retryPolicy: retryPolicy,
+            cancellationHandle: cancellationHandle,
+            sleep: sleep
+        )
+
+        return await runHandle.outcome.value
+    }
+
     /// Runs a mutation and waits for its terminal outcome.
     @preconcurrency
     public static func run<Value: Sendable>(
@@ -82,15 +128,13 @@ public enum MHMutationRunner {
             }
         }
     ) async -> MHMutationOutcome<Value> {
-        let runHandle = start(
+        await run(
             mutation: mutation,
+            adapter: .fixed(afterSuccess),
             retryPolicy: retryPolicy,
             cancellationHandle: cancellationHandle,
-            afterSuccess: afterSuccess,
             sleep: sleep
         )
-
-        return await runHandle.outcome.value
     }
 }
 

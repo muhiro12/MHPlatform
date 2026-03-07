@@ -1,11 +1,10 @@
 import Combine
 import Foundation
-import MHRouteExecution
+import MHPlatform
 
 @MainActor
 final class RouteExecutionDemoModel: ObservableObject {
     private enum Constants {
-        static let resolveDelayMilliseconds = 150
         static let applyDelayMilliseconds = 90
     }
 
@@ -15,49 +14,12 @@ final class RouteExecutionDemoModel: ObservableObject {
 
     private let coordinator: MHRouteCoordinator<
         RouteExecutionDemoRoute,
-        RouteExecutionDemoOutcome
+        RouteExecutionDemoRoute
     >
     private var logSequence = 0
 
     init() {
-        let executor = MHRouteExecutor<
-            RouteExecutionDemoRoute,
-            RouteExecutionDemoOutcome
-        >(
-            resolve: { route in
-                try await Task.sleep(
-                    for: .milliseconds(Constants.resolveDelayMilliseconds)
-                )
-
-                switch route {
-                case .home:
-                    return .init(
-                        route: route,
-                        destination: "home"
-                    )
-                case .search:
-                    return .init(
-                        route: route,
-                        destination: "search?q=tea"
-                    )
-                case .settings:
-                    return .init(
-                        route: route,
-                        destination: "settings/subscription"
-                    )
-                case .broken:
-                    throw RouteExecutionDemoError.resolveFailed
-                }
-            },
-            apply: { _ in
-                try await Task.sleep(
-                    for: .milliseconds(Constants.applyDelayMilliseconds)
-                )
-            }
-        )
-
         coordinator = .init(
-            executor: executor,
             initialReadiness: true
         ) { lhs, rhs in
             lhs == rhs
@@ -80,7 +42,9 @@ final class RouteExecutionDemoModel: ObservableObject {
     func submit(_ route: RouteExecutionDemoRoute) {
         Task {
             do {
-                let outcome = try await coordinator.submit(route)
+                let outcome = try await coordinator.submit(route) { [self] resolvedRoute in
+                    try await applyRoute(resolvedRoute)
+                }
                 appendLog(
                     outcomeMessage(
                         for: outcome,
@@ -100,7 +64,9 @@ final class RouteExecutionDemoModel: ObservableObject {
     func applyPendingIfReady() {
         Task {
             do {
-                let outcome = try await coordinator.applyPendingIfReady()
+                let outcome = try await coordinator.applyPendingIfReady { [self] resolvedRoute in
+                    try await applyRoute(resolvedRoute)
+                }
                 if let outcome {
                     appendLog(
                         outcomeMessage(
@@ -142,16 +108,43 @@ final class RouteExecutionDemoModel: ObservableObject {
     }
 
     private func outcomeMessage(
-        for outcome: MHRouteExecutionOutcome<RouteExecutionDemoOutcome>,
+        for outcome: MHRouteExecutionOutcome<RouteExecutionDemoRoute>,
         source: String
     ) -> String {
         switch outcome {
         case .queued:
             return "\(source): queued"
-        case .applied(let resolvedOutcome):
-            return "\(source): applied \(resolvedOutcome.destination)"
+        case .applied(let route):
+            return "\(source): applied \(destination(for: route))"
         case .deduplicated:
             return "\(source): deduplicated"
+        }
+    }
+
+    private func applyRoute(
+        _ route: RouteExecutionDemoRoute
+    ) async throws {
+        try await Task.sleep(
+            for: .milliseconds(Constants.applyDelayMilliseconds)
+        )
+
+        if route == .broken {
+            throw RouteExecutionDemoError.resolveFailed
+        }
+    }
+
+    private func destination(
+        for route: RouteExecutionDemoRoute
+    ) -> String {
+        switch route {
+        case .home:
+            return "home"
+        case .search:
+            return "search?q=tea"
+        case .settings:
+            return "settings/subscription"
+        case .broken:
+            return "broken"
         }
     }
 

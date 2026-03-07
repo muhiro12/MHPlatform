@@ -1,5 +1,4 @@
-import MHMutationFlow
-import MHReviewPolicy
+import MHPlatform
 import SwiftUI
 
 struct MutationReviewPipelineDemoView: View {

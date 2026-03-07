@@ -1,4 +1,4 @@
-import MHAppRuntime
+import MHPlatform
 import SwiftUI
 
 struct AppRuntimeDemoView: View {

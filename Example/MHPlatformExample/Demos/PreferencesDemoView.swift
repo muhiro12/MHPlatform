@@ -1,4 +1,4 @@
-import MHPreferences
+import MHPlatform
 import SwiftUI
 
 struct PreferencesDemoView: View {

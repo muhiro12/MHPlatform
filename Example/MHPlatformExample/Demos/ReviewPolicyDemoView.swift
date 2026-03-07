@@ -1,4 +1,4 @@
-import MHReviewPolicy
+import MHPlatform
 import SwiftUI
 
 struct ReviewPolicyDemoView: View {

@@ -1,5 +1,5 @@
 import Foundation
-import MHPersistenceMaintenance
+import MHPlatform
 import SwiftUI
 
 struct PersistenceMaintenanceDemoView: View {

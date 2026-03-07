@@ -1,4 +1,4 @@
-import MHMutationFlow
+import MHPlatform
 import SwiftUI
 
 struct MutationFlowDemoView: View {
@@ -12,6 +12,27 @@ struct MutationFlowDemoView: View {
         let failFirstAttempt: Bool
         let failSideEffect: Bool
         let cancelBeforeStepTwo: Bool
+
+        let followUpSignals: [FollowUpSignal] = [
+            .reloadWidgets,
+            .syncNotifications,
+            .requestReview
+        ]
+    }
+
+    nonisolated struct SaveDraftResult: Sendable {
+        let message: String
+        let followUpSignals: [FollowUpSignal]
+    }
+
+    nonisolated enum FollowUpSignal: String, Sendable {
+        case reloadWidgets
+        case syncNotifications
+        case requestReview
+
+        var stepName: String {
+            rawValue
+        }
     }
 
     private actor MutationAttemptState {
@@ -87,6 +108,86 @@ struct MutationFlowDemoView: View {
         }
     }
 
+    nonisolated private static func makeMutation(
+        attempts: MutationAttemptState,
+        scenario: MutationScenario
+    ) -> MHMutation<SaveDraftResult> {
+        .init(
+            name: "saveDraft"
+        ) {
+            let attempt = await attempts.nextAttempt()
+            if scenario.failFirstAttempt,
+               attempt == Constants.firstAttempt {
+                throw MutationDemoError.operationFailed
+            }
+
+            return .init(
+                message: "Saved sample draft",
+                followUpSignals: scenario.followUpSignals
+            )
+        }
+    }
+
+    nonisolated private static func makeAdapter(
+        scenario: MutationScenario,
+        cancellationHandle: MHCancellationHandle
+    ) -> MHMutationAdapter<SaveDraftResult> {
+        let workflowAdapter = MHMutationAdapter<SaveDraftResult> { result in
+            result.followUpSignals.compactMap { signal in
+                switch signal {
+                case .reloadWidgets, .syncNotifications:
+                    return makeFollowUpStep(
+                        for: signal,
+                        scenario: scenario,
+                        cancellationHandle: cancellationHandle
+                    )
+                case .requestReview:
+                    return nil
+                }
+            }
+        }
+        let reviewAdapter = MHMutationAdapter<SaveDraftResult> { result in
+            guard result.followUpSignals.contains(.requestReview) else {
+                return []
+            }
+
+            return [
+                makeFollowUpStep(
+                    for: .requestReview,
+                    scenario: scenario,
+                    cancellationHandle: cancellationHandle
+                )
+            ]
+        }
+
+        return workflowAdapter.appending(reviewAdapter)
+    }
+
+    nonisolated private static func makeFollowUpStep(
+        for signal: FollowUpSignal,
+        scenario: MutationScenario,
+        cancellationHandle: MHCancellationHandle
+    ) -> MHMutationStep {
+        switch signal {
+        case .reloadWidgets:
+            return .init(name: signal.stepName) {
+                if scenario.cancelBeforeStepTwo {
+                    cancellationHandle.cancel()
+                }
+            }
+        case .syncNotifications:
+            return .init(name: signal.stepName) {
+                if scenario.failSideEffect {
+                    throw MutationDemoError.sideEffectFailed
+                }
+            }
+        case .requestReview:
+            return .init(name: signal.stepName) {
+                // Intentionally empty.
+            }
+        }
+    }
+
     private func runFlow() {
         let scenario = MutationScenario(
             failFirstAttempt: failFirstAttempt,
@@ -106,40 +207,23 @@ struct MutationFlowDemoView: View {
     private func runFlowTask(scenario: MutationScenario) async {
         let cancellationHandle = MHCancellationHandle()
         let attempts = MutationAttemptState()
-
-        let mutation = MHMutation<String>(
-            name: "saveDraft"
-        ) {
-            let attempt = await attempts.nextAttempt()
-            if scenario.failFirstAttempt,
-               attempt == Constants.firstAttempt {
-                throw MutationDemoError.operationFailed
-            }
-            return "Saved sample draft"
-        }
+        let mutation = Self.makeMutation(
+            attempts: attempts,
+            scenario: scenario
+        )
+        let adapter = Self.makeAdapter(
+            scenario: scenario,
+            cancellationHandle: cancellationHandle
+        )
 
         let runHandle = MHMutationRunner.start(
             mutation: mutation,
+            adapter: adapter,
             retryPolicy: .init(
                 maximumAttempts: Constants.retryMaximumAttempts,
                 backoff: .immediate
             ),
-            cancellationHandle: cancellationHandle,
-            afterSuccess: [
-                .init(name: "reloadWidgets") {
-                    if scenario.cancelBeforeStepTwo {
-                        cancellationHandle.cancel()
-                    }
-                },
-                .init(name: "syncNotifications") {
-                    if scenario.failSideEffect {
-                        throw MutationDemoError.sideEffectFailed
-                    }
-                },
-                .init(name: "requestReview") {
-                    // Intentionally empty.
-                }
-            ]
+            cancellationHandle: cancellationHandle
         )
 
         async let eventLogTask = collectEventLog(from: runHandle.events)
@@ -150,70 +234,6 @@ struct MutationFlowDemoView: View {
             eventLog = events
             outcomeSummary = summarize(outcome)
             isRunning = false
-        }
-    }
-
-    private func collectEventLog(
-        from events: AsyncStream<MHMutationEvent<String>>
-    ) async -> [String] {
-        var values = [String]()
-
-        for await event in events {
-            values.append(eventTitle(event))
-        }
-
-        return values
-    }
-
-    private func eventTitle(_ event: MHMutationEvent<String>) -> String {
-        switch event {
-        case let .started(mutation, attempt):
-            return "started(\(mutation), attempt=\(attempt))"
-        case .progress(let progress):
-            return progressTitle(progress)
-        case let .succeeded(_, attempts, completedSteps):
-            return "succeeded(attempts=\(attempts), completed=\(completedSteps))"
-        case let .failed(errorDescription, attempts, completedSteps, isRecoverable):
-            return [
-                "failed(attempts=\(attempts)",
-                "recoverable=\(isRecoverable)",
-                "completed=\(completedSteps)",
-                "error=\(errorDescription))"
-            ].joined(separator: ", ")
-        case let .cancelled(attempts, completedSteps):
-            return "cancelled(attempts=\(attempts), completed=\(completedSteps))"
-        }
-    }
-
-    private func progressTitle(_ progress: MHMutationProgress) -> String {
-        switch progress {
-        case let .retryScheduled(nextAttempt, delay):
-            return "progress.retryScheduled(nextAttempt=\(nextAttempt), delay=\(delay))"
-        case let .stepStarted(name, completedSteps, totalSteps):
-            return "progress.stepStarted(\(name), \(completedSteps)/\(totalSteps))"
-        case let .stepSucceeded(name, completedSteps, totalSteps):
-            return "progress.stepSucceeded(\(name), \(completedSteps)/\(totalSteps))"
-        }
-    }
-
-    private func summarize(_ outcome: MHMutationOutcome<String>) -> String {
-        switch outcome {
-        case let .succeeded(value, attempts, completedSteps):
-            return [
-                "Succeeded after \(attempts) attempt(s): \(value)",
-                "steps \(completedSteps.joined(separator: ", "))"
-            ].joined(separator: " | ")
-        case let .failed(failure, attempts, completedSteps, isRecoverable):
-            return [
-                "Failed after \(attempts) attempt(s): \(failure)",
-                "recoverable=\(isRecoverable)",
-                "completed \(completedSteps.joined(separator: ", "))"
-            ].joined(separator: " | ")
-        case let .cancelled(attempts, completedSteps):
-            return [
-                "Cancelled after \(attempts) attempt(s)",
-                "completed \(completedSteps.joined(separator: ", "))"
-            ].joined(separator: " | ")
         }
     }
 }

@@ -1,5 +1,4 @@
-import MHNotificationPayloads
-import MHNotificationPlans
+import MHPlatform
 import SwiftUI
 
 struct NotificationPipelineDemoView: View {

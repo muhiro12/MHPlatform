@@ -34,8 +34,19 @@ extension MHMutationRunner {
         attempt: Int,
         context: RunContext<Value>
     ) async -> AttemptDecision<Value> {
+        if isCancelled(context.cancellationHandle) {
+            return .finish(
+                cancelledOutcome(
+                    attempts: attempt,
+                    completedSteps: [],
+                    emit: context.emit
+                )
+            )
+        }
+
+        let steps = context.adapter.steps(for: value)
         let stepResult = await runSteps(
-            steps: context.afterSuccess,
+            steps: steps,
             cancellationHandle: context.cancellationHandle,
             emit: context.emit
         )

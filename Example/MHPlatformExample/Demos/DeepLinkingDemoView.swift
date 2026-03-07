@@ -1,4 +1,4 @@
-import MHDeepLinking
+import MHPlatform
 import SwiftUI
 
 struct DeepLinkingDemoView: View {
@@ -203,13 +203,13 @@ struct DeepLinkingDemoView: View {
         Section("Pending Route Inbox") {
             Button("Store Settings Route") {
                 Task {
-                    guard let url = codec.preferredURL(
-                        for: .settings("notifications")
+                    guard let url = await Self.inbox.ingest(
+                        .settings("notifications"),
+                        using: codec
                     ) else {
                         return
                     }
 
-                    await Self.inbox.ingest(url)
                     await MainActor.run {
                         inboxStatus = "Stored \(url.absoluteString)"
                     }
@@ -218,9 +218,9 @@ struct DeepLinkingDemoView: View {
 
             Button("Consume Inbox Route") {
                 Task {
-                    let url = await Self.inbox.consumeLatest()
+                    let route = await Self.inbox.consumeLatest(using: codec)
                     await MainActor.run {
-                        inboxStatus = url?.absoluteString ?? "No pending inbox URL"
+                        inboxStatus = route?.title ?? "No pending inbox route"
                     }
                 }
             }
@@ -234,16 +234,18 @@ struct DeepLinkingDemoView: View {
     private var storeSection: some View {
         Section("UserDefaults Store") {
             Button("Store Item Route") {
-                guard let url = codec.preferredURL(for: .item("rent")) else {
+                guard let url = Self.store.ingest(
+                    .item("rent"),
+                    using: codec
+                ) else {
                     return
                 }
 
-                Self.store.ingest(url)
                 storeStatus = "Stored \(url.absoluteString)"
             }
 
             Button("Consume Stored Route") {
-                storeStatus = Self.store.consumeLatest()?.absoluteString ?? "No stored URL"
+                storeStatus = Self.store.consumeLatest(using: codec)?.title ?? "No stored route"
             }
 
             Text(storeStatus)

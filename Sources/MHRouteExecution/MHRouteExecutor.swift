@@ -33,3 +33,18 @@ public struct MHRouteExecutor<Route: Sendable, Outcome: Sendable>: Sendable {
         return outcome
     }
 }
+
+public extension MHRouteExecutor where Route == Outcome {
+    /// Executor that treats the incoming route as the resolved outcome and
+    /// defers concrete application to the caller.
+    static var identity: Self {
+        .init(
+            resolve: { route in
+                route
+            },
+            apply: { _ in
+                // Intentionally empty.
+            }
+        )
+    }
+}

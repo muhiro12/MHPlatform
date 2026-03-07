@@ -1,4 +1,4 @@
-import MHNotificationPayloads
+import MHPlatform
 #if canImport(UserNotifications)
 import Foundation
 import UserNotifications

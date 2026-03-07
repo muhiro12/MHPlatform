@@ -1,4 +1,4 @@
-import MHNotificationPlans
+import MHPlatform
 import SwiftUI
 
 struct NotificationPlansDemoView: View {

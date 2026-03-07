@@ -1,7 +1,6 @@
 import Combine
 import Foundation
-import MHDeepLinking
-import MHRouteExecution
+import MHPlatform
 
 @MainActor
 final class DeepLinkRoutePipelineDemoModel: ObservableObject {
@@ -95,26 +94,23 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
     }
 
     func ingestDeepLink(_ route: AppRoute) {
-        guard let url = codec.preferredURL(for: route) else {
-            append("ingest: failed to build URL")
-            return
-        }
-
         Task {
-            await inbox.ingest(url)
+            guard let url = await inbox.ingest(
+                route,
+                using: codec
+            ) else {
+                append("ingest: failed to build URL")
+                return
+            }
+
             append("ingest: \(url.absoluteString)")
         }
     }
 
     func processInbox() {
         Task {
-            guard let url = await inbox.consumeLatest() else {
-                append("processInbox: no URL")
-                return
-            }
-
-            guard let route = codec.parse(url) else {
-                append("processInbox: rejected URL")
+            guard let route = await inbox.consumeLatest(using: codec) else {
+                append("processInbox: no route")
                 return
             }
 
