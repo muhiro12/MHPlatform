@@ -194,28 +194,27 @@ struct MHReviewRequesterTests {
             subsystem: "tests.review"
         )
 
-        MHReviewRequester.logOutcome(
+        await MHReviewRequester.logOutcome(
             .requested,
             logger: logger
         )
-        MHReviewRequester.logOutcome(
+        await MHReviewRequester.logOutcome(
             .skippedInvalidLotteryRange,
             logger: logger
         )
-        MHReviewRequester.logOutcome(
+        await MHReviewRequester.logOutcome(
             .skippedNoForegroundScene,
             logger: logger
         )
-        MHReviewRequester.logOutcome(
+        await MHReviewRequester.logOutcome(
             .unsupportedPlatform,
             logger: logger
         )
-        MHReviewRequester.logOutcome(
+        await MHReviewRequester.logOutcome(
             .skippedByPolicy,
             logger: logger
         )
 
-        try? await Task.sleep(for: .milliseconds(50))
         let events = await store.events()
         #expect(events.map(\.level) == [
             .notice,
