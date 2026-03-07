@@ -32,27 +32,71 @@ public enum MHReviewRequester {
         )
     }
 
+    /// Requests an in-app review when the policy allows it and reports the terminal outcome.
+    @MainActor
+    @preconcurrency
+    public static func requestIfNeeded(
+        policy: MHReviewPolicy,
+        randomValueProvider: RandomValueProvider = { range in
+            Int.random(in: range)
+        },
+        sleep: Sleep = { duration in
+            try? await Task.sleep(for: duration)
+        },
+        onOutcome: @Sendable (MHReviewRequestOutcome) -> Void
+    ) async -> MHReviewRequestOutcome {
+        await requestIfNeeded(
+            policy: policy,
+            randomValueProvider: randomValueProvider,
+            sleep: sleep,
+            environment: .live,
+            onOutcome: onOutcome
+        )
+    }
+
     @MainActor
     static func requestIfNeeded(
         policy: MHReviewPolicy,
         randomValueProvider: RandomValueProvider,
         sleep: Sleep,
-        environment: MHReviewRequestEnvironment
+        environment: MHReviewRequestEnvironment,
+        onOutcome: @Sendable (MHReviewRequestOutcome) -> Void = { _ in
+            // no-op
+        }
     ) async -> MHReviewRequestOutcome {
         guard policy.lotteryMaxExclusive > 0 else {
-            return .skippedInvalidLotteryRange
+            return finish(
+                .skippedInvalidLotteryRange,
+                onOutcome: onOutcome
+            )
         }
 
         let randomValue = randomValueProvider(0..<policy.lotteryMaxExclusive)
         guard policy.shouldRequestReview(randomValue: randomValue) else {
-            return .skippedByPolicy
+            return finish(
+                .skippedByPolicy,
+                onOutcome: onOutcome
+            )
         }
 
         if policy.requestDelay != .zero {
             await sleep(policy.requestDelay)
         }
 
-        return environment.requestReview()
+        return finish(
+            environment.requestReview(),
+            onOutcome: onOutcome
+        )
+    }
+}
+
+private extension MHReviewRequester {
+    static func finish(
+        _ outcome: MHReviewRequestOutcome,
+        onOutcome: @Sendable (MHReviewRequestOutcome) -> Void
+    ) -> MHReviewRequestOutcome {
+        onOutcome(outcome)
+        return outcome
     }
 }
 

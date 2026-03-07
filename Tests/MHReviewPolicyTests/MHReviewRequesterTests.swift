@@ -27,6 +27,22 @@ struct MHReviewRequesterTests {
     }
 
     @Test
+    func requestIfNeeded_reports_skipped_invalid_range_once() async {
+        let state = InvocationState()
+        let policy = MHReviewPolicy(
+            lotteryMaxExclusive: 0,
+            requestDelay: .seconds(2)
+        )
+
+        let outcome = await MHReviewRequester.requestIfNeeded(policy: policy) { reportedOutcome in
+            state.recordEvent(String(describing: reportedOutcome))
+        }
+
+        #expect(outcome == .skippedInvalidLotteryRange)
+        #expect(state.eventsValue() == ["skippedInvalidLotteryRange"])
+    }
+
+    @Test
     func requestIfNeeded_returns_skipped_by_policy_without_sleep_when_lottery_misses() async {
         let state = InvocationState()
         let policy = MHReviewPolicy(
@@ -48,6 +64,28 @@ struct MHReviewRequesterTests {
         #expect(outcome == .skippedByPolicy)
         #expect(state.randomCallCountValue() == 1)
         #expect(state.sleepCallCountValue() == 0)
+    }
+
+    @Test
+    func requestIfNeeded_reports_skipped_by_policy_once() async {
+        let state = InvocationState()
+        let policy = MHReviewPolicy(
+            lotteryMaxExclusive: 5,
+            requestDelay: .seconds(2)
+        )
+
+        let outcome = await MHReviewRequester.requestIfNeeded(
+            policy: policy,
+            randomValueProvider: { range in
+                range.upperBound - 1
+            },
+            onOutcome: { reportedOutcome in
+                state.recordEvent(String(describing: reportedOutcome))
+            }
+        )
+
+        #expect(outcome == .skippedByPolicy)
+        #expect(state.eventsValue() == ["skippedByPolicy"])
     }
 
     @Test
@@ -79,6 +117,36 @@ struct MHReviewRequesterTests {
         #expect(state.randomCallCountValue() == 1)
         #expect(state.sleepCallCountValue() == 1)
         #expect(state.eventsValue() == ["sleep", "request"])
+    }
+
+    @Test
+    func requestIfNeeded_reports_requested_once() async {
+        let state = InvocationState()
+        let policy = MHReviewPolicy(
+            lotteryMaxExclusive: 5,
+            requestDelay: .zero
+        )
+        let randomValueProvider: @Sendable (Range<Int>) -> Int = { _ in
+            0
+        }
+        let sleep: @Sendable (Duration) async -> Void = { _ in
+            Issue.record("sleep should not be called")
+        }
+        let environment = MHReviewRequestEnvironment {
+            .requested
+        }
+
+        let outcome = await MHReviewRequester.requestIfNeeded(
+            policy: policy,
+            randomValueProvider: randomValueProvider,
+            sleep: sleep,
+            environment: environment
+        ) { reportedOutcome in
+            state.recordEvent(String(describing: reportedOutcome))
+        }
+
+        #expect(outcome == .requested)
+        #expect(state.eventsValue() == ["requested"])
     }
 
     #if os(iOS)

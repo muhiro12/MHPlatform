@@ -1,8 +1,39 @@
 import Foundation
-import MHLogging
+@testable import MHLogging
 import Testing
 
 struct MHLoggerTests {
+    @Test
+    func loggerFactory_shares_store_policy_and_subsystem_override() async {
+        let factory = MHLoggerFactory(
+            policy: .init(
+                minimumLevel: .debug,
+                persistsToDisk: false,
+                maximumInMemoryEvents: 20,
+                maximumDiskBytes: 1_000
+            ),
+            subsystem: "tests.factory"
+        )
+        let firstLogger = factory.logger(
+            category: "First",
+            source: "Tests/First.swift"
+        )
+        let secondLogger = factory.logger(
+            category: "Second",
+            source: "Tests/Second.swift"
+        )
+
+        await firstLogger.logImmediately(.info, "first")
+        await secondLogger.logImmediately(.notice, "second")
+
+        let events = await factory.store.events()
+        #expect(factory.policy.minimumLevel == .debug)
+        #expect(factory.subsystem == "tests.factory")
+        #expect(events.map(\.message) == ["first", "second"])
+        #expect(events.map(\.subsystem) == ["tests.factory", "tests.factory"])
+        #expect(events.map(\.category) == ["First", "Second"])
+    }
+
     @Test
     func logger_policy_filters_lower_severity() async {
         let store = MHLogStore(
