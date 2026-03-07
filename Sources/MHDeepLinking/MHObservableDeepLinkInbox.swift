@@ -41,3 +41,32 @@ public final class MHObservableDeepLinkInbox {
         pendingURL = url
     }
 }
+
+public extension MHObservableDeepLinkInbox {
+    /// Builds a URL for the route, stores it in memory, and returns the stored URL.
+    @discardableResult
+    func ingest<Route: MHDeepLinkRoute & Sendable>(
+        _ route: Route,
+        using codec: MHDeepLinkCodec<Route>,
+        transport: MHDeepLinkTransport? = nil
+    ) async -> URL? {
+        let url = await inbox.ingest(
+            route,
+            using: codec,
+            transport: transport
+        )
+        if let url {
+            pendingURL = url
+        }
+        return url
+    }
+
+    /// Consumes the latest pending URL and parses it into an app-owned route.
+    func consumeLatest<Route: MHDeepLinkRoute & Sendable>(
+        using codec: MHDeepLinkCodec<Route>
+    ) async -> Route? {
+        let route = await inbox.consumeLatest(using: codec)
+        pendingURL = nil
+        return route
+    }
+}

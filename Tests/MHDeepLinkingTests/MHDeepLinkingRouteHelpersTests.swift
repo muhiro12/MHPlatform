@@ -3,7 +3,7 @@ import MHDeepLinking
 import Testing
 
 struct MHDeepLinkingRouteHelpersTests {
-    private enum ExampleRoute: Equatable, MHDeepLinkRoute {
+    private enum ExampleRoute: Equatable, Sendable, MHDeepLinkRoute {
         case root
         case item(String)
 
@@ -128,6 +128,52 @@ struct MHDeepLinkingRouteHelpersTests {
 
         let route: ExampleRoute? = await inbox.consumeLatest(using: codec)
         #expect(route == nil)
+        #expect(await inbox.consumeLatest() == nil)
+    }
+
+    @Test
+    @MainActor
+    func observable_inbox_route_helper_round_trips_selected_transport() async {
+        let inbox = MHObservableDeepLinkInbox()
+        let codec = MHDeepLinkCodec<ExampleRoute>(
+            configuration: configuration
+        )
+
+        let storedURL = await inbox.ingest(
+            .item("rent"),
+            using: codec,
+            transport: .universalLink
+        )
+
+        #expect(storedURL?.absoluteString == "https://example.com/MHPlatform/item?id=rent")
+        #expect(inbox.pendingURL == storedURL)
+
+        let consumedRoute: ExampleRoute? = await inbox.consumeLatest(using: codec)
+        let emptyRoute: ExampleRoute? = await inbox.consumeLatest(using: codec)
+
+        #expect(consumedRoute == .item("rent"))
+        #expect(emptyRoute == nil)
+        #expect(inbox.pendingURL == nil)
+    }
+
+    @Test
+    @MainActor
+    func observable_inbox_route_helper_returns_nil_for_invalid_pending_url() async throws {
+        let inbox = MHObservableDeepLinkInbox()
+        let codec = MHDeepLinkCodec<ExampleRoute>(
+            configuration: configuration
+        )
+        let invalidURL = try #require(
+            URL(string: "https://invalid.example/MHPlatform/item?id=rent")
+        )
+
+        await inbox.ingest(invalidURL)
+        #expect(inbox.pendingURL == invalidURL)
+
+        let route: ExampleRoute? = await inbox.consumeLatest(using: codec)
+
+        #expect(route == nil)
+        #expect(inbox.pendingURL == nil)
         #expect(await inbox.consumeLatest() == nil)
     }
 }
