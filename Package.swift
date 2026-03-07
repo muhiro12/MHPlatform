@@ -120,7 +120,8 @@ let package = Package(
             name: "MHMutationFlow"
         ),
         .target(
-            name: "MHRouteExecution"
+            name: "MHRouteExecution",
+            dependencies: ["MHLogging"]
         ),
         .target(
             name: "MHPersistenceMaintenance"
@@ -164,7 +165,10 @@ let package = Package(
         ),
         .testTarget(
             name: "MHRouteExecutionTests",
-            dependencies: ["MHRouteExecution"]
+            dependencies: [
+                "MHRouteExecution",
+                "MHLogging"
+            ]
         ),
         .testTarget(
             name: "MHPersistenceMaintenanceTests",
