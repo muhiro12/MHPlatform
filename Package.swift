@@ -121,7 +121,10 @@ let package = Package(
         ),
         .target(
             name: "MHRouteExecution",
-            dependencies: ["MHLogging"]
+            dependencies: [
+                "MHDeepLinking",
+                "MHLogging"
+            ]
         ),
         .target(
             name: "MHPersistenceMaintenance"
@@ -166,6 +169,7 @@ let package = Package(
         .testTarget(
             name: "MHRouteExecutionTests",
             dependencies: [
+                "MHDeepLinking",
                 "MHRouteExecution",
                 "MHLogging"
             ]

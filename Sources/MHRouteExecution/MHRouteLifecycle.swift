@@ -1,4 +1,5 @@
 import Foundation
+import MHDeepLinking
 import MHLogging
 
 /// Shared route lifecycle driver for parsed URLs and app-owned route application.
@@ -12,6 +13,20 @@ public actor MHRouteLifecycle<Route: Sendable> {
 
     private let coordinator: MHRouteCoordinator<Route, Route>
     private let logger: MHLogger
+
+    /// Returns whether a pending route currently exists.
+    public var hasPendingRoute: Bool {
+        get async {
+            await coordinator.hasPendingRoute
+        }
+    }
+
+    /// Returns the current readiness gate state.
+    public var isReady: Bool {
+        get async {
+            await coordinator.isReady
+        }
+    }
 
     /// Creates a lifecycle driver backed by the shared route coordinator.
     @preconcurrency
@@ -86,6 +101,63 @@ public actor MHRouteLifecycle<Route: Sendable> {
         )
         return try await submit(
             route,
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+
+    /// Consumes the latest pending URL from an in-memory inbox and submits it when present.
+    @discardableResult
+    @preconcurrency
+    public func submitLatest(
+        from inbox: MHDeepLinkInbox,
+        parse: RouteParser,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        guard let url = await inbox.consumeLatest() else {
+            return nil
+        }
+
+        return try await submit(
+            url,
+            parse: parse,
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+
+    /// Consumes the latest pending URL from an observable inbox and submits it when present.
+    @discardableResult
+    @preconcurrency
+    public func submitLatest(
+        from inbox: MHObservableDeepLinkInbox,
+        parse: RouteParser,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        guard let url = await inbox.consumeLatest() else {
+            return nil
+        }
+
+        return try await submit(
+            url,
+            parse: parse,
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+
+    /// Consumes the latest pending URL from persistent storage and submits it when present.
+    @discardableResult
+    @preconcurrency
+    public func submitLatest(
+        from store: MHDeepLinkStore,
+        parse: RouteParser,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        guard let url = store.consumeLatest() else {
+            return nil
+        }
+
+        return try await submit(
+            url,
+            parse: parse,
             applyOnMainActor: applyOnMainActor
         )
     }

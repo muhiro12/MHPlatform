@@ -1,4 +1,5 @@
 import Foundation
+@testable import MHDeepLinking
 @testable import MHLogging
 @testable import MHRouteExecution
 import Testing
