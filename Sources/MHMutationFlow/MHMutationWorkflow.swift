@@ -25,6 +25,23 @@ public enum MHMutationWorkflow {
         error.localizedDescription
     }
 
+    /// Runs a main-actor mutation using the default workflow error mapping.
+    @preconcurrency
+    public static func runThrowing<Value: Sendable>(
+        name: String,
+        operation: @escaping @MainActor @Sendable () throws -> Value,
+        adapter: MHMutationAdapter<Value>,
+        operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
+    ) async throws -> Value {
+        try await runThrowing(
+            name: name,
+            operation: operation,
+            adapter: adapter,
+            mapFailure: defaultFailure(from:),
+            operationErrorDescription: operationErrorDescription
+        )
+    }
+
     /// Runs a main-actor mutation using the returned value directly as adapter input.
     @preconcurrency
     public static func runThrowing<Value: Sendable, Failure: Error & Sendable>(
@@ -50,6 +67,32 @@ public enum MHMutationWorkflow {
     }
 
     // swiftlint:disable function_parameter_count
+    /// Runs a main-actor mutation while projecting separate adapter input and return value
+    /// using the default workflow error mapping.
+    @preconcurrency
+    public static func runThrowing<
+        OperationValue,
+        AdapterValue: Sendable,
+        ResultValue: Sendable
+    >(
+        name: String,
+        operation: @escaping @MainActor @Sendable () throws -> OperationValue,
+        adapter: MHMutationAdapter<AdapterValue>,
+        afterSuccess: @escaping @MainActor @Sendable (OperationValue) -> AdapterValue,
+        returning: @escaping @MainActor @Sendable (OperationValue) -> ResultValue,
+        operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
+    ) async throws -> ResultValue {
+        try await runThrowing(
+            name: name,
+            operation: operation,
+            adapter: adapter,
+            afterSuccess: afterSuccess,
+            returning: returning,
+            mapFailure: defaultFailure(from:),
+            operationErrorDescription: operationErrorDescription
+        )
+    }
+
     /// Runs a main-actor mutation while projecting separate adapter input and return value.
     @preconcurrency
     public static func runThrowing<
@@ -97,4 +140,12 @@ public enum MHMutationWorkflow {
         }
     }
     // swiftlint:enable function_parameter_count
+}
+
+private extension MHMutationWorkflow {
+    static func defaultFailure(
+        from failure: MHMutationFailure
+    ) -> MHMutationWorkflowError {
+        .init(failure: failure)
+    }
 }
