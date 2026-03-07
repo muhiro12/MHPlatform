@@ -144,6 +144,32 @@ public enum MHNotificationOrchestrator {
         defaultActionIdentifier: String = "com.apple.UNNotificationDefaultActionIdentifier",
         dismissActionIdentifier: String = "com.apple.UNNotificationDismissActionIdentifier"
     ) async -> MHNotificationRouteDeliveryOutcome {
+        let outcome = routeDeliveryOutcome(
+            userInfo: userInfo,
+            actionIdentifier: actionIdentifier,
+            codec: codec,
+            fallbackRouteURL: fallbackRouteURL,
+            defaultActionIdentifier: defaultActionIdentifier,
+            dismissActionIdentifier: dismissActionIdentifier
+        )
+
+        return await deliverRouteURL(
+            outcome,
+            deliver: deliver,
+            clearPendingURLWhenNoRoute: clearPendingURLWhenNoRoute
+        )
+    }
+
+    /// Resolves a route URL and returns the delivery outcome without performing delivery.
+    @preconcurrency
+    public static func routeDeliveryOutcome(
+        userInfo: [AnyHashable: Any],
+        actionIdentifier: String,
+        codec: MHNotificationPayloadCodec = .init(),
+        fallbackRouteURL: @Sendable (MHNotificationPayload?, MHNotificationResponseContext) -> URL? = { _, _ in nil },
+        defaultActionIdentifier: String = "com.apple.UNNotificationDefaultActionIdentifier",
+        dismissActionIdentifier: String = "com.apple.UNNotificationDismissActionIdentifier"
+    ) -> MHNotificationRouteDeliveryOutcome {
         let payload = codec.decode(userInfo)
         let response = MHNotificationResponseContext(
             actionIdentifier: actionIdentifier,
@@ -151,13 +177,25 @@ public enum MHNotificationOrchestrator {
             dismissActionIdentifier: dismissActionIdentifier
         )
 
-        return await deliverRouteURL(
+        return routeDeliveryOutcome(
             payload: payload,
             response: response,
-            deliver: deliver,
-            clearPendingURLWhenNoRoute: clearPendingURLWhenNoRoute,
             fallbackRouteURL: fallbackRouteURL
         )
+    }
+
+    /// Delivers a previously resolved route delivery outcome.
+    @preconcurrency
+    public static func deliverRouteURL(
+        _ outcome: MHNotificationRouteDeliveryOutcome,
+        deliver: @MainActor @Sendable (URL?) async -> Void,
+        clearPendingURLWhenNoRoute: Bool = false
+    ) async -> MHNotificationRouteDeliveryOutcome {
+        if clearPendingURLWhenNoRoute || outcome.routeURL != nil {
+            await deliver(outcome.routeURL)
+        }
+
+        return outcome
     }
 
     private static func routeDeliveryOutcome(

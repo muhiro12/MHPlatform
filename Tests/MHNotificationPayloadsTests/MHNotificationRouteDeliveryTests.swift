@@ -142,14 +142,17 @@ struct MHNotificationRouteDeliveryTests {
             ]
         ]
 
-        let outcome = await MHNotificationOrchestrator.deliverRouteURL(
+        let outcome = MHNotificationOrchestrator.routeDeliveryOutcome(
             userInfo: userInfo,
             actionIdentifier: "view-month",
-            codec: codec,
+            codec: codec
+        )
+        let deliveredOutcome = await MHNotificationOrchestrator.deliverRouteURL(
+            outcome,
             deliver: deliver
         )
 
-        #expect(outcome == .init(
+        #expect(deliveredOutcome == .init(
             routeURL: url("mhplatform://month?year=2026&month=1"),
             source: .payload
         ))
@@ -163,10 +166,9 @@ struct MHNotificationRouteDeliveryTests {
             await recorder.record(routeURL)
         }
 
-        let outcome = await MHNotificationOrchestrator.deliverRouteURL(
+        let outcome = MHNotificationOrchestrator.routeDeliveryOutcome(
             userInfo: [:],
             actionIdentifier: "browse",
-            deliver: deliver
         ) { _, response in
             guard response.actionIdentifier == "browse" else {
                 return nil
@@ -174,12 +176,36 @@ struct MHNotificationRouteDeliveryTests {
 
             return url("mhplatform://recipes")
         }
+        let deliveredOutcome = await MHNotificationOrchestrator.deliverRouteURL(
+            outcome,
+            deliver: deliver
+        )
 
-        #expect(outcome == .init(
+        #expect(deliveredOutcome == .init(
             routeURL: url("mhplatform://recipes"),
             source: .fallback
         ))
         #expect(await recorder.values() == [url("mhplatform://recipes")])
+    }
+
+    @Test
+    func deliverRouteURL_outcome_skips_delivery_when_no_route_and_clear_is_disabled() async {
+        let recorder = DeliveryRecorder()
+        let deliver: @MainActor @Sendable (URL?) async -> Void = { routeURL in
+            await recorder.record(routeURL)
+        }
+        let outcome = MHNotificationRouteDeliveryOutcome(
+            routeURL: nil,
+            source: .noRoute
+        )
+
+        let deliveredOutcome = await MHNotificationOrchestrator.deliverRouteURL(
+            outcome,
+            deliver: deliver
+        )
+
+        #expect(deliveredOutcome == outcome)
+        #expect(await recorder.values().isEmpty)
     }
 }
 
