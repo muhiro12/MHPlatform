@@ -36,11 +36,13 @@ MHPlatform is maintained as an internal app platform foundation for reusable non
   both apps.
 - `MHReviewPolicy` is shared today, but review triggers and surrounding
   workflow decisions remain app-specific.
-- `MHMutationFlow` is available in MHPlatform and now includes an app-facing
-  adapter contract, but it has not been adopted in the apps yet.
+- `MHMutationFlow` now includes both the low-level runner and the higher-level
+  `MHMutationWorkflow` shell shaped by the local mutation workflow wrappers
+  already present in both apps, while app-side cutover remains deferred.
 - Recent platform-first work adds helper surfaces for route execution,
-  deep-link handoff, logging setup, and mutation adapter composition without
-  moving app-owned route/effect models into MHPlatform.
+  deep-link handoff, logging setup, mutation adapter composition, and
+  mutation workflow shells without moving app-owned route/effect models into
+  MHPlatform.
 
 ## Module Boundaries
 
@@ -101,12 +103,15 @@ Integration contract:
 Integration contract:
 [`MHMutationFlow`](integration-contracts.md#mhmutationflow)
 
+- Owns app-facing workflow shells:
+  `MHMutationWorkflow`, `MHMutationWorkflowError`
 - Owns mutation retry, cancellation, and post-success side-effect orchestration
 - Owns the app-facing adapter bridge from successful mutation values to ordered
   `MHMutationStep`s through `MHMutationAdapter`
 - Owns additive adapter composition helpers for sequencing fixed and
   value-derived post-success steps
-- Exposes observable execution events through `MHMutationEvent`
+- Exposes low-level runner and observable execution events through
+  `MHMutationRunner`, `MHMutationEvent`
 - Does not define a shared cross-app mutation metadata, hint, or effect schema
 - Does not own persistence, widgets, notifications, or review APIs directly
 

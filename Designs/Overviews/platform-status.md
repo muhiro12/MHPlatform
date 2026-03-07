@@ -11,6 +11,8 @@
   defaults.
 - Added `MHMutationAdapter.appending(_:)` so apps can combine fixed and
   value-derived follow-up steps without introducing a shared mutation schema.
+- Added `MHMutationWorkflow` and `MHMutationWorkflowError` so apps can stop
+  recreating the same thin failure-mapping shell around `MHMutationRunner`.
 - Updated `MHPlatformExample` to demonstrate these helpers through the umbrella
   `MHPlatform` product.
 - Refreshed the README and architecture docs to describe these helper
@@ -34,7 +36,8 @@
 - `MHLogging` with structured logging, query/export surfaces, and
   `MHLoggerFactory` for shared setup ergonomics.
 - `MHMutationFlow` with retry, cancellation, fixed `afterSuccess` steps, and
-  value-driven `MHMutationAdapter` plus additive adapter composition.
+  value-driven `MHMutationAdapter`, additive adapter composition, and the
+  higher-level `MHMutationWorkflow` shell.
 
 ## Adopted in Apps Today
 
@@ -45,13 +48,16 @@
 - Both apps currently use `MHAppRuntime` and `MHReviewPolicy`.
 - Both apps already have route/deep-link/notification code paths that can
   consume the new helper surfaces later without changing MHPlatform again.
-- Neither app imports `MHMutationFlow` yet.
+- Both apps now keep local mutation workflow wrappers whose shape matches
+  `MHMutationWorkflow`, but direct package-side adoption remains deferred.
 
 Reference evidence:
 - `Incomes/Incomes/Sources/IncomesApp.swift`
 - `Incomes/Incomes/Sources/ContentView.swift`
+- `Incomes/Incomes/Sources/Common/Services/IncomesMutationWorkflow.swift`
 - `Cookle/Cookle/CookleApp.swift`
 - `Cookle/Cookle/ContentView.swift`
+- `Cookle/Cookle/Sources/Common/Services/CookleMutationWorkflow.swift`
 
 ## Still App-Specific
 

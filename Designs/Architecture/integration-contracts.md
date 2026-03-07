@@ -144,6 +144,8 @@ This document is normative for integration design.
 - `MHMutation<Value>` (named operation unit)
 - Optional `MHMutationRetryPolicy`
 - Optional `MHCancellationHandle`
+- Optional high-level workflow shell:
+  - `MHMutationWorkflow`
 - Optional post-success bridge:
   - `MHMutationAdapter<Value>` for deriving ordered steps from a successful
     app-owned mutation value
@@ -153,6 +155,9 @@ This document is normative for integration design.
 
 ### Outputs
 
+- Throwing workflow shell:
+  - `MHMutationWorkflow.runThrowing`
+  - `MHMutationWorkflowError`
 - `MHMutationRun<Value>` (from `start`):
   - `events: AsyncStream<MHMutationEvent<Value>>`
   - `outcome: Task<MHMutationOutcome<Value>, Never>`
@@ -167,12 +172,16 @@ This document is normative for integration design.
 ### Threading / Actor
 
 - Runner is actor-agnostic.
+- `MHMutationWorkflow.runThrowing` expects main-actor operations and bridges
+  failure into a throwing app-facing shell.
 - Events are emitted on runner execution context.
 - UI observers must explicitly bridge to `MainActor`.
 
 ### Intended Call Sites
 
 - Save/update/delete orchestration in app workflow services
+- Main-actor workflow helpers that want default failure mapping plus ordered
+  post-success steps
 - Mutation services whose success values already carry app-owned follow-up
   hints or effect metadata
 - Retriable network + local side-effect flows

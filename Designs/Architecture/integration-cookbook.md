@@ -128,7 +128,7 @@ func syncRequests(
 #endif
 ```
 
-## Recipe 3: MutationOutcome -> ReviewPolicy
+## Recipe 3: MutationWorkflow -> ReviewPolicy
 
 Trigger review policy only from meaningful success outcomes.
 
@@ -136,36 +136,68 @@ Trigger review policy only from meaningful success outcomes.
 import MHMutationFlow
 import MHReviewPolicy
 
+struct SaveSummary: Sendable {
+    let itemID: String
+    let shouldSyncNotifications: Bool
+    let shouldRequestReview: Bool
+}
+
 @MainActor
 func runSaveAndMaybeRequestReview() async {
-    let mutation = MHMutation<Void>(
-        name: "saveItem",
-        operation: {
-            try await saveItem()
+    let reviewPolicy = MHReviewPolicy(
+        lotteryMaxExclusive: 10,
+        requestDelay: .seconds(1)
+    )
+    let adapter = MHMutationAdapter<SaveSummary> { summary in
+        var steps = [MHMutationStep]()
+
+        if summary.shouldSyncNotifications {
+            steps.append(
+                .mainActor(name: "syncNotifications") {
+                    try await syncNotifications()
+                }
+            )
         }
-    )
 
-    let run = MHMutationRunner.start(
-        mutation: mutation,
-        retryPolicy: .init(maximumAttempts: 3, backoff: .fixed(.milliseconds(200))),
-        afterSuccess: [
-            .init(name: "syncNotifications") { try await syncNotifications() }
-        ]
-    )
+        if summary.shouldRequestReview {
+            steps.append(
+                .mainActor(name: "requestReview") {
+                    _ = await MHReviewRequester.requestIfNeeded(
+                        policy: reviewPolicy
+                    )
+                }
+            )
+        }
 
-    for await event in run.events {
-        logMutationEvent(event)
+        return steps
     }
 
-    let outcome = await run.outcome.value
-    guard case .succeeded = outcome else {
-        return
+    do {
+        let itemID = try await MHMutationWorkflow.runThrowing(
+            name: "saveItem",
+            operation: {
+                try await saveItem()
+            },
+            adapter: adapter,
+            afterSuccess: { item in
+                SaveSummary(
+                    itemID: item.id,
+                    shouldSyncNotifications: true,
+                    shouldRequestReview: true
+                )
+            },
+            returning: { item in
+                item.id
+            }
+        )
+        logMutationSuccess(itemID)
+    } catch let error as MHMutationWorkflowError {
+        logMutationFailure(error)
+    } catch is CancellationError {
+        logMutationCancellation()
+    } catch {
+        logUnexpectedFailure(error)
     }
-
-    let reviewOutcome = await MHReviewRequester.requestIfNeeded(
-        policy: .init(lotteryMaxExclusive: 10, requestDelay: .seconds(1))
-    )
-    logReviewOutcome(reviewOutcome)
 }
 ```
 
@@ -226,7 +258,8 @@ struct DebugLogView: View {
 1. `MHDeepLinking` + `MHRouteExecution` を先行導入し、起動直後の deep link 取りこぼしを防ぐ。
 2. `MHNotificationPlans` を導入し、既存通知候補から deterministic な `Plan` を生成する。
 3. `MHNotificationPayloads` を導入し、payload codec と route resolver を統一する。
-4. `MHMutationFlow` で更新系ワークフローの retry/cancel/event/outcome を標準化する。
+4. `MHMutationWorkflow` と `MHMutationAdapter` で更新系ワークフローの
+   ordered follow-up steps と default failure mapping を標準化する。
 5. `MHPersistenceMaintenance` と `MHPreferences` を段階導入し、起動時保守処理と typed preferences を統一する。
 6. 最後に `MHReviewPolicy` を `MHMutationOutcome.succeeded` 起点で接続する。
 7. `MHLogging` を導入し、Debug画面で `MHLogConsoleView` による検索と JSONL 抽出を提供する。
@@ -236,7 +269,8 @@ struct DebugLogView: View {
 1. `MHPreferences` と `MHNotificationPayloads` を先に入れて設定/通知の契約を安定化する。
 2. `MHDeepLinking` + `MHRouteExecution` を導入し、widget/push 入口を readiness-aware に統合する。
 3. `MHNotificationPlans` を導入して候補選定を deterministic 化する。
-4. `MHMutationFlow` を保存系処理へ適用し、Outcome/Event ベースの副作用判断へ寄せる。
+4. `MHMutationWorkflow` を保存系処理へ適用し、app-owned effect metadata を
+   ordered follow-up steps へ寄せる。
 5. `MHPersistenceMaintenance` を導入して migration/reset orchestration を共通化する。
 6. `MHReviewPolicy` は成功体験フローに限定して接続する。
 7. `MHLogging` を導入し、`Logger(#file)` 相当の呼び出しを `MHLogger` に統一する。

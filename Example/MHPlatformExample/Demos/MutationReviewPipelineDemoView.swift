@@ -2,13 +2,12 @@ import MHPlatform
 import SwiftUI
 
 struct MutationReviewPipelineDemoView: View {
-    private enum Constants {
-        static let retryMaximumAttempts = 2
+    nonisolated private enum Constants {
         static let reviewLotteryMaxExclusive = 10
         static let forcedReviewLotteryHit = 0
     }
 
-    enum Scenario: String, CaseIterable, Identifiable {
+    nonisolated enum Scenario: String, CaseIterable, Identifiable {
         case success
         case failure
 
@@ -17,9 +16,45 @@ struct MutationReviewPipelineDemoView: View {
         }
     }
 
+    nonisolated private struct SaveDraftResult: Sendable {
+        let message: String
+        let shouldSynchronizeNotifications: Bool
+        let shouldRequestReview: Bool
+    }
+
+    nonisolated private struct PipelineSummaries: Sendable {
+        let mutation: String
+        let review: String
+    }
+
+    nonisolated private struct PipelineSnapshot: Sendable {
+        let didSynchronizeNotifications: Bool
+        let reviewOutcome: MHReviewRequestOutcome?
+    }
+
+    private actor PipelineRecorder {
+        private var didSynchronizeNotifications = false
+        private var reviewOutcome: MHReviewRequestOutcome?
+
+        func markNotificationsSynchronized() {
+            didSynchronizeNotifications = true
+        }
+
+        func recordReviewOutcome(_ outcome: MHReviewRequestOutcome) {
+            reviewOutcome = outcome
+        }
+
+        func snapshot() -> PipelineSnapshot {
+            .init(
+                didSynchronizeNotifications: didSynchronizeNotifications,
+                reviewOutcome: reviewOutcome
+            )
+        }
+    }
+
     @State private var scenario: Scenario = .success
     @State private var isRunning = false
-    @State private var mutationSummary = "Run a mutation scenario."
+    @State private var mutationSummary = "Run a mutation workflow scenario."
     @State private var reviewSummary = "Review policy has not been triggered yet."
 
     var body: some View {
@@ -42,7 +77,7 @@ struct MutationReviewPipelineDemoView: View {
             }
             .pickerStyle(.segmented)
 
-            Button(isRunning ? "Running..." : "Run Pipeline") {
+            Button(isRunning ? "Running..." : "Run Workflow") {
                 runPipeline()
             }
             .disabled(isRunning)
@@ -50,7 +85,7 @@ struct MutationReviewPipelineDemoView: View {
     }
 
     private var mutationOutcomeSection: some View {
-        Section("Mutation Outcome") {
+        Section("Mutation Workflow") {
             Text(mutationSummary)
                 .font(.caption.monospaced())
                 .textSelection(.enabled)
@@ -66,98 +101,158 @@ struct MutationReviewPipelineDemoView: View {
     }
 
     private func runPipeline() {
+        let selectedScenario = scenario
+
         isRunning = true
-        mutationSummary = "Running mutation..."
-        reviewSummary = "Waiting for mutation outcome..."
+        mutationSummary = "Running mutation workflow..."
+        reviewSummary = "Waiting for mutation success..."
 
         Task {
-            let outcome = await runMutationScenario(scenario)
-            let review = await triggerReviewIfNeeded(from: outcome)
+            let recorder = PipelineRecorder()
+            let summaries = await runPipelineTask(
+                selectedScenario,
+                recorder: recorder
+            )
 
             await MainActor.run {
-                mutationSummary = describeMutationOutcome(outcome)
-                reviewSummary = review
+                mutationSummary = summaries.mutation
+                reviewSummary = summaries.review
                 isRunning = false
             }
         }
     }
 
-    private func runMutationScenario(_ scenario: Scenario) async -> MHMutationOutcome<String> {
-        let mutation = MHMutation<String>(
-            name: "saveDraft"
-        ) {
-            if scenario == .failure {
-                throw PipelineError.mutationFailed
-            }
-            return "saved"
-        }
+    private func runPipelineTask(
+        _ scenario: Scenario,
+        recorder: PipelineRecorder
+    ) async -> PipelineSummaries {
+        do {
+            let result = try await runMutationScenario(
+                scenario,
+                recorder: recorder
+            )
+            let snapshot = await recorder.snapshot()
 
-        return await MHMutationRunner.run(
-            mutation: mutation,
-            retryPolicy: .init(
-                maximumAttempts: Constants.retryMaximumAttempts,
-                backoff: .immediate
-            ),
-            afterSuccess: [
-                .init(name: "syncNotifications") {
-                    // Intentionally empty.
-                }
-            ]
-        )
+            return .init(
+                mutation: describeMutationSuccess(
+                    result,
+                    snapshot: snapshot
+                ),
+                review: describeReviewSummary(snapshot.reviewOutcome)
+            )
+        } catch is CancellationError {
+            return .init(
+                mutation: "cancelled",
+                review: "Skipped: mutation workflow was cancelled."
+            )
+        } catch let error as MHMutationWorkflowError {
+            return .init(
+                mutation: "failed(error=\(error.description))",
+                review: "Skipped: mutation workflow did not succeed."
+            )
+        } catch {
+            return .init(
+                mutation: "failed(error=\(error.localizedDescription))",
+                review: "Skipped: mutation workflow did not succeed."
+            )
+        }
     }
 
-    @MainActor
-    private func triggerReviewIfNeeded(
-        from mutationOutcome: MHMutationOutcome<String>
-    ) async -> String {
-        guard case .succeeded = mutationOutcome else {
-            return "Skipped: mutation did not succeed."
-        }
-
-        let policy = MHReviewPolicy(
+    private func runMutationScenario(
+        _ scenario: Scenario,
+        recorder: PipelineRecorder
+    ) async throws -> SaveDraftResult {
+        let reviewPolicy = MHReviewPolicy(
             lotteryMaxExclusive: Constants.reviewLotteryMaxExclusive,
             requestDelay: .zero
         )
 
-        let outcome = await MHReviewRequester.requestIfNeeded(
-            policy: policy,
-            randomValueProvider: { _ in
-                Constants.forcedReviewLotteryHit
-            },
-            sleep: { _ in
-                // Intentionally empty.
-            }
-        )
+        let adapter = MHMutationAdapter<SaveDraftResult> { result in
+            var steps = [MHMutationStep]()
 
-        return "Triggered after success: \(outcome)"
+            if result.shouldSynchronizeNotifications {
+                steps.append(
+                    .mainActor(name: "syncNotifications") {
+                        await recorder.markNotificationsSynchronized()
+                    }
+                )
+            }
+
+            if result.shouldRequestReview {
+                steps.append(
+                    .mainActor(name: "requestReview") {
+                        let outcome = await MHReviewRequester.requestIfNeeded(
+                            policy: reviewPolicy,
+                            randomValueProvider: { _ in
+                                Constants.forcedReviewLotteryHit
+                            },
+                            sleep: { _ in
+                                // Intentionally empty.
+                            }
+                        )
+                        await recorder.recordReviewOutcome(outcome)
+                    }
+                )
+            }
+
+            return steps
+        }
+
+        return try await MHMutationWorkflow.runThrowing(
+            name: "saveDraft",
+            operation: {
+                if scenario == .failure {
+                    throw PipelineError.mutationFailed
+                }
+
+                return .init(
+                    message: "saved",
+                    shouldSynchronizeNotifications: true,
+                    shouldRequestReview: true
+                )
+            },
+            adapter: adapter,
+            operationErrorDescription: Self.operationErrorDescription
+        )
     }
 
-    private func describeMutationOutcome(_ outcome: MHMutationOutcome<String>) -> String {
-        switch outcome {
-        case let .succeeded(value, attempts, completedSteps):
-            return [
-                "succeeded(value=\(value)",
-                "attempts=\(attempts)",
-                "completed=\(completedSteps))"
-            ].joined(separator: ", ")
-        case let .failed(failure, attempts, completedSteps, isRecoverable):
-            return [
-                "failed(failure=\(failure)",
-                "attempts=\(attempts)",
-                "completed=\(completedSteps)",
-                "recoverable=\(isRecoverable))"
-            ].joined(separator: ", ")
-        case let .cancelled(attempts, completedSteps):
-            return [
-                "cancelled(attempts=\(attempts)",
-                "completed=\(completedSteps))"
-            ].joined(separator: ", ")
+    private func describeMutationSuccess(
+        _ result: SaveDraftResult,
+        snapshot: PipelineSnapshot
+    ) -> String {
+        [
+            "succeeded(message=\(result.message)",
+            "notificationsSynced=\(snapshot.didSynchronizeNotifications)",
+            "reviewStep=\(snapshot.reviewOutcome != nil))"
+        ].joined(separator: ", ")
+    }
+
+    private func describeReviewSummary(
+        _ outcome: MHReviewRequestOutcome?
+    ) -> String {
+        guard let outcome else {
+            return "Skipped: no review step ran."
         }
+
+        return "Triggered after success: \(outcome)"
     }
 }
 
 private extension MutationReviewPipelineDemoView {
-    enum PipelineError: Error {
+    nonisolated enum PipelineError: Error {
         case mutationFailed
+    }
+
+    nonisolated static func operationErrorDescription(
+        _ error: any Error
+    ) -> String {
+        if let pipelineError = error as? PipelineError {
+            switch pipelineError {
+            case .mutationFailed:
+                return "mutation failed"
+            }
+        }
+
+        return error.localizedDescription
     }
 }

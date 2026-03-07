@@ -67,13 +67,15 @@ import MHRouteExecution
 - `MHReviewPolicy` is already shared, but the surrounding workflow triggers stay
   app-specific.
 - Domain mutation result models, follow-up metadata, and concrete side effects
-  still belong to each app. `MHMutationFlow` now provides a bridge for future
-  adoption without standardizing those app-specific schemas.
+  still belong to each app. `MHMutationFlow` now provides both
+  `MHMutationAdapter` and the higher-level `MHMutationWorkflow` shell so apps
+  can converge on a shared workflow shape without standardizing those
+  app-specific schemas.
 - Recent MHPlatform-first additions focus on thinner app integration:
   `MHRouteExecution` identity helpers, codec-backed deep-link inbox/store
-  helpers, `MHLoggerFactory`, and `MHMutationAdapter` composition. These reduce
-  app-side boilerplate without moving route enums, effect models, or concrete
-  side effects into MHPlatform.
+  helpers, `MHLoggerFactory`, `MHMutationAdapter` composition, and
+  `MHMutationWorkflow`. These reduce app-side boilerplate without moving route
+  enums, effect models, or concrete side effects into MHPlatform.
 
 ## MHAppRuntime
 
@@ -181,11 +183,15 @@ let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
 
 ## MHMutationFlow
 
-`MHMutationFlow` runs a mutation with retry, cancellation, and ordered
-post-success side effects. `MHMutationAdapter` lets an app map its own success
-value metadata or effect hints into ordered steps without introducing a shared
-cross-app mutation outcome model. Adapters can also be composed to keep fixed
-and value-derived follow-up steps explicit.
+`MHMutationFlow` supports two adoption levels. Reach for
+`MHMutationWorkflow` when the app wants a default throwing shell with ordered
+follow-up steps. Drop to `MHMutationRunner` directly only when the app needs
+explicit retry, cancellation, or event streaming control.
+
+`MHMutationAdapter` lets an app map its own success value metadata or effect
+hints into ordered steps without introducing a shared cross-app mutation
+outcome model. Adapters can also be composed to keep fixed and value-derived
+follow-up steps explicit.
 
 Integration contract:
 [`MHMutationFlow`](Designs/Architecture/integration-contracts.md#mhmutationflow)
@@ -194,44 +200,44 @@ Integration contract:
 import MHMutationFlow
 
 struct SaveItemResult: Sendable {
+    let value: String
     let shouldReloadWidgets: Bool
-    let shouldRequestReview: Bool
+    let shouldSyncNotifications: Bool
 }
 
-let mutation = MHMutation<SaveItemResult>(
-    name: "save-item",
-    operation: {
-        .init(
-            shouldReloadWidgets: true,
-            shouldRequestReview: true
-        )
-    }
-)
-
-let workflowAdapter = MHMutationAdapter<SaveItemResult> { result in
+let adapter = MHMutationAdapter<SaveItemResult> { result in
     var steps = [MHMutationStep]()
 
     if result.shouldReloadWidgets {
-        steps.append(.init(name: "reloadWidgets") {})
+        steps.append(.mainActor(name: "reloadWidgets") {
+            reloadWidgets()
+        })
+    }
+
+    if result.shouldSyncNotifications {
+        steps.append(.mainActor(name: "syncNotifications") {
+            await syncNotifications()
+        })
     }
 
     return steps
 }
-let reviewAdapter = MHMutationAdapter<SaveItemResult> { result in
-    if result.shouldRequestReview {
-        return [.init(name: "requestReview") {}]
-    }
 
-    return []
-}
-let adapter = workflowAdapter.appending(reviewAdapter)
-
-let outcome = await MHMutationRunner.run(
-    mutation: mutation,
-    adapter: adapter,
-    retryPolicy: .default
+let result = try await MHMutationWorkflow.runThrowing(
+    name: "save-item",
+    operation: {
+        .init(
+            value: "saved",
+            shouldReloadWidgets: true,
+            shouldSyncNotifications: true
+        )
+    },
+    adapter: adapter
 )
 ```
+
+The lower-level `MHMutationRunner` remains available when the app needs custom
+retry policy, cancellation handles, or observable event streams.
 
 ## MHRouteExecution
 
@@ -363,6 +369,6 @@ It includes cross-module demos for:
 - DeepLinking + RouteExecution pipeline
 - RouteExecution identity-route apply path
 - NotificationPlans + NotificationPayloads pipeline
-- MutationOutcome-driven ReviewPolicy trigger
+- MutationWorkflow-driven ReviewPolicy trigger
 - Structured logging + JSONL analysis workflow
 - MutationFlow adapter composition with ordered follow-up steps
