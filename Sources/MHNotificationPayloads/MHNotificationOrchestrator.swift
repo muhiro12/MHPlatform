@@ -137,30 +137,27 @@ public enum MHNotificationOrchestrator {
     public static func deliverRouteURL(
         userInfo: [AnyHashable: Any],
         actionIdentifier: String,
-        deliver: @MainActor @Sendable (URL?) async -> Void,
         codec: MHNotificationPayloadCodec = .init(),
+        deliver: @MainActor @Sendable (URL?) async -> Void,
         clearPendingURLWhenNoRoute: Bool = false,
-        fallbackRouteURL: @Sendable ([AnyHashable: Any], String) -> URL? = { _, _ in nil },
+        fallbackRouteURL: @Sendable (MHNotificationPayload?, MHNotificationResponseContext) -> URL? = { _, _ in nil },
         defaultActionIdentifier: String = "com.apple.UNNotificationDefaultActionIdentifier",
         dismissActionIdentifier: String = "com.apple.UNNotificationDismissActionIdentifier"
     ) async -> MHNotificationRouteDeliveryOutcome {
+        let payload = codec.decode(userInfo)
         let response = MHNotificationResponseContext(
             actionIdentifier: actionIdentifier,
             defaultActionIdentifier: defaultActionIdentifier,
             dismissActionIdentifier: dismissActionIdentifier
         )
-        let outcome = routeDeliveryOutcome(
-            userInfo: userInfo,
+
+        return await deliverRouteURL(
+            payload: payload,
             response: response,
-            codec: codec,
+            deliver: deliver,
+            clearPendingURLWhenNoRoute: clearPendingURLWhenNoRoute,
             fallbackRouteURL: fallbackRouteURL
         )
-
-        if clearPendingURLWhenNoRoute || outcome.routeURL != nil {
-            await deliver(outcome.routeURL)
-        }
-
-        return outcome
     }
 
     private static func routeDeliveryOutcome(
@@ -181,38 +178,6 @@ public enum MHNotificationOrchestrator {
         if let routeURL = fallbackRouteURL(
             payload,
             response
-        ) {
-            return .init(
-                routeURL: routeURL,
-                source: .fallback
-            )
-        }
-
-        return .init(
-            routeURL: nil,
-            source: .noRoute
-        )
-    }
-
-    private static func routeDeliveryOutcome(
-        userInfo: [AnyHashable: Any],
-        response: MHNotificationResponseContext,
-        codec: MHNotificationPayloadCodec,
-        fallbackRouteURL: @Sendable ([AnyHashable: Any], String) -> URL?
-    ) -> MHNotificationRouteDeliveryOutcome {
-        if let routeURL = resolveRouteURL(
-            payload: codec.decode(userInfo),
-            response: response
-        ) {
-            return .init(
-                routeURL: routeURL,
-                source: .payload
-            )
-        }
-
-        if let routeURL = fallbackRouteURL(
-            userInfo,
-            response.actionIdentifier
         ) {
             return .init(
                 routeURL: routeURL,

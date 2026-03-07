@@ -120,6 +120,67 @@ struct MHNotificationRouteDeliveryTests {
         ))
         #expect(await recorder.values() == [legacyURL, nil])
     }
+
+    @Test
+    func deliverRouteURL_fromUserInfo_uses_custom_codec_keys() async {
+        let recorder = DeliveryRecorder()
+        let deliver: @MainActor @Sendable (URL?) async -> Void = { routeURL in
+            await recorder.record(routeURL)
+        }
+        let codec = MHNotificationPayloadCodec(
+            configuration: .init(
+                keys: .init(
+                    defaultRouteURL: "primary",
+                    fallbackRouteURL: "secondary",
+                    actionRouteURLs: "actions"
+                )
+            )
+        )
+        let userInfo: [AnyHashable: Any] = [
+            "actions": [
+                "view-month": "mhplatform://month?year=2026&month=1"
+            ]
+        ]
+
+        let outcome = await MHNotificationOrchestrator.deliverRouteURL(
+            userInfo: userInfo,
+            actionIdentifier: "view-month",
+            codec: codec,
+            deliver: deliver
+        )
+
+        #expect(outcome == .init(
+            routeURL: url("mhplatform://month?year=2026&month=1"),
+            source: .payload
+        ))
+        #expect(await recorder.values() == [url("mhplatform://month?year=2026&month=1")])
+    }
+
+    @Test
+    func deliverRouteURL_fromUserInfo_uses_response_based_fallback() async {
+        let recorder = DeliveryRecorder()
+        let deliver: @MainActor @Sendable (URL?) async -> Void = { routeURL in
+            await recorder.record(routeURL)
+        }
+
+        let outcome = await MHNotificationOrchestrator.deliverRouteURL(
+            userInfo: [:],
+            actionIdentifier: "browse",
+            deliver: deliver
+        ) { _, response in
+            guard response.actionIdentifier == "browse" else {
+                return nil
+            }
+
+            return url("mhplatform://recipes")
+        }
+
+        #expect(outcome == .init(
+            routeURL: url("mhplatform://recipes"),
+            source: .fallback
+        ))
+        #expect(await recorder.values() == [url("mhplatform://recipes")])
+    }
 }
 
 private func url(_ value: String) -> URL {
