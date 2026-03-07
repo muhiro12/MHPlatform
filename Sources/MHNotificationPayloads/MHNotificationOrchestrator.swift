@@ -135,7 +135,7 @@ public enum MHNotificationOrchestrator {
     /// Resolves a route URL, applies app-specific fallback policy, and delivers it.
     @preconcurrency
     public static func deliverRouteURL(
-        userInfo: [AnyHashable: Any],
+        userInfo: sending [AnyHashable: Any],
         actionIdentifier: String,
         codec: MHNotificationPayloadCodec = .init(),
         deliver: @MainActor @Sendable (URL?) async -> Void,
