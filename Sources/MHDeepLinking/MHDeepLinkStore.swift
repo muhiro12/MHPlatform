@@ -14,6 +14,21 @@ public final class MHDeepLinkStore {
         self.key = key
     }
 
+    /// Creates a persistent deep-link store backed by a suite-scoped `UserDefaults`.
+    public convenience init?(
+        suiteName: String,
+        key: String
+    ) {
+        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+            return nil
+        }
+
+        self.init(
+            userDefaults: userDefaults,
+            key: key
+        )
+    }
+
     /// Persists a pending URL.
     public func ingest(_ url: URL) {
         userDefaults.set(url.absoluteString, forKey: key)

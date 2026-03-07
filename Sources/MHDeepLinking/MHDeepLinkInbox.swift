@@ -20,4 +20,9 @@ public actor MHDeepLinkInbox {
         pendingURL = nil
         return currentURL
     }
+
+    /// Clears any pending URL without consuming it.
+    public func clear() {
+        pendingURL = nil
+    }
 }
