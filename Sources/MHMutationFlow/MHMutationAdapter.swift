@@ -54,4 +54,14 @@ public struct MHMutationAdapter<Value: Sendable>: Sendable {
             steps(for: value) + other.steps(for: value)
         }
     }
+
+    /// Reuses this adapter for a new value by mapping the new value first.
+    @preconcurrency
+    public func contramap<NewValue: Sendable>(
+        _ transform: @escaping @Sendable (NewValue) -> Value
+    ) -> MHMutationAdapter<NewValue> {
+        .init { newValue in
+            steps(for: transform(newValue))
+        }
+    }
 }
