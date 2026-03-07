@@ -32,6 +32,13 @@ public actor MHDeepLinkInbox {
     }
 }
 
+extension MHDeepLinkInbox: MHDeepLinkURLSource {
+    /// Consumes and clears the latest pending URL.
+    public func consumeLatestURL() async -> URL? { // swiftlint:disable:this async_without_await
+        consumeLatest()
+    }
+}
+
 public extension MHDeepLinkInbox {
     /// Builds a URL for the route, stores it in memory, and returns the stored URL.
     @discardableResult

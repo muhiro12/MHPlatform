@@ -1,7 +1,7 @@
 import Foundation
 
 /// UserDefaults-backed pending deep-link storage.
-public final class MHDeepLinkStore {
+public final class MHDeepLinkStore: @unchecked Sendable {
     private let userDefaults: UserDefaults
     private let key: String
 
@@ -44,6 +44,13 @@ public final class MHDeepLinkStore {
             return nil
         }
         return URL(string: urlString)
+    }
+}
+
+extension MHDeepLinkStore: MHDeepLinkURLSource {
+    /// Consumes and clears the latest pending URL.
+    public func consumeLatestURL() async -> URL? { // swiftlint:disable:this async_without_await
+        consumeLatest()
     }
 }
 

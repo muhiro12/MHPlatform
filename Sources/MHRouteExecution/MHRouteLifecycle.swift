@@ -49,6 +49,18 @@ public actor MHRouteLifecycle<Route: Sendable> {
         await coordinator.setReadiness(isReady)
     }
 
+    /// Opens readiness and immediately replays the current pending route when present.
+    @discardableResult
+    @preconcurrency
+    public func activate(
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        await coordinator.setReadiness(true)
+        return try await applyPendingIfReady(
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+
     /// Submits a route for execution and logs the lifecycle outcome.
     @discardableResult
     @preconcurrency
@@ -108,17 +120,28 @@ public actor MHRouteLifecycle<Route: Sendable> {
     /// Consumes the latest pending URL from an in-memory inbox and submits it when present.
     @discardableResult
     @preconcurrency
+    public func submitLatest<Source: MHDeepLinkURLSource>(
+        from source: Source,
+        parse: RouteParser,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        try await submitLatestFromSource(
+            source,
+            parse: parse,
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+
+    /// Consumes the latest pending URL from an in-memory inbox and submits it when present.
+    @discardableResult
+    @preconcurrency
     public func submitLatest(
         from inbox: MHDeepLinkInbox,
         parse: RouteParser,
         applyOnMainActor: @escaping RouteApplier
     ) async throws -> MHRouteExecutionOutcome<Route>? {
-        guard let url = await inbox.consumeLatest() else {
-            return nil
-        }
-
-        return try await submit(
-            url,
+        try await submitLatestFromSource(
+            inbox,
             parse: parse,
             applyOnMainActor: applyOnMainActor
         )
@@ -132,12 +155,8 @@ public actor MHRouteLifecycle<Route: Sendable> {
         parse: RouteParser,
         applyOnMainActor: @escaping RouteApplier
     ) async throws -> MHRouteExecutionOutcome<Route>? {
-        guard let url = await inbox.consumeLatest() else {
-            return nil
-        }
-
-        return try await submit(
-            url,
+        try await submitLatestFromSource(
+            inbox,
             parse: parse,
             applyOnMainActor: applyOnMainActor
         )
@@ -151,7 +170,22 @@ public actor MHRouteLifecycle<Route: Sendable> {
         parse: RouteParser,
         applyOnMainActor: @escaping RouteApplier
     ) async throws -> MHRouteExecutionOutcome<Route>? {
-        guard let url = store.consumeLatest() else {
+        try await submitLatestFromSource(
+            store,
+            parse: parse,
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+}
+
+private extension MHRouteLifecycle {
+    @preconcurrency
+    func submitLatestFromSource(
+        _ source: some MHDeepLinkURLSource,
+        parse: RouteParser,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        guard let url = await source.consumeLatestURL() else {
             return nil
         }
 
@@ -161,9 +195,7 @@ public actor MHRouteLifecycle<Route: Sendable> {
             applyOnMainActor: applyOnMainActor
         )
     }
-}
 
-private extension MHRouteLifecycle {
     func logExecutionOutcome(
         _ outcome: MHRouteExecutionOutcome<Route>
     ) async {

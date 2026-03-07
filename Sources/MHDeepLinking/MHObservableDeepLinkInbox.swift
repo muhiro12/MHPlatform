@@ -5,7 +5,7 @@ import Observation
 @MainActor
 @preconcurrency
 @Observable
-public final class MHObservableDeepLinkInbox {
+public final class MHObservableDeepLinkInbox: @unchecked Sendable {
     /// Latest pending URL mirrored for observation.
     public private(set) var pendingURL: URL?
 
@@ -39,6 +39,13 @@ public final class MHObservableDeepLinkInbox {
     public func replacePendingURL(_ url: URL?) async {
         await inbox.replacePendingURL(url)
         pendingURL = url
+    }
+}
+
+extension MHObservableDeepLinkInbox: MHDeepLinkURLSource {
+    /// Consumes and clears the latest pending URL.
+    public func consumeLatestURL() async -> URL? {
+        await consumeLatest()
     }
 }
 
