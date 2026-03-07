@@ -97,6 +97,71 @@ struct MHDestructiveResetServiceTests {
             "event:completed"
         ])
     }
+
+    @Test
+    func runThrowing_returns_completed_steps() async throws {
+        let recorder = Recorder()
+
+        let completedSteps = try await MHDestructiveResetService.runThrowing(
+            steps: [
+                .init(name: "clear-cache") {
+                    recorder.append("action:clear-cache")
+                },
+                .init(name: "rebuild-index") {
+                    recorder.append("action:rebuild-index")
+                }
+            ]
+        ) { event in
+            recorder.append("event:\(Self.eventDescription(event))")
+        }
+
+        #expect(completedSteps == ["clear-cache", "rebuild-index"])
+        #expect(recorder.snapshot() == [
+            "event:stepStarted:clear-cache",
+            "action:clear-cache",
+            "event:stepSucceeded:clear-cache",
+            "event:stepStarted:rebuild-index",
+            "action:rebuild-index",
+            "event:stepSucceeded:rebuild-index",
+            "event:completed"
+        ])
+    }
+
+    @Test
+    func runThrowing_throws_first_failure() async {
+        let recorder = Recorder()
+
+        do {
+            try await MHDestructiveResetService.runThrowing(
+                steps: [
+                    .init(name: "clear-cache") {
+                        recorder.append("action:clear-cache")
+                    },
+                    .init(name: "wipe-store") {
+                        recorder.append("action:wipe-store")
+                        throw ResetError.failedStep
+                    },
+                    .init(name: "rebuild-index") {
+                        recorder.append("action:rebuild-index")
+                    }
+                ]
+            ) { event in
+                recorder.append("event:\(Self.eventDescription(event))")
+            }
+            Issue.record("Expected runThrowing to throw.")
+        } catch {
+            #expect(String(describing: error) == "failedStep")
+        }
+
+        #expect(recorder.snapshot() == [
+            "event:stepStarted:clear-cache",
+            "action:clear-cache",
+            "event:stepSucceeded:clear-cache",
+            "event:stepStarted:wipe-store",
+            "action:wipe-store",
+            "event:stepFailed:wipe-store:failedStep"
+        ])
+    }
 }
 
 private extension MHDestructiveResetServiceTests {

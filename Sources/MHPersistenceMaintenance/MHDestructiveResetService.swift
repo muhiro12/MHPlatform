@@ -47,6 +47,25 @@ public enum MHDestructiveResetService {
         onEvent(.completed)
         return .succeeded(completedSteps: completedSteps)
     }
+
+    /// Executes reset steps sequentially and throws when the first step fails.
+    @preconcurrency
+    public static func runThrowing(
+        steps: [MHDestructiveResetStep],
+        onEvent: @Sendable (MHDestructiveResetEvent) -> Void = { _ in () }
+    ) async throws -> [String] {
+        let outcome = await run(
+            steps: steps,
+            onEvent: onEvent
+        )
+
+        switch outcome {
+        case .succeeded(let completedSteps):
+            return completedSteps
+        case .failed(let error, _, _):
+            throw error
+        }
+    }
 }
 
 private extension MHDestructiveResetService {
