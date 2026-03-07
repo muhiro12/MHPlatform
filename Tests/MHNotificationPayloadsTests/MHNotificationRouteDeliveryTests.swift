@@ -7,7 +7,6 @@ import Testing
 struct MHNotificationRouteDeliveryTests {
     @Test
     func deliverRouteURL_delivers_default_action_route() async {
-        let codec = MHNotificationPayloadCodec()
         let payload = MHNotificationPayload(
             routes: .init(
                 defaultRouteURL: url("mhplatform://item?id=rent")
@@ -19,10 +18,11 @@ struct MHNotificationRouteDeliveryTests {
         }
 
         let outcome = await MHNotificationOrchestrator.deliverRouteURL(
-            userInfo: codec.encode(payload),
-            actionIdentifier: "com.apple.UNNotificationDefaultActionIdentifier",
-            deliver: deliver,
-            codec: codec
+            payload: payload,
+            response: .init(
+                actionIdentifier: "com.apple.UNNotificationDefaultActionIdentifier"
+            ),
+            deliver: deliver
         )
 
         #expect(outcome == .init(
@@ -34,7 +34,6 @@ struct MHNotificationRouteDeliveryTests {
 
     @Test
     func deliverRouteURL_delivers_custom_action_route() async {
-        let codec = MHNotificationPayloadCodec()
         let payload = MHNotificationPayload(
             routes: .init(
                 defaultRouteURL: url("mhplatform://item?id=rent"),
@@ -49,10 +48,11 @@ struct MHNotificationRouteDeliveryTests {
         }
 
         let outcome = await MHNotificationOrchestrator.deliverRouteURL(
-            userInfo: codec.encode(payload),
-            actionIdentifier: "view-month",
-            deliver: deliver,
-            codec: codec
+            payload: payload,
+            response: .init(
+                actionIdentifier: "view-month"
+            ),
+            deliver: deliver
         )
 
         #expect(outcome == .init(
@@ -70,8 +70,10 @@ struct MHNotificationRouteDeliveryTests {
         }
 
         let outcome = await MHNotificationOrchestrator.deliverRouteURL(
-            userInfo: [:],
-            actionIdentifier: "unknown",
+            payload: nil,
+            response: .init(
+                actionIdentifier: "unknown"
+            ),
             deliver: deliver
         )
 
@@ -91,17 +93,19 @@ struct MHNotificationRouteDeliveryTests {
         }
 
         let fallbackOutcome = await MHNotificationOrchestrator.deliverRouteURL(
-            userInfo: [
-                "secondaryDeepLinkURL": legacyURL.absoluteString
-            ],
-            actionIdentifier: "view-month",
+            payload: nil,
+            response: .init(
+                actionIdentifier: "view-month"
+            ),
             deliver: deliver,
             fallbackRouteURL: legacyMonthFallbackRouteURL
         )
 
         let clearOutcome = await MHNotificationOrchestrator.deliverRouteURL(
-            userInfo: [:],
-            actionIdentifier: "unknown",
+            payload: nil,
+            response: .init(
+                actionIdentifier: "unknown"
+            ),
             deliver: deliver,
             clearPendingURLWhenNoRoute: true
         )
@@ -126,12 +130,12 @@ private func url(_ value: String) -> URL {
 }
 
 private func legacyMonthFallbackRouteURL(
-    userInfo: [AnyHashable: Any],
-    actionIdentifier: String
+    _: MHNotificationPayload?,
+    response: MHNotificationResponseContext
 ) -> URL? {
-    guard actionIdentifier == "view-month" else {
+    guard response.actionIdentifier == "view-month" else {
         return nil
     }
-    return URL(string: userInfo["secondaryDeepLinkURL"] as? String ?? "")
+    return url("mhplatform://month?year=2026&month=1")
 }
 #endif

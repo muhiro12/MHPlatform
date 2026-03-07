@@ -85,18 +85,51 @@ public enum MHNotificationOrchestrator {
         defaultActionIdentifier: String = "com.apple.UNNotificationDefaultActionIdentifier",
         dismissActionIdentifier: String = "com.apple.UNNotificationDismissActionIdentifier"
     ) -> URL? {
-        guard let payload = codec.decode(userInfo) else {
-            return nil
-        }
-
-        return MHNotificationRouteResolver.resolveRouteURL(
-            payload: payload,
+        resolveRouteURL(
+            payload: codec.decode(userInfo),
             response: .init(
                 actionIdentifier: actionIdentifier,
                 defaultActionIdentifier: defaultActionIdentifier,
                 dismissActionIdentifier: dismissActionIdentifier
             )
         )
+    }
+
+    /// Resolves a route URL from a decoded payload and response context.
+    public static func resolveRouteURL(
+        payload: MHNotificationPayload?,
+        response: MHNotificationResponseContext
+    ) -> URL? {
+        guard let payload else {
+            return nil
+        }
+
+        return MHNotificationRouteResolver.resolveRouteURL(
+            payload: payload,
+            response: response
+        )
+    }
+
+    /// Resolves a route URL, applies app-specific fallback policy, and delivers it.
+    @preconcurrency
+    public static func deliverRouteURL(
+        payload: MHNotificationPayload?,
+        response: MHNotificationResponseContext,
+        deliver: @MainActor @Sendable (URL?) async -> Void,
+        clearPendingURLWhenNoRoute: Bool = false,
+        fallbackRouteURL: @Sendable (MHNotificationPayload?, MHNotificationResponseContext) -> URL? = { _, _ in nil }
+    ) async -> MHNotificationRouteDeliveryOutcome {
+        let outcome = routeDeliveryOutcome(
+            payload: payload,
+            response: response,
+            fallbackRouteURL: fallbackRouteURL
+        )
+
+        if clearPendingURLWhenNoRoute || outcome.routeURL != nil {
+            await deliver(outcome.routeURL)
+        }
+
+        return outcome
     }
 
     /// Resolves a route URL, applies app-specific fallback policy, and delivers it.
@@ -111,13 +144,14 @@ public enum MHNotificationOrchestrator {
         defaultActionIdentifier: String = "com.apple.UNNotificationDefaultActionIdentifier",
         dismissActionIdentifier: String = "com.apple.UNNotificationDismissActionIdentifier"
     ) async -> MHNotificationRouteDeliveryOutcome {
+        let response = MHNotificationResponseContext(
+            actionIdentifier: actionIdentifier,
+            defaultActionIdentifier: defaultActionIdentifier,
+            dismissActionIdentifier: dismissActionIdentifier
+        )
         let outcome = routeDeliveryOutcome(
             userInfo: userInfo,
-            response: .init(
-                actionIdentifier: actionIdentifier,
-                defaultActionIdentifier: defaultActionIdentifier,
-                dismissActionIdentifier: dismissActionIdentifier
-            ),
+            response: response,
             codec: codec,
             fallbackRouteURL: fallbackRouteURL
         )
@@ -130,17 +164,45 @@ public enum MHNotificationOrchestrator {
     }
 
     private static func routeDeliveryOutcome(
+        payload: MHNotificationPayload?,
+        response: MHNotificationResponseContext,
+        fallbackRouteURL: @Sendable (MHNotificationPayload?, MHNotificationResponseContext) -> URL?
+    ) -> MHNotificationRouteDeliveryOutcome {
+        if let routeURL = resolveRouteURL(
+            payload: payload,
+            response: response
+        ) {
+            return .init(
+                routeURL: routeURL,
+                source: .payload
+            )
+        }
+
+        if let routeURL = fallbackRouteURL(
+            payload,
+            response
+        ) {
+            return .init(
+                routeURL: routeURL,
+                source: .fallback
+            )
+        }
+
+        return .init(
+            routeURL: nil,
+            source: .noRoute
+        )
+    }
+
+    private static func routeDeliveryOutcome(
         userInfo: [AnyHashable: Any],
         response: MHNotificationResponseContext,
         codec: MHNotificationPayloadCodec,
         fallbackRouteURL: @Sendable ([AnyHashable: Any], String) -> URL?
     ) -> MHNotificationRouteDeliveryOutcome {
         if let routeURL = resolveRouteURL(
-            userInfo: userInfo,
-            actionIdentifier: response.actionIdentifier,
-            codec: codec,
-            defaultActionIdentifier: response.defaultActionIdentifier,
-            dismissActionIdentifier: response.dismissActionIdentifier
+            payload: codec.decode(userInfo),
+            response: response
         ) {
             return .init(
                 routeURL: routeURL,
