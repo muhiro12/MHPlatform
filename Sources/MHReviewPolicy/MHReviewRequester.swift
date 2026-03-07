@@ -1,4 +1,5 @@
 import Foundation
+import MHLogging
 
 #if os(iOS)
 import UIKit
@@ -54,6 +55,28 @@ public enum MHReviewRequester {
         )
     }
 
+    /// Requests an in-app review when the policy allows it and logs terminal outcomes.
+    @MainActor
+    @preconcurrency
+    public static func requestIfNeeded(
+        policy: MHReviewPolicy,
+        logger: MHLogger,
+        randomValueProvider: RandomValueProvider = { range in
+            Int.random(in: range)
+        },
+        sleep: Sleep = { duration in
+            try? await Task.sleep(for: duration)
+        }
+    ) async -> MHReviewRequestOutcome {
+        await requestIfNeeded(
+            policy: policy,
+            randomValueProvider: randomValueProvider,
+            sleep: sleep,
+            environment: .live,
+            logger: logger
+        )
+    }
+
     @MainActor
     static func requestIfNeeded(
         policy: MHReviewPolicy,
@@ -87,6 +110,47 @@ public enum MHReviewRequester {
             environment.requestReview(),
             onOutcome: onOutcome
         )
+    }
+
+    @MainActor
+    static func requestIfNeeded(
+        policy: MHReviewPolicy,
+        randomValueProvider: RandomValueProvider,
+        sleep: Sleep,
+        environment: MHReviewRequestEnvironment,
+        logger: MHLogger
+    ) async -> MHReviewRequestOutcome {
+        await requestIfNeeded(
+            policy: policy,
+            randomValueProvider: randomValueProvider,
+            sleep: sleep,
+            environment: environment
+        ) { outcome in
+            logOutcome(
+                outcome,
+                logger: logger
+            )
+        }
+    }
+}
+
+extension MHReviewRequester {
+    static func logOutcome(
+        _ outcome: MHReviewRequestOutcome,
+        logger: MHLogger
+    ) {
+        switch outcome {
+        case .requested:
+            logger.notice("review request invoked")
+        case .skippedInvalidLotteryRange:
+            logger.warning("review request skipped because the lottery range was invalid")
+        case .skippedNoForegroundScene:
+            logger.info("review request skipped because no foreground scene was available")
+        case .unsupportedPlatform:
+            logger.info("review request skipped because the platform is unsupported")
+        case .skippedByPolicy:
+            break
+        }
     }
 }
 

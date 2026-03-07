@@ -129,7 +129,8 @@ let package = Package(
             name: "MHPreferences"
         ),
         .target(
-            name: "MHReviewPolicy"
+            name: "MHReviewPolicy",
+            dependencies: ["MHLogging"]
         ),
         .target(
             name: "MHLogging"
@@ -175,7 +176,10 @@ let package = Package(
         ),
         .testTarget(
             name: "MHReviewPolicyTests",
-            dependencies: ["MHReviewPolicy"]
+            dependencies: [
+                "MHReviewPolicy",
+                "MHLogging"
+            ]
         ),
         .testTarget(
             name: "MHLoggingTests",

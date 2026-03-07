@@ -1,3 +1,4 @@
+@testable import MHLogging
 @testable import MHReviewPolicy
 import Testing
 
@@ -176,4 +177,57 @@ struct MHReviewRequesterTests {
         #expect(outcome == .unsupportedPlatform)
     }
     #endif
+
+    @Test
+    func logOutcome_logs_expected_messages_for_terminal_outcomes() async {
+        let store = MHLogStore(
+            policy: .init(
+                minimumLevel: .debug,
+                persistsToDisk: false,
+                maximumInMemoryEvents: 20,
+                maximumDiskBytes: 1_000
+            )
+        )
+        let logger = MHLogger(
+            "Tests/MHReviewRequesterTests.swift",
+            store: store,
+            subsystem: "tests.review"
+        )
+
+        MHReviewRequester.logOutcome(
+            .requested,
+            logger: logger
+        )
+        MHReviewRequester.logOutcome(
+            .skippedInvalidLotteryRange,
+            logger: logger
+        )
+        MHReviewRequester.logOutcome(
+            .skippedNoForegroundScene,
+            logger: logger
+        )
+        MHReviewRequester.logOutcome(
+            .unsupportedPlatform,
+            logger: logger
+        )
+        MHReviewRequester.logOutcome(
+            .skippedByPolicy,
+            logger: logger
+        )
+
+        try? await Task.sleep(for: .milliseconds(50))
+        let events = await store.events()
+        #expect(events.map(\.level) == [
+            .notice,
+            .warning,
+            .info,
+            .info
+        ])
+        #expect(events.map(\.message) == [
+            "review request invoked",
+            "review request skipped because the lottery range was invalid",
+            "review request skipped because no foreground scene was available",
+            "review request skipped because the platform is unsupported"
+        ])
+    }
 }
