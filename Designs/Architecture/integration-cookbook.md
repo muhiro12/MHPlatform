@@ -2,20 +2,21 @@
 
 This cookbook focuses on composable end-to-end integration patterns.
 
-## Recipe 1: DeepLink -> Inbox -> Resolution -> Executor
+## Recipe 1: DeepLink -> Inbox -> RouteLifecycle
 
 Use this pipeline when URLs can arrive before UI/bootstrap readiness.
 
 ```swift
 import MHDeepLinking
+import MHLogging
 import MHRouteExecution
 
 actor AppRoutePipeline {
     private let codec: MHDeepLinkCodec<AppRoute>
     private let inbox = MHDeepLinkInbox()
-    private let coordinator: MHRouteCoordinator<AppRoute, RouteApplyToken>
+    private let routeLifecycle: MHRouteLifecycle<AppRoute>
 
-    init() {
+    init(logger: MHLogger) {
         codec = .init(configuration: .init(
             customScheme: "myapp",
             preferredUniversalLinkHost: "example.com",
@@ -24,44 +25,48 @@ actor AppRoutePipeline {
             preferredTransport: .customScheme
         ))
 
-        let executor = MHRouteExecutor<AppRoute, RouteApplyToken>(
-            resolve: { route in
-                try await resolveRoute(route)
-            },
-            apply: { token in
-                try await applyRoute(token)
-            }
-        )
-
-        coordinator = .init(
+        routeLifecycle = .init(
+            logger: logger,
             initialReadiness: false,
-            executor: executor,
-            isDuplicate: { lhs, rhs in lhs == rhs }
+            isDuplicate: ==
         )
     }
 
+    func receiveRoute(_ route: AppRoute) async {
+        await inbox.ingest(route, using: codec)
+    }
+
     func receiveURL(_ url: URL) async {
-        guard codec.parse(url) != nil else {
-            return
-        }
         await inbox.ingest(url)
     }
 
     func setReady(_ ready: Bool) async {
-        await coordinator.setReadiness(ready)
-        _ = try? await coordinator.applyPendingIfReady()
+        await routeLifecycle.setReadiness(ready)
+        _ = try? await routeLifecycle.applyPendingIfReady { route in
+            try await applyRoute(route)
+        }
     }
 
     func drainInboxOnce() async {
-        guard let url = await inbox.consumeLatest(),
-              let route = codec.parse(url) else {
+        guard let url = await inbox.consumeLatest() else {
             return
         }
 
-        _ = try? await coordinator.submit(route)
+        _ = try? await routeLifecycle.submit(
+            url,
+            parse: { incomingURL in
+                codec.parse(incomingURL)
+            },
+            applyOnMainActor: { route in
+                try await applyRoute(route)
+            }
+        )
     }
 }
 ```
+
+Use `MHRouteCoordinator` directly when the app needs a separate resolve/apply
+pipeline or direct access to pending-queue introspection.
 
 Lifecycle placement checklist:
 

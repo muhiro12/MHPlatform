@@ -93,33 +93,48 @@ This document is normative for integration design.
 ### Required Inputs
 
 - Route type (`Sendable`)
-- Resolved outcome type (`Sendable`)
 - Either:
-  - `MHRouteExecutor<Route, Outcome>` with app-provided `resolve/apply`
+  - `MHRouteLifecycle<Route>` with app-provided logger, parse closure, and
+    `applyOnMainActor` closure
+  - `MHRouteExecutor<Route, Outcome>` plus `MHRouteCoordinator<Route, Outcome>`
   - identity execution path when `Route == Outcome`
+- Optional resolved outcome type (`Sendable`) when the app uses
+  `MHRouteExecutor` directly
 - Initial readiness (`initialReadiness`) and duplicate predicate (`isDuplicate`)
 
 ### Outputs
 
+- Higher-level lifecycle helper:
+  - `setReadiness(_:)`
+  - `submit(_:applyOnMainActor:)`
+  - `submit(_:parse:applyOnMainActor:)`
+  - `applyPendingIfReady(applyOnMainActor:)`
 - `MHRouteExecutionOutcome<Outcome>`:
   - `.applied(Outcome)`
   - `.queued`
   - `.deduplicated`
-- Pending route introspection:
+- Pending queue introspection on `MHRouteCoordinator`:
   - `hasPendingRoute`
   - `isReady`
 
 ### Threading / Actor
 
+- `MHRouteLifecycle` is an `actor` backed by `MHRouteCoordinator` and logs
+  lifecycle outcomes through `MHLogger`.
 - `MHRouteCoordinator` is an `actor`.
 - Route submission, queue replacement, and apply are serialized.
-- No implicit `MainActor`; callers hop to UI actor as needed.
+- No implicit `MainActor` except the app-provided `applyOnMainActor` closure.
 
 ### Intended Call Sites
 
-- Parsed route execution from DeepLinking and NotificationPayloads
+- Parsed route execution from DeepLinking and NotificationPayloads via
+  `MHRouteLifecycle`
+- App navigation routers/services that want logger-backed readiness gating
+  without wiring `MHRouteExecutor` manually
 - Bootstrap/readiness transitions via `setReadiness(_:)`
 - Replay hook via `applyPendingIfReady()` after app state becomes ready
+- Low-level coordinator usage when the app needs explicit resolve/apply
+  separation or direct pending-state introspection
 - Identity-route flows that already have the final route value and only need an
   app-owned `applyOnMainActor` closure
 
@@ -133,9 +148,11 @@ This document is normative for integration design.
 
 ### Boundary Rule (Normative)
 
+- `MHRouteLifecycle` is a thin logger-backed shell over route parsing,
+  readiness gating, and replay.
 - Identity helpers only remove dummy resolve/apply boilerplate.
-- Apps still own route definitions, readiness decisions, and concrete route
-  application logic.
+- Apps still own route definitions, route parsers, readiness decisions, and
+  concrete route application logic.
 
 ## MHMutationFlow
 

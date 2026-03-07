@@ -6,6 +6,9 @@
   flows can keep app-owned apply logic without dummy resolve/apply closures.
 - Added codec-backed route helpers in `MHDeepLinking` so inbox/store handoff
   can ingest and consume app-owned routes while still storing `URL` values.
+- Refreshed the route pipeline demo and docs so `MHRouteLifecycle` is the
+  current helper-first adoption path, while `MHRouteCoordinator` remains the
+  low-level execution surface.
 - Added `MHLoggerFactory` in `MHLogging` as a thin helper for app-owned logger
   setup around `MHLogStore`, `MHLogPolicy`, and optional subsystem/category
   defaults.
@@ -31,8 +34,8 @@
 - `MHReviewPolicy` as the shared review-request policy surface.
 - `MHDeepLinking` with URL grammar primitives plus codec-backed inbox/store
   helpers for app-owned route handoff.
-- `MHRouteExecution` with readiness-aware execution and an identity-route path
-  for `Route == Outcome` flows.
+- `MHRouteExecution` with readiness-aware execution, `MHRouteLifecycle`, and
+  an identity-route path for `Route == Outcome` flows.
 - `MHLogging` with structured logging, query/export surfaces, and
   `MHLoggerFactory` for shared setup ergonomics.
 - `MHMutationFlow` with retry, cancellation, fixed `afterSuccess` steps, and
@@ -46,17 +49,24 @@
 - Cookle imports `MHPlatform` in app bootstrap, root views, ads/store/license
   surfaces, debug sample data, and review-trigger call sites.
 - Both apps currently use `MHAppRuntime` and `MHReviewPolicy`.
-- Both apps already have route/deep-link/notification code paths that can
-  consume the new helper surfaces later without changing MHPlatform again.
+- Both apps already use `MHRouteLifecycle` as the route-execution shell while
+  keeping route parsing and route application logic app-owned.
+- Deep-link handoff helpers are partially adopted today:
+  Incomes uses `MHDeepLinkInbox`, while Cookle already uses
+  `MHObservableDeepLinkInbox` in its app graph.
 - Both apps now keep local mutation workflow wrappers whose shape matches
   `MHMutationWorkflow`, but direct package-side adoption remains deferred.
 
 Reference evidence:
 - `Incomes/Incomes/Sources/IncomesApp.swift`
 - `Incomes/Incomes/Sources/ContentView.swift`
+- `Incomes/Incomes/Sources/Main/Views/MainNavigationRouter.swift`
+- `Incomes/Incomes/Sources/Notification/Models/NotificationService.swift`
 - `Incomes/Incomes/Sources/Common/Services/IncomesMutationWorkflow.swift`
 - `Cookle/Cookle/CookleApp.swift`
 - `Cookle/Cookle/ContentView.swift`
+- `Cookle/Cookle/Sources/Main/Services/MainRouteService.swift`
+- `Cookle/Cookle/Sources/Main/Views/MainView.swift`
 - `Cookle/Cookle/Sources/Common/Services/CookleMutationWorkflow.swift`
 
 ## Still App-Specific

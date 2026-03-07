@@ -11,7 +11,7 @@ struct DeepLinkRoutePipelineDemoView: View {
                 executionSection
                 logSection
             }
-            .navigationTitle("DeepLink + Route")
+            .navigationTitle("DeepLink + RouteLifecycle")
         }
     }
 
@@ -28,7 +28,11 @@ struct DeepLinkRoutePipelineDemoView: View {
                     }
                 )
             )
-            LabeledContent("Has pending route") {
+            LabeledContent("Has pending inbox URL") {
+                Text(model.hasPendingDeepLink ? "Yes" : "No")
+                    .font(.caption.monospaced())
+            }
+            LabeledContent("Has queued route") {
                 Text(model.hasPendingRoute ? "Yes" : "No")
                     .font(.caption.monospaced())
             }
@@ -46,11 +50,11 @@ struct DeepLinkRoutePipelineDemoView: View {
     }
 
     private var executionSection: some View {
-        Section("Inbox -> RouteExecutor") {
-            Button("Process Inbox") {
-                model.processInbox()
+        Section("Inbox -> MHRouteLifecycle") {
+            Button("Drain Inbox") {
+                model.drainInbox()
             }
-            Button("Apply Pending") {
+            Button("Apply Pending Route") {
                 model.applyPendingIfReady()
             }
         }

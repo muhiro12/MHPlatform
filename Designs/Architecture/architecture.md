@@ -36,6 +36,10 @@ MHPlatform is maintained as an internal app platform foundation for reusable non
   both apps.
 - `MHReviewPolicy` is shared today, but review triggers and surrounding
   workflow decisions remain app-specific.
+- `MHRouteExecution` now includes both low-level queue/executor primitives and
+  the higher-level `MHRouteLifecycle` helper. Both apps already use the
+  lifecycle shell while route enums, parsing, and apply closures remain
+  app-owned.
 - `MHMutationFlow` now includes both the low-level runner and the higher-level
   `MHMutationWorkflow` shell shaped by the local mutation workflow wrappers
   already present in both apps, while app-side cutover remains deferred.
@@ -120,9 +124,12 @@ Integration contract:
 Integration contract:
 [`MHRouteExecution`](integration-contracts.md#mhrouteexecution)
 
+- Owns app-facing lifecycle helper:
+  `MHRouteLifecycle`
 - Owns route execution orchestration primitives:
   `MHRouteExecutor`, `MHRouteCoordinator`, `MHRouteExecutionOutcome`
 - Owns readiness-aware pending queue behavior with latest-wins semantics
+- Owns a logger-backed helper path for parsed URLs and replaying queued routes
 - Owns an identity-route convenience path for `Route == Outcome` flows while
   leaving route application in app-owned closures
 - Does not own URL parsing, route type definitions, persistence access, or UI state models
@@ -190,10 +197,12 @@ Integration contract:
 - `MHNotificationPlans` has no dependency on the other modules.
 - `MHNotificationPayloads` has no dependency on the other modules.
 - `MHMutationFlow` has no dependency on the other modules.
-- `MHRouteExecution` has no dependency on the other modules.
+- `MHRouteExecution` depends on `MHLogging` for `MHRouteLifecycle` outcome
+  logging and has no other MHPlatform module dependencies.
 - `MHPersistenceMaintenance` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
-- `MHReviewPolicy` has no dependency on the other modules.
+- `MHReviewPolicy` depends on `MHLogging` for requester outcome logging and
+  has no other MHPlatform module dependencies.
 - `MHLogging` has no dependency on the other modules.
 - ExampleApp may import all public modules or the umbrella product, but package
   targets must stay independent.

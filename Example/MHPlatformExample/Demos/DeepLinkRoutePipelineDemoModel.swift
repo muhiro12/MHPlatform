@@ -4,7 +4,7 @@ import MHPlatform
 
 @MainActor
 final class DeepLinkRoutePipelineDemoModel: ObservableObject {
-    enum AppRoute: String, CaseIterable, Identifiable, Sendable, Equatable, MHDeepLinkRoute {
+    nonisolated enum AppRoute: String, CaseIterable, Identifiable, Sendable, Equatable, MHDeepLinkRoute {
         case home
         case search
         case settings
@@ -47,7 +47,26 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
         }
     }
 
+    private enum Constants {
+        static let maximumInMemoryEvents = 20
+        static let maximumDiskBytes = 1_000
+        static let applyDelayMilliseconds = 90
+    }
+
+    private static var loggerFactory: MHLoggerFactory {
+        .init(
+            policy: .init(
+                minimumLevel: .debug,
+                persistsToDisk: false,
+                maximumInMemoryEvents: Constants.maximumInMemoryEvents,
+                maximumDiskBytes: Constants.maximumDiskBytes
+            ),
+            subsystem: "MHPlatformExample"
+        )
+    }
+
     @Published private(set) var isReady = false
+    @Published private(set) var hasPendingDeepLink = false
     @Published private(set) var hasPendingRoute = false
     @Published private(set) var logs = [String]()
 
@@ -63,33 +82,26 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
         )
     )
     private let inbox = MHDeepLinkInbox()
-    private let coordinator: MHRouteCoordinator<AppRoute, String>
+    private let routeLifecycle: MHRouteLifecycle<AppRoute>
     private var sequence = 0
 
     init() {
-        let executor = MHRouteExecutor<AppRoute, String>(
-            resolve: { route in
-                "resolved:\(route.rawValue)"
-            },
-            apply: { _ in
-                // Intentionally empty.
-            }
+        routeLifecycle = .init(
+            logger: Self.loggerFactory.logger(
+                category: "DeepLinkRoutePipelineDemo",
+                source: #fileID
+            ),
+            initialReadiness: false,
+            isDuplicate: ==
         )
-        coordinator = .init(
-            executor: executor,
-            initialReadiness: false
-        ) { lhs, rhs in
-            lhs == rhs
-        }
     }
 
     func setReadiness(_ isReady: Bool) {
         self.isReady = isReady
 
         Task {
-            await coordinator.setReadiness(isReady)
+            await routeLifecycle.setReadiness(isReady)
             append("readiness=\(isReady)")
-            await refreshPendingStatus()
         }
     }
 
@@ -103,58 +115,120 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
                 return
             }
 
+            hasPendingDeepLink = true
             append("ingest: \(url.absoluteString)")
         }
     }
 
-    func processInbox() {
+    func drainInbox() {
         Task {
-            guard let route = await inbox.consumeLatest(using: codec) else {
-                append("processInbox: no route")
+            guard let url = await inbox.consumeLatest() else {
+                append("drainInbox: no pending URL")
                 return
             }
 
-            do {
-                let outcome = try await coordinator.submit(route)
-                append("processInbox: \(description(for: outcome))")
-            } catch {
-                append("processInbox: error \(error)")
-            }
+            hasPendingDeepLink = false
+            let codec = self.codec
 
-            await refreshPendingStatus()
+            do {
+                let outcome = try await routeLifecycle.submit(
+                    url,
+                    parse: { incomingURL in
+                        codec.parse(incomingURL)
+                    },
+                    applyOnMainActor: { [self] route in
+                        try await apply(route)
+                    }
+                )
+                guard let outcome else {
+                    append("drainInbox: ignored invalid URL")
+                    return
+                }
+
+                updatePendingRouteState(for: outcome)
+                append("drainInbox: \(description(for: outcome))")
+            } catch {
+                hasPendingRoute = false
+                append("drainInbox: error \(describe(error: error))")
+            }
         }
     }
 
     func applyPendingIfReady() {
         Task {
             do {
-                let outcome = try await coordinator.applyPendingIfReady()
-                if let outcome {
-                    append("applyPendingIfReady: \(description(for: outcome))")
-                } else {
+                guard let outcome = try await routeLifecycle.applyPendingIfReady(
+                    applyOnMainActor: { [self] route in
+                        try await apply(route)
+                    }
+                ) else {
+                    hasPendingRoute = false
                     append("applyPendingIfReady: no pending route")
+                    return
                 }
-            } catch {
-                append("applyPendingIfReady: error \(error)")
-            }
 
-            await refreshPendingStatus()
+                updatePendingRouteState(for: outcome)
+                append("applyPendingIfReady: \(description(for: outcome))")
+            } catch {
+                hasPendingRoute = true
+                append("applyPendingIfReady: error \(describe(error: error))")
+            }
         }
     }
 
-    private func refreshPendingStatus() async {
-        hasPendingRoute = await coordinator.hasPendingRoute
+    private func apply(_ route: AppRoute) async throws {
+        try await Task.sleep(
+            for: .milliseconds(Constants.applyDelayMilliseconds)
+        )
+
+        append("apply: \(destination(for: route))")
     }
 
-    private func description(for outcome: MHRouteExecutionOutcome<String>) -> String {
+    private func updatePendingRouteState(
+        for outcome: MHRouteExecutionOutcome<AppRoute>
+    ) {
+        switch outcome {
+        case .queued,
+             .deduplicated:
+            hasPendingRoute = true
+        case .applied:
+            hasPendingRoute = false
+        }
+    }
+
+    private func description(
+        for outcome: MHRouteExecutionOutcome<AppRoute>
+    ) -> String {
         switch outcome {
         case .queued:
             return "queued"
-        case .applied(let value):
-            return "applied(\(value))"
+        case .applied(let route):
+            return "applied(\(destination(for: route)))"
         case .deduplicated:
             return "deduplicated"
         }
+    }
+
+    private func destination(
+        for route: AppRoute
+    ) -> String {
+        switch route {
+        case .home:
+            return "home"
+        case .search:
+            return "search?q=tea"
+        case .settings:
+            return "settings/notifications"
+        }
+    }
+
+    private func describe(error: any Error) -> String {
+        if let localizedError = error as? LocalizedError,
+           let errorDescription = localizedError.errorDescription {
+            return errorDescription
+        }
+
+        return String(describing: error)
     }
 
     private func append(_ message: String) {

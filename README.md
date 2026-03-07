@@ -66,16 +66,21 @@ import MHRouteExecution
   apps for startup, premium/ad availability state, and runtime-owned views.
 - `MHReviewPolicy` is already shared, but the surrounding workflow triggers stay
   app-specific.
+- `MHRouteExecution` now provides both the low-level coordinator/executor
+  primitives and the higher-level `MHRouteLifecycle` shell. Both apps already
+  use the lifecycle helper while keeping route enums, parsing, and apply logic
+  app-owned.
 - Domain mutation result models, follow-up metadata, and concrete side effects
   still belong to each app. `MHMutationFlow` now provides both
   `MHMutationAdapter` and the higher-level `MHMutationWorkflow` shell so apps
   can converge on a shared workflow shape without standardizing those
   app-specific schemas.
 - Recent MHPlatform-first additions focus on thinner app integration:
-  `MHRouteExecution` identity helpers, codec-backed deep-link inbox/store
-  helpers, `MHLoggerFactory`, `MHMutationAdapter` composition, and
-  `MHMutationWorkflow`. These reduce app-side boilerplate without moving route
-  enums, effect models, or concrete side effects into MHPlatform.
+  `MHRouteLifecycle`, `MHRouteExecution` identity helpers, codec-backed
+  deep-link inbox/store helpers, `MHLoggerFactory`, `MHMutationAdapter`
+  composition, and `MHMutationWorkflow`. These reduce app-side boilerplate
+  without moving route enums, effect models, or concrete side effects into
+  MHPlatform.
 
 ## MHAppRuntime
 
@@ -241,27 +246,57 @@ retry policy, cancellation handles, or observable event streams.
 
 ## MHRouteExecution
 
-`MHRouteExecution` coordinates route handling with readiness checks and a
-latest-wins pending route queue. For `Route == Outcome` flows, the identity
-helper removes the need for a dummy resolver while keeping app-owned apply logic
-at the call site.
+`MHRouteExecution` supports two adoption levels. Reach for
+`MHRouteLifecycle` when the app wants a logger-backed helper around parsed
+URLs, readiness gating, and queued-route replay. Drop to `MHRouteCoordinator`
+directly only when the app needs explicit resolve/apply separation or direct
+pending-queue introspection.
 
 Integration contract:
 [`MHRouteExecution`](Designs/Architecture/integration-contracts.md#mhrouteexecution)
 
 ```swift
+import MHDeepLinking
+import MHLogging
 import MHRouteExecution
 
-let coordinator: MHRouteCoordinator<AppRoute, AppRoute> = .init(
+let codec = MHDeepLinkCodec<AppRoute>(
+    configuration: .init(
+        customScheme: "myapp",
+        preferredUniversalLinkHost: "example.com",
+        allowedUniversalLinkHosts: ["example.com"],
+        universalLinkPathPrefix: "MyApp",
+        preferredTransport: .customScheme
+    )
+)
+let inbox = MHDeepLinkInbox()
+let logger = MHLoggerFactory.osLogDefault.logger(
+    category: "route",
+    source: #fileID
+)
+let routeLifecycle = MHRouteLifecycle<AppRoute>(
+    logger: logger,
     initialReadiness: false,
     isDuplicate: ==
 )
-await coordinator.setReadiness(hasLoadedInitialState)
+await routeLifecycle.setReadiness(hasLoadedInitialState)
 
-let outcome = try await coordinator.submit(.settings) { route in
-    try await applyRoute(route)
+if let incomingURL = await inbox.consumeLatest() {
+    _ = try await routeLifecycle.submit(
+        incomingURL,
+        parse: { url in
+            codec.parse(url)
+        },
+        applyOnMainActor: { route in
+            try await applyRoute(route)
+        }
+    )
 }
 ```
+
+The lower-level `MHRouteCoordinator` and identity-route apply path remain
+available for flows that need a custom resolve/apply split or direct pending
+queue inspection.
 
 ## MHPersistenceMaintenance
 
@@ -366,8 +401,8 @@ logger.info("App started")
 
 It includes cross-module demos for:
 
-- DeepLinking + RouteExecution pipeline
-- RouteExecution identity-route apply path
+- DeepLinking inbox + RouteLifecycle pipeline
+- RouteExecution low-level coordinator apply path
 - NotificationPlans + NotificationPayloads pipeline
 - MutationWorkflow-driven ReviewPolicy trigger
 - Structured logging + JSONL analysis workflow
