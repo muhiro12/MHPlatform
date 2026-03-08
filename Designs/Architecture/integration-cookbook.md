@@ -2,7 +2,7 @@
 
 This cookbook focuses on composable end-to-end integration patterns.
 
-## Recipe 1: DeepLink -> ObservableInbox -> RouteLifecycle
+## Recipe 1: DeepLink Sources -> RouteLifecycle
 
 Use this pipeline when URLs can arrive before UI/bootstrap readiness.
 
@@ -14,7 +14,8 @@ import MHRouteExecution
 @MainActor
 final class AppRoutePipeline {
     private let codec: MHDeepLinkCodec<AppRoute>
-    let inbox: MHObservableDeepLinkInbox
+    let routeInbox: MHObservableDeepLinkInbox
+    let notificationInbox: MHDeepLinkInbox
     private let routeLifecycle: MHRouteLifecycle<AppRoute>
 
     init(logger: MHLogger) {
@@ -23,9 +24,10 @@ final class AppRoutePipeline {
             preferredUniversalLinkHost: "example.com",
             allowedUniversalLinkHosts: ["example.com"],
             universalLinkPathPrefix: "MyApp",
-            preferredTransport: .customScheme
+                preferredTransport: .customScheme
         ))
-        inbox = .init()
+        routeInbox = .init()
+        notificationInbox = .init()
 
         routeLifecycle = .init(
             logger: logger,
@@ -35,11 +37,15 @@ final class AppRoutePipeline {
     }
 
     func receiveRoute(_ route: AppRoute) async {
-        await inbox.ingest(route, using: codec)
+        await routeInbox.ingest(route, using: codec)
+    }
+
+    func receiveNotificationRoute(_ url: URL) async {
+        await notificationInbox.setPendingURL(url)
     }
 
     func receiveURL(_ url: URL) async {
-        await inbox.ingest(url)
+        await routeInbox.ingest(url)
     }
 
     func setReady(_ ready: Bool) async {
@@ -51,7 +57,8 @@ final class AppRoutePipeline {
 
     func drainPendingURL() async {
         _ = try? await routeLifecycle.submitLatest(
-            from: inbox,
+            from: routeInbox,
+            notificationInbox,
             using: codec,
             applyOnMainActor: { route in
                 try await applyRoute(route)
@@ -64,17 +71,22 @@ final class AppRoutePipeline {
 Swap in `MHDeepLinkInbox` when SwiftUI observation is unnecessary, or
 `MHDeepLinkStore` when the pending URL needs persistence across launches.
 
-When multiple handoff sources can produce a pending URL, compose them first and
-keep the route pipeline single-sourced:
+When multiple handoff sources need a reusable ordering outside route replay,
+compose them first:
 
 ```swift
-let routeInbox = MHObservableDeepLinkInbox()
 let handoffSources = MHDeepLinkSourceChain(
     intentStore,
     notificationInbox
 )
 
-await handoffSources.forwardLatestURL(to: routeInbox)
+_ = try? await routeLifecycle.submitLatest(
+    from: handoffSources,
+    using: codec,
+    applyOnMainActor: { route in
+        try await applyRoute(route)
+    }
+)
 ```
 
 Use `MHRouteCoordinator` directly when the app needs a separate resolve/apply

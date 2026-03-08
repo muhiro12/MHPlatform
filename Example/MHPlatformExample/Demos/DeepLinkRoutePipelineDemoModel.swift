@@ -80,12 +80,17 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
             preferredTransport: .customScheme
         )
     )
-    private let inbox: MHObservableDeepLinkInbox
+    private let routeInbox: MHObservableDeepLinkInbox
+    private let notificationInbox: MHObservableDeepLinkInbox
     private let routeLifecycle: MHRouteLifecycle<AppRoute>
     private var sequence = 0
 
-    init(inbox: MHObservableDeepLinkInbox = .init()) {
-        self.inbox = inbox
+    init(
+        routeInbox: MHObservableDeepLinkInbox = .init(),
+        notificationInbox: MHObservableDeepLinkInbox = .init()
+    ) {
+        self.routeInbox = routeInbox
+        self.notificationInbox = notificationInbox
         routeLifecycle = .init(
             logger: Self.loggerFactory.logger(
                 category: "DeepLinkRoutePipelineDemo",
@@ -106,7 +111,7 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
 
     func ingestDeepLink(_ route: AppRoute) {
         Task {
-            guard let url = await inbox.ingest(
+            guard let url = await routeInbox.ingest(
                 route,
                 using: codec
             ) else {
@@ -118,23 +123,42 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
         }
     }
 
+    func ingestNotificationRoute(_ route: AppRoute) {
+        Task {
+            guard let url = await notificationInbox.ingest(
+                route,
+                using: codec
+            ) else {
+                append("notification ingest: failed to build URL")
+                return
+            }
+
+            append("notification ingest: \(url.absoluteString)")
+        }
+    }
+
     func drainInbox() {
         Task {
-            let hadPendingURL = inbox.pendingURL != nil
+            let hadRouteInboxURL = routeInbox.pendingURL != nil
+            let hadNotificationInboxURL = notificationInbox.pendingURL != nil
             let codec = self.codec
 
             do {
                 let outcome = try await routeLifecycle.submitLatest(
-                    from: inbox,
+                    from: routeInbox,
+                    notificationInbox,
                     using: codec
                 ) { [self] route in
                     try await apply(route)
                 }
                 await refreshLifecycleState()
                 guard let outcome else {
-                    let message = hadPendingURL
-                        ? "drainInbox: ignored invalid URL"
-                        : "drainInbox: no pending URL"
+                    let message: String
+                    if hadRouteInboxURL || hadNotificationInboxURL {
+                        message = "drainInbox: ignored invalid URL"
+                    } else {
+                        message = "drainInbox: no pending URL"
+                    }
                     append(message)
                     return
                 }

@@ -2,7 +2,8 @@ import MHPlatform
 import SwiftUI
 
 struct DeepLinkRoutePipelineDemoView: View {
-    @State private var inbox: MHObservableDeepLinkInbox
+    @State private var routeInbox: MHObservableDeepLinkInbox
+    @State private var notificationInbox: MHObservableDeepLinkInbox
     @StateObject private var model: DeepLinkRoutePipelineDemoModel
 
     var body: some View {
@@ -31,7 +32,12 @@ struct DeepLinkRoutePipelineDemoView: View {
                 )
             )
             LabeledContent("Pending inbox URL") {
-                Text(inbox.pendingURL?.absoluteString ?? "None")
+                Text(routeInbox.pendingURL?.absoluteString ?? "None")
+                    .font(.caption.monospaced())
+                    .textSelection(.enabled)
+            }
+            LabeledContent("Pending notification URL") {
+                Text(notificationInbox.pendingURL?.absoluteString ?? "None")
                     .font(.caption.monospaced())
                     .textSelection(.enabled)
             }
@@ -43,17 +49,20 @@ struct DeepLinkRoutePipelineDemoView: View {
     }
 
     private var ingestSection: some View {
-        Section("DeepLink -> ObservableInbox") {
+        Section("DeepLink Sources") {
             ForEach(DeepLinkRoutePipelineDemoModel.AppRoute.allCases) { route in
                 Button("Ingest \(route.title)") {
                     model.ingestDeepLink(route)
+                }
+                Button("Notification Handoff \(route.title)") {
+                    model.ingestNotificationRoute(route)
                 }
             }
         }
     }
 
     private var executionSection: some View {
-        Section("ObservableInbox -> MHRouteLifecycle") {
+        Section("Inboxes -> MHRouteLifecycle") {
             Button("Submit Latest Pending URL") {
                 model.drainInbox()
             }
@@ -79,10 +88,15 @@ struct DeepLinkRoutePipelineDemoView: View {
     }
 
     init() {
-        let inbox = MHObservableDeepLinkInbox()
-        _inbox = .init(initialValue: inbox)
+        let routeInbox = MHObservableDeepLinkInbox()
+        let notificationInbox = MHObservableDeepLinkInbox()
+        _routeInbox = .init(initialValue: routeInbox)
+        _notificationInbox = .init(initialValue: notificationInbox)
         _model = .init(
-            wrappedValue: DeepLinkRoutePipelineDemoModel(inbox: inbox)
+            wrappedValue: DeepLinkRoutePipelineDemoModel(
+                routeInbox: routeInbox,
+                notificationInbox: notificationInbox
+            )
         )
     }
 }

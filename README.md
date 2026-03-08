@@ -312,7 +312,8 @@ let codec = MHDeepLinkCodec<AppRoute>(
         preferredTransport: .customScheme
     )
 )
-let inbox = MHObservableDeepLinkInbox()
+let routeInbox = MHObservableDeepLinkInbox()
+let notificationInbox = MHDeepLinkInbox()
 let logger = MHLoggerFactory.osLogDefault.logger(
     category: "route",
     source: #fileID
@@ -325,7 +326,8 @@ let routeLifecycle = MHRouteLifecycle<AppRoute>(
 await routeLifecycle.setReadiness(hasLoadedInitialState)
 
 _ = try await routeLifecycle.submitLatest(
-    from: inbox,
+    from: routeInbox,
+    notificationInbox,
     using: codec,
     applyOnMainActor: { route in
         try await applyRoute(route)
@@ -335,7 +337,10 @@ _ = try await routeLifecycle.submitLatest(
 
 Use `MHObservableDeepLinkInbox` when SwiftUI needs to observe the pending URL,
 swap in `MHDeepLinkInbox` for actor-only handoff, and use `MHDeepLinkStore`
-when the pending URL must survive process restarts.
+when the pending URL must survive process restarts. When multiple sources can
+race to provide the next URL, pass them directly to `submitLatest(from:...)`
+in priority order or build an `MHDeepLinkSourceChain` first when you want to
+reuse that ordering elsewhere.
 
 The lower-level `MHRouteCoordinator` and identity-route apply path remain
 available for flows that need a custom resolve/apply split or direct pending

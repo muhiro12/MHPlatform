@@ -159,7 +159,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
             initialReadiness: true,
             isDuplicate: ==
         )
-        let source = TestDeepLinkURLSource(
+        let source = MHRouteExecutionTestDeepLinkURLSource(
             url: URL(string: "test://route/42")
         )
 
@@ -227,23 +227,6 @@ private extension MHRouteLifecycleDeepLinkHandoffTests {
     enum TestConstants {
         static let maximumInMemoryEvents = 20
         static let maximumDiskBytes = 1_000
-    }
-
-    actor TestDeepLinkURLSource: MHDeepLinkURLSource {
-        private var url: URL?
-        private(set) var consumeCount = 0
-
-        init(url: URL?) {
-            self.url = url
-        }
-
-        func consumeLatestURL() -> URL? {
-            consumeCount += 1
-            defer {
-                url = nil
-            }
-            return url
-        }
     }
 
     static func parseRoute(from url: URL) -> Int? {

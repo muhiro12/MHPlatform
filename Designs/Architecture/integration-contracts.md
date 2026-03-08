@@ -137,7 +137,11 @@ This document is normative for integration design.
   - `submit(_:parse:applyOnMainActor:)`
   - `submit(_:using:applyOnMainActor:)`
   - `submitLatest(from:parse:applyOnMainActor:)`
+  - `submitLatest(from: MHDeepLinkSourceChain, parse:applyOnMainActor:)`
+  - `submitLatest(from: any MHDeepLinkURLSource..., parse:applyOnMainActor:)`
   - `submitLatest(from:using:applyOnMainActor:)`
+  - `submitLatest(from: MHDeepLinkSourceChain, using:applyOnMainActor:)`
+  - `submitLatest(from: any MHDeepLinkURLSource..., using:applyOnMainActor:)`
   - `applyPendingIfReady(applyOnMainActor:)`
 - `MHRouteExecutionOutcome<Outcome>`:
   - `.applied(Outcome)`
@@ -163,6 +167,8 @@ This document is normative for integration design.
   without wiring `MHRouteExecutor` manually
 - Pending deep-link source drain from `MHDeepLinkInbox`,
   `MHObservableDeepLinkInbox`, or `MHDeepLinkStore`
+- Ordered multi-source deep-link drain via `MHDeepLinkSourceChain` or variadic
+  `submitLatest(from:...)`
 - Bootstrap/readiness transitions via `setReadiness(_:)`
 - Replay hook via `applyPendingIfReady()` after app state becomes ready
 - Low-level coordinator usage when the app needs explicit resolve/apply

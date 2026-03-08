@@ -111,6 +111,83 @@ struct MHRouteLifecycleCodecTests {
             "ignored deep-link URL because parsing failed"
         ])
     }
+
+    @Test
+    func submitLatest_usingCodec_fromSourceChain_appliesFirstAvailableRoute() async throws {
+        let (logger, logStore) = makeLogger()
+        let recorder = MHRouteExecutionEventRecorder()
+        let lifecycle = MHRouteLifecycle<CodecRoute>(
+            logger: logger,
+            initialReadiness: true,
+            isDuplicate: ==
+        )
+        let emptySource = MHRouteExecutionTestDeepLinkURLSource(url: nil)
+        let queuedSource = MHRouteExecutionTestDeepLinkURLSource(
+            url: URL(string: "test://route/31")
+        )
+        let fallbackSource = MHRouteExecutionTestDeepLinkURLSource(
+            url: URL(string: "test://route/99")
+        )
+
+        let outcome = try await lifecycle.submitLatest(
+            from: MHDeepLinkSourceChain(
+                emptySource,
+                queuedSource,
+                fallbackSource
+            ),
+            using: Self.codec
+        ) { route in
+            await recorder.record("apply:\(route.value)")
+        }
+
+        expectApplied(
+            outcome,
+            expected: 31
+        )
+        #expect(await emptySource.consumeCount == 1)
+        #expect(await queuedSource.consumeCount == 1)
+        #expect(await fallbackSource.consumeCount == 0)
+        #expect(await recorder.events() == ["apply:31"])
+        let events = await logStore.events()
+        #expect(events.map(\.message) == [
+            "accepted deep-link URL for route handling",
+            "route applied"
+        ])
+    }
+
+    @Test
+    func submitLatest_usingCodec_fromVariadicSources_stopsAtFirstAvailableURL() async throws {
+        let (logger, logStore) = makeLogger()
+        let recorder = MHRouteExecutionEventRecorder()
+        let lifecycle = MHRouteLifecycle<CodecRoute>(
+            logger: logger,
+            initialReadiness: true,
+            isDuplicate: ==
+        )
+        let invalidSource = MHRouteExecutionTestDeepLinkURLSource(
+            url: URL(string: "test://unknown/42")
+        )
+        let validSource = MHRouteExecutionTestDeepLinkURLSource(
+            url: URL(string: "test://route/42")
+        )
+
+        let outcome = try await lifecycle.submitLatest(
+            from: invalidSource,
+            validSource,
+            using: Self.codec
+        ) { route in
+            await recorder.record("apply:\(route.value)")
+        }
+
+        #expect(outcome == nil)
+        #expect(await invalidSource.consumeCount == 1)
+        #expect(await validSource.consumeCount == 0)
+        #expect(await recorder.events().isEmpty)
+        let events = await logStore.events()
+        #expect(events.map(\.message) == [
+            "ignored deep-link URL because parsing failed"
+        ])
+    }
 }
 
 private extension MHRouteLifecycleCodecTests {

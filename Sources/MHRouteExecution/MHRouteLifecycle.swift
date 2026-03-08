@@ -131,6 +131,38 @@ public actor MHRouteLifecycle<Route: Sendable> {
             applyOnMainActor: applyOnMainActor
         )
     }
+
+    /// Consumes the latest pending URL from an ordered source chain and submits
+    /// it when present.
+    @discardableResult
+    @preconcurrency
+    public func submitLatest(
+        from sources: MHDeepLinkSourceChain,
+        parse: RouteParser,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        try await submitLatestFromSource(
+            sources,
+            parse: parse,
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+
+    /// Consumes the latest pending URL from ordered sources and submits it when
+    /// present.
+    @discardableResult
+    @preconcurrency
+    public func submitLatest(
+        from sources: any MHDeepLinkURLSource...,
+        parse: RouteParser,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        try await submitLatest(
+            from: MHDeepLinkSourceChain(sources),
+            parse: parse,
+            applyOnMainActor: applyOnMainActor
+        )
+    }
 }
 
 private extension MHRouteLifecycle {
@@ -207,6 +239,40 @@ public extension MHRouteLifecycle where Route: MHDeepLinkRoute {
             parse: { incomingURL in
                 codec.parse(incomingURL)
             },
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+
+    /// Consumes the latest pending URL from an ordered source chain, parses it
+    /// with the supplied codec, and submits the resolved route when present.
+    @discardableResult
+    @preconcurrency
+    func submitLatest(
+        from sources: MHDeepLinkSourceChain,
+        using codec: MHDeepLinkCodec<Route>,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        try await submitLatest(
+            from: sources,
+            parse: { incomingURL in
+                codec.parse(incomingURL)
+            },
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+
+    /// Consumes the latest pending URL from ordered sources, parses it with the
+    /// supplied codec, and submits the resolved route when present.
+    @discardableResult
+    @preconcurrency
+    func submitLatest(
+        from sources: any MHDeepLinkURLSource...,
+        using codec: MHDeepLinkCodec<Route>,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        try await submitLatest(
+            from: MHDeepLinkSourceChain(sources),
+            using: codec,
             applyOnMainActor: applyOnMainActor
         )
     }
