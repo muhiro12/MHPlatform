@@ -21,6 +21,8 @@
 - Added `MHLoggerFactory` in `MHLogging` as a thin helper for app-owned logger
   setup around `MHLogStore`, `MHLogPolicy`, and optional subsystem/category
   defaults.
+- Added `MHPlatformTesting` as a separate test-support product so reusable
+  doubles and recorders stop living in per-module test folders.
 - Added `MHMutationAdapter.appending(_:)` so apps can combine fixed and
   value-derived follow-up steps without introducing a shared mutation schema.
 - Added `MHMutationWorkflow` and `MHMutationWorkflowError` so apps can stop
@@ -48,6 +50,8 @@
   `Route == Outcome` flows.
 - `MHLogging` with structured logging, query/export surfaces, and
   `MHLoggerFactory` for shared setup ergonomics.
+- `MHPlatformTesting` with reusable notification, deep-link, logging, and
+  route-execution test helpers.
 - `MHMutationFlow` with retry, cancellation, fixed `afterSuccess` steps, and
   value-driven `MHMutationAdapter`, additive adapter composition, and the
   higher-level `MHMutationWorkflow` shell.

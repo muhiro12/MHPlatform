@@ -2,6 +2,7 @@
 import Foundation
 import MHDeepLinking
 import MHNotificationPayloads
+import MHPlatformTesting
 import Testing
 
 @MainActor
@@ -100,6 +101,32 @@ struct MHNotificationRouteDestinationTests {
             source: .noRoute
         ))
         #expect(store.consumeLatest() == nil)
+    }
+
+    @Test
+    func deliverRouteURL_stores_payload_route_in_recorder_destination() async {
+        let recorder = MHDeepLinkURLRecorder()
+
+        let outcome = await MHNotificationOrchestrator.deliverRouteURL(
+            payload: .init(
+                routes: .init(
+                    defaultRouteURL: url("mhplatform://item?id=tea")
+                )
+            ),
+            response: .init(
+                actionIdentifier: "com.apple.UNNotificationDefaultActionIdentifier"
+            ),
+            destination: recorder
+        )
+
+        #expect(outcome == .init(
+            routeURL: url("mhplatform://item?id=tea"),
+            source: .payload
+        ))
+        #expect(await recorder.latestURL() == url("mhplatform://item?id=tea"))
+        #expect(await recorder.pendingURLHistoryValue() == [
+            url("mhplatform://item?id=tea")
+        ])
     }
 }
 

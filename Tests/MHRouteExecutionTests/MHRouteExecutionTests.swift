@@ -1,10 +1,11 @@
+import MHPlatformTesting
 import MHRouteExecution
 import Testing
 
 struct MHRouteExecutionTests {
     @Test
     func submit_applies_route_when_ready() async throws {
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
                 await recorder.record("resolve:\(route)")
@@ -28,7 +29,7 @@ struct MHRouteExecutionTests {
             expected: 30
         )
         #expect(
-            await recorder.events() == [
+            await recorder.values() == [
                 "resolve:3",
                 "apply:30"
             ]
@@ -38,14 +39,14 @@ struct MHRouteExecutionTests {
 
     @Test
     func submit_queues_route_until_readiness_gate_opens() async throws {
-        let recorder = MHRouteExecutionRouteRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
-                await recorder.recordResolvedRoute(route)
+                await recorder.record("resolve:\(route)")
                 return route
             },
             apply: { outcome in
-                await recorder.recordAppliedOutcome(outcome)
+                await recorder.record("apply:\(outcome)")
             }
         )
         let coordinator = MHRouteCoordinator(
@@ -74,19 +75,22 @@ struct MHRouteExecutionTests {
         )
 
         #expect(await coordinator.hasPendingRoute == false)
-        #expect(await recorder.snapshot() == (resolved: [1], applied: [1]))
+        #expect(await recorder.values() == [
+            "resolve:1",
+            "apply:1"
+        ])
     }
 
     @Test
     func submit_latest_wins_when_multiple_routes_are_queued() async throws {
-        let recorder = MHRouteExecutionRouteRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
-                await recorder.recordResolvedRoute(route)
+                await recorder.record("resolve:\(route)")
                 return route
             },
             apply: { outcome in
-                await recorder.recordAppliedOutcome(outcome)
+                await recorder.record("apply:\(outcome)")
             }
         )
         let coordinator = MHRouteCoordinator(
@@ -113,7 +117,10 @@ struct MHRouteExecutionTests {
             expected: 2
         )
 
-        #expect(await recorder.snapshot() == (resolved: [2], applied: [2]))
+        #expect(await recorder.values() == [
+            "resolve:2",
+            "apply:2"
+        ])
     }
 
     @Test
@@ -142,13 +149,13 @@ struct MHRouteExecutionTests {
 
     @Test
     func submit_queues_new_route_while_execution_is_running() async throws {
-        let recorder = MHRouteExecutionRouteRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let startedSignal = MHRouteExecutionStartedSignal()
         let gate = MHRouteExecutionSuspensionGate()
 
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
-                await recorder.recordResolvedRoute(route)
+                await recorder.record("resolve:\(route)")
                 if route == 1 {
                     await startedSignal.markStarted()
                     await gate.wait()
@@ -156,7 +163,7 @@ struct MHRouteExecutionTests {
                 return route
             },
             apply: { outcome in
-                await recorder.recordAppliedOutcome(outcome)
+                await recorder.record("apply:\(outcome)")
             }
         )
         let coordinator = MHRouteCoordinator(
@@ -192,7 +199,12 @@ struct MHRouteExecutionTests {
             expected: 2
         )
 
-        #expect(await recorder.snapshot() == (resolved: [1, 2], applied: [1, 2]))
+        #expect(await recorder.values() == [
+            "resolve:1",
+            "apply:1",
+            "resolve:2",
+            "apply:2"
+        ])
         #expect(await coordinator.hasPendingRoute == false)
     }
 

@@ -58,6 +58,17 @@ import MHDeepLinking
 import MHRouteExecution
 ```
 
+Testing support:
+
+```swift
+.product(name: "MHPlatformTesting", package: "MHPlatform")
+```
+
+`MHPlatformTesting` is a separate test-support product. It provides reusable
+helpers such as `MHNotificationCenterDouble`, `MHDeepLinkURLRecorder`,
+`MHLogSinkRecorder`, and `MHRouteExecutionRecorder` without re-exporting them
+through the umbrella `MHPlatform` module.
+
 ## Current Adoption Snapshot
 
 - Incomes and Cookle currently adopt MHPlatform primarily through the umbrella

@@ -1,5 +1,6 @@
 #if canImport(UserNotifications)
 import MHNotificationPayloads
+import MHPlatformTesting
 import Testing
 import UserNotifications
 
@@ -7,7 +8,7 @@ import UserNotifications
 struct MHNotificationManagedRequestMatcherTests {
     @Test
     func replaceManagedPendingRequests_withPrefixMatcher_removes_managed_only() async {
-        let center = NotificationCenterDouble(
+        let center = MHNotificationCenterDouble(
             authorizationStatus: .authorized,
             pendingRequests: [
                 request(identifier: "managed.old"),
@@ -29,7 +30,7 @@ struct MHNotificationManagedRequestMatcherTests {
 
     @Test
     func replaceManagedPendingRequests_withExactMatcher_removes_exact_identifiers_only() async {
-        let center = NotificationCenterDouble(
+        let center = MHNotificationCenterDouble(
             authorizationStatus: .authorized,
             pendingRequests: [
                 request(identifier: "managed.keep"),
@@ -55,7 +56,7 @@ struct MHNotificationManagedRequestMatcherTests {
 
     @Test
     func replaceManagedPendingRequests_withMixedMatcher_combines_prefix_and_exact_matches() async {
-        let center = NotificationCenterDouble(
+        let center = MHNotificationCenterDouble(
             authorizationStatus: .authorized,
             pendingRequests: [
                 request(identifier: "managed.remove"),
@@ -93,7 +94,7 @@ struct MHNotificationManagedRequestMatcherTests {
 
     @Test
     func replaceManagedPendingRequests_withMatcher_leaves_pending_requests_when_nothing_matches() async {
-        let center = NotificationCenterDouble(
+        let center = MHNotificationCenterDouble(
             authorizationStatus: .authorized,
             pendingRequests: [
                 request(identifier: "foreign.keep"),

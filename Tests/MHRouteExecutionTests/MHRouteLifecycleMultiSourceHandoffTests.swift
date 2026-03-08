@@ -1,25 +1,26 @@
 import Foundation
-@testable import MHDeepLinking
-@testable import MHLogging
-@testable import MHRouteExecution
+import MHDeepLinking
+import MHLogging
+import MHPlatformTesting
+import MHRouteExecution
 import Testing
 
 struct MHRouteLifecycleMultiSourceHandoffTests {
     @Test
     func submitLatest_fromSourceChain_consumesFirstAvailableURLAndAppliesRoute() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: true,
             isDuplicate: ==
         )
-        let emptySource = MHRouteExecutionTestDeepLinkURLSource(url: nil)
-        let queuedSource = MHRouteExecutionTestDeepLinkURLSource(
-            url: URL(string: "test://route/35")
+        let emptySource = MHDeepLinkURLRecorder(initialURL: nil)
+        let queuedSource = MHDeepLinkURLRecorder(
+            initialURL: URL(string: "test://route/35")
         )
-        let fallbackSource = MHRouteExecutionTestDeepLinkURLSource(
-            url: URL(string: "test://route/88")
+        let fallbackSource = MHDeepLinkURLRecorder(
+            initialURL: URL(string: "test://route/88")
         )
 
         let outcome = try await lifecycle.submitLatest(
@@ -38,10 +39,10 @@ struct MHRouteLifecycleMultiSourceHandoffTests {
             appliedOutcome,
             expected: 35
         )
-        #expect(await emptySource.consumeCount == 1)
-        #expect(await queuedSource.consumeCount == 1)
-        #expect(await fallbackSource.consumeCount == 0)
-        #expect(await recorder.events() == ["apply:35"])
+        #expect(await emptySource.consumeCountValue() == 1)
+        #expect(await queuedSource.consumeCountValue() == 1)
+        #expect(await fallbackSource.consumeCountValue() == 0)
+        #expect(await recorder.values() == ["apply:35"])
         let events = await store.events()
         #expect(events.map(\.message) == [
             "accepted deep-link URL for route handling",
@@ -52,15 +53,15 @@ struct MHRouteLifecycleMultiSourceHandoffTests {
     @Test
     func submitLatest_fromVariadicSources_appliesRouteFromLaterAvailableSource() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: true,
             isDuplicate: ==
         )
-        let emptySource = MHRouteExecutionTestDeepLinkURLSource(url: nil)
-        let queuedSource = MHRouteExecutionTestDeepLinkURLSource(
-            url: URL(string: "test://route/64")
+        let emptySource = MHDeepLinkURLRecorder(initialURL: nil)
+        let queuedSource = MHDeepLinkURLRecorder(
+            initialURL: URL(string: "test://route/64")
         )
 
         let outcome = try await lifecycle.submitLatest(
@@ -76,9 +77,9 @@ struct MHRouteLifecycleMultiSourceHandoffTests {
             appliedOutcome,
             expected: 64
         )
-        #expect(await emptySource.consumeCount == 1)
-        #expect(await queuedSource.consumeCount == 1)
-        #expect(await recorder.events() == ["apply:64"])
+        #expect(await emptySource.consumeCountValue() == 1)
+        #expect(await queuedSource.consumeCountValue() == 1)
+        #expect(await recorder.values() == ["apply:64"])
         let events = await store.events()
         #expect(events.map(\.message) == [
             "accepted deep-link URL for route handling",

@@ -1,10 +1,12 @@
-import MHNotificationPayloads
 #if canImport(UserNotifications)
 import Foundation
+import MHNotificationPayloads
 import UserNotifications
 
+/// In-memory `MHNotificationCentering` double for notification orchestration tests.
 @MainActor
-final class NotificationCenterDouble: MHNotificationCentering {
+@preconcurrency
+public final class MHNotificationCenterDouble: MHNotificationCentering {
     private static let authorizationDeniedCode = 1
     private static let addFailureCode = 2
 
@@ -17,7 +19,7 @@ final class NotificationCenterDouble: MHNotificationCentering {
     private var categoryIdentifiers = [String]()
     private var addAttemptIdentifiers = [String]()
 
-    init(
+    public init(
         authorizationStatus: UNAuthorizationStatus,
         pendingRequests: [UNNotificationRequest],
         authorizationStatusAfterRequest: UNAuthorizationStatus = .authorized,
@@ -29,68 +31,76 @@ final class NotificationCenterDouble: MHNotificationCentering {
         self.failingAddIdentifiers = failingAddIdentifiers
     }
 
-    func fetchAuthorizationStatus() async -> UNAuthorizationStatus {
+    public func fetchAuthorizationStatus() async -> UNAuthorizationStatus {
         await Task.yield()
         return authorizationStatus
     }
 
-    func requestAuthorization(options _: UNAuthorizationOptions) async throws -> Bool {
+    public func requestAuthorization(
+        options _: UNAuthorizationOptions
+    ) async throws -> Bool {
         await Task.yield()
         requestAuthorizationCallCount += 1
         authorizationStatus = authorizationStatusAfterRequest
+
         guard authorizationStatus != .denied else {
             throw NSError(
-                domain: "NotificationCenterDouble",
+                domain: "MHNotificationCenterDouble",
                 code: Self.authorizationDeniedCode
             )
         }
+
         return authorizationStatus == .authorized
     }
 
-    func fetchPendingNotificationRequests() async -> [UNNotificationRequest] {
+    public func fetchPendingNotificationRequests() async -> [UNNotificationRequest] {
         await Task.yield()
         return pendingRequests
     }
 
-    func removePendingRequests(withIdentifiers identifiers: [String]) {
+    public func removePendingRequests(withIdentifiers identifiers: [String]) {
         let removedIdentifiers = Set(identifiers)
         pendingRequests.removeAll { request in
             removedIdentifiers.contains(request.identifier)
         }
     }
 
-    func add(_ request: UNNotificationRequest) async throws {
+    public func add(_ request: UNNotificationRequest) async throws {
         await Task.yield()
         addAttemptIdentifiers.append(request.identifier)
+
         guard failingAddIdentifiers.contains(request.identifier) == false else {
             throw NSError(
-                domain: "NotificationCenterDouble",
+                domain: "MHNotificationCenterDouble",
                 code: Self.addFailureCode
             )
         }
+
         pendingRequests.removeAll { pendingRequest in
             pendingRequest.identifier == request.identifier
         }
         pendingRequests.append(request)
     }
 
-    func registerNotificationCategories(_ categories: Set<UNNotificationCategory>) {
+    public func registerNotificationCategories(
+        _ categories: Set<UNNotificationCategory>
+    ) {
         categoryIdentifiers = categories.map(\.identifier).sorted()
     }
 
-    func requestAuthorizationCallCountValue() -> Int {
+    public func requestAuthorizationCallCountValue() -> Int {
         requestAuthorizationCallCount
     }
 
-    func pendingIdentifiers() -> [String] {
+    public func pendingIdentifiers() -> [String] {
         pendingRequests.map(\.identifier).sorted()
     }
 
-    func categoryIdentifiersValue() -> [String] {
+    public func categoryIdentifiersValue() -> [String] {
         categoryIdentifiers
     }
 
-    func addAttemptIdentifiersValue() -> [String] {
+    public func addAttemptIdentifiersValue() -> [String] {
         addAttemptIdentifiers
     }
 }

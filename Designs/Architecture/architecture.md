@@ -19,6 +19,7 @@ surfaces of the concrete modules for app adoption.
 - `MHPreferences`
 - `MHReviewPolicy`
 - `MHLogging`
+- `MHPlatformTesting`
 
 Consumers may either `import MHPlatform` for the common umbrella surface or
 import concrete module names directly for granular adoption.
@@ -191,6 +192,17 @@ Integration contract:
   `MHLogConsoleView`
 - Does not own app-specific PII masking policy, alerting policy, or external telemetry backend contracts
 
+### `MHPlatformTesting`
+
+- Owns package-level test doubles and recorders intended for app and package
+  tests:
+  `MHNotificationCenterDouble`, `MHDeepLinkURLRecorder`,
+  `MHLogSinkRecorder`, `MHRouteExecutionRecorder`
+- Depends on runtime modules only as needed to conform to their public
+  test-facing protocols
+- Is intentionally separate from the umbrella `MHPlatform` product so
+  production targets do not pick up testing helpers by default
+
 ## Dependency Rules
 
 - Module dependencies are intentionally flat for v1.
@@ -210,6 +222,8 @@ Integration contract:
 - `MHReviewPolicy` depends on `MHLogging` for requester outcome logging and
   has no other MHPlatform module dependencies.
 - `MHLogging` has no dependency on the other modules.
+- `MHPlatformTesting` depends on `MHDeepLinking`, `MHLogging`, and
+  `MHNotificationPayloads` to provide reusable doubles and recorders.
 - ExampleApp may import all public modules or the umbrella product, but package
   targets must stay independent.
 

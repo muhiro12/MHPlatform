@@ -54,6 +54,10 @@ let package = Package(
         .library(
             name: "MHLogging",
             targets: ["MHLogging"]
+        ),
+        .library(
+            name: "MHPlatformTesting",
+            targets: ["MHPlatformTesting"]
         )
     ],
     dependencies: [
@@ -140,6 +144,14 @@ let package = Package(
         .target(
             name: "MHLogging"
         ),
+        .target(
+            name: "MHPlatformTesting",
+            dependencies: [
+                "MHDeepLinking",
+                "MHLogging",
+                "MHNotificationPayloads"
+            ]
+        ),
         .testTarget(
             name: "MHPlatformTests",
             dependencies: ["MHPlatform"]
@@ -163,7 +175,8 @@ let package = Package(
             name: "MHNotificationPayloadsTests",
             dependencies: [
                 "MHNotificationPayloads",
-                "MHDeepLinking"
+                "MHDeepLinking",
+                "MHPlatformTesting"
             ]
         ),
         .testTarget(
@@ -175,7 +188,8 @@ let package = Package(
             dependencies: [
                 "MHDeepLinking",
                 "MHRouteExecution",
-                "MHLogging"
+                "MHLogging",
+                "MHPlatformTesting"
             ]
         ),
         .testTarget(
@@ -195,7 +209,10 @@ let package = Package(
         ),
         .testTarget(
             name: "MHLoggingTests",
-            dependencies: ["MHLogging"]
+            dependencies: [
+                "MHLogging",
+                "MHPlatformTesting"
+            ]
         )
     ]
 )

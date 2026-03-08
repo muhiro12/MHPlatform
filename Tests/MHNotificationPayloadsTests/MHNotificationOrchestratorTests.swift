@@ -1,6 +1,7 @@
 #if canImport(UserNotifications)
 import Foundation
 import MHNotificationPayloads
+import MHPlatformTesting
 import Testing
 import UserNotifications
 
@@ -8,7 +9,7 @@ import UserNotifications
 struct MHNotificationOrchestratorTests {
     @Test
     func registerCategories_registers_all_descriptors() {
-        let center = NotificationCenterDouble(
+        let center = MHNotificationCenterDouble(
             authorizationStatus: .authorized,
             pendingRequests: []
         )
@@ -40,7 +41,7 @@ struct MHNotificationOrchestratorTests {
 
     @Test
     func requestAuthorizationIfNeeded_requests_when_status_is_not_determined() async {
-        let center = NotificationCenterDouble(
+        let center = MHNotificationCenterDouble(
             authorizationStatus: .notDetermined,
             pendingRequests: [],
             authorizationStatusAfterRequest: .authorized
@@ -59,7 +60,7 @@ struct MHNotificationOrchestratorTests {
     @Test
     func requestAuthorizationIfNeeded_skips_request_for_authorized_or_denied() async {
         for initialStatus in [UNAuthorizationStatus.authorized, .denied] {
-            let center = NotificationCenterDouble(
+            let center = MHNotificationCenterDouble(
                 authorizationStatus: initialStatus,
                 pendingRequests: []
             )
@@ -77,7 +78,7 @@ struct MHNotificationOrchestratorTests {
 
     @Test
     func replaceManagedPendingRequests_continues_after_add_failures() async {
-        let center = NotificationCenterDouble(
+        let center = MHNotificationCenterDouble(
             authorizationStatus: .authorized,
             pendingRequests: [],
             failingAddIdentifiers: ["managed.fail"]
@@ -112,7 +113,7 @@ struct MHNotificationOrchestratorTests {
 
     @Test
     func replaceManagedPendingRequests_keeps_existing_request_when_replacement_fails() async {
-        let center = NotificationCenterDouble(
+        let center = MHNotificationCenterDouble(
             authorizationStatus: .authorized,
             pendingRequests: [
                 request(identifier: "managed.keep"),

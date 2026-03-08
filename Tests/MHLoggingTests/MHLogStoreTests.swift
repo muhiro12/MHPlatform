@@ -1,5 +1,6 @@
 import Foundation
 import MHLogging
+import MHPlatformTesting
 import Testing
 
 struct MHLogStoreTests {
@@ -100,6 +101,25 @@ struct MHLogStoreTests {
         )
         #expect(event.level == .warning)
         #expect(event.message == "message-2")
+    }
+
+    @Test
+    func forwards_events_to_custom_sink_recorder() async {
+        let policy = MHLogPolicy(
+            minimumLevel: .debug,
+            persistsToDisk: false,
+            maximumInMemoryEvents: 20,
+            maximumDiskBytes: 1_000
+        )
+        let sinkRecorder = MHLogSinkRecorder()
+        let store = MHLogStore(
+            policy: policy,
+            sinks: [sinkRecorder]
+        )
+
+        await store.record(makeEvent(index: 1, level: .error))
+
+        #expect(await sinkRecorder.events().map(\.message) == ["message-1"])
     }
 }
 

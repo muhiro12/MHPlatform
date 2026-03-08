@@ -1,14 +1,15 @@
 import Foundation
-@testable import MHDeepLinking
-@testable import MHLogging
-@testable import MHRouteExecution
+import MHDeepLinking
+import MHLogging
+import MHPlatformTesting
+import MHRouteExecution
 import Testing
 
 struct MHRouteLifecycleTests {
     @Test
     func submit_logs_applied_outcome() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: true,
@@ -23,7 +24,7 @@ struct MHRouteLifecycleTests {
             outcome,
             expected: 3
         )
-        #expect(await recorder.events() == ["apply:3"])
+        #expect(await recorder.values() == ["apply:3"])
         let events = await store.events()
         #expect(events.map(\.level) == [.notice])
         #expect(events.map(\.message) == ["route applied"])
@@ -32,7 +33,7 @@ struct MHRouteLifecycleTests {
     @Test
     func applyPendingIfReady_logs_queued_then_applied() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: false,
@@ -62,7 +63,7 @@ struct MHRouteLifecycleTests {
             appliedOutcome,
             expected: 7
         )
-        #expect(await recorder.events() == ["apply:7"])
+        #expect(await recorder.values() == ["apply:7"])
         let events = await store.events()
         #expect(events.map(\.message) == [
             "route queued until execution becomes ready",
@@ -99,7 +100,7 @@ struct MHRouteLifecycleTests {
     @Test
     func submit_url_logs_acceptance_and_applies_route() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: true,
@@ -125,7 +126,7 @@ struct MHRouteLifecycleTests {
             appliedOutcome,
             expected: 5
         )
-        #expect(await recorder.events() == ["apply:5"])
+        #expect(await recorder.values() == ["apply:5"])
         let events = await store.events()
         #expect(events.map(\.message) == [
             "accepted deep-link URL for route handling",
@@ -136,7 +137,7 @@ struct MHRouteLifecycleTests {
     @Test
     func submit_url_logs_rejection_without_applying_route() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: true,
@@ -160,7 +161,7 @@ struct MHRouteLifecycleTests {
         if outcome != nil {
             Issue.record("Expected nil when URL parsing fails.")
         }
-        #expect(await recorder.events().isEmpty)
+        #expect(await recorder.values().isEmpty)
         let events = await store.events()
         #expect(events.map(\.message) == [
             "ignored deep-link URL because parsing failed"

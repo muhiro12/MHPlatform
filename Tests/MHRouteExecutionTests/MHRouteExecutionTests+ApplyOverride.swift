@@ -1,10 +1,11 @@
+import MHPlatformTesting
 import MHRouteExecution
 import Testing
 
 extension MHRouteExecutionTests {
     @Test
     func submit_with_apply_override_applies_route_when_ready() async throws {
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
                 await recorder.record("resolve:\(route)")
@@ -30,7 +31,7 @@ extension MHRouteExecutionTests {
             expected: 30
         )
         #expect(
-            await recorder.events() == [
+            await recorder.values() == [
                 "resolve:3",
                 "override:30"
             ]
@@ -39,7 +40,7 @@ extension MHRouteExecutionTests {
 
     @Test
     func apply_pending_with_apply_override_uses_override_when_readiness_opens() async throws {
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
                 await recorder.record("resolve:\(route)")
@@ -71,7 +72,7 @@ extension MHRouteExecutionTests {
             expected: 7
         )
         #expect(
-            await recorder.events() == [
+            await recorder.values() == [
                 "resolve:7",
                 "override:7"
             ]
@@ -80,7 +81,7 @@ extension MHRouteExecutionTests {
 
     @Test
     func submit_with_apply_override_keeps_duplicate_pending_route_deduplicated() async throws {
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let executor = MHRouteExecutor<Int, Int>(
             resolve: { route in
                 await recorder.record("resolve:\(route)")
@@ -117,7 +118,7 @@ extension MHRouteExecutionTests {
             expected: 9
         )
         #expect(
-            await recorder.events() == [
+            await recorder.values() == [
                 "resolve:9",
                 "override:9"
             ]

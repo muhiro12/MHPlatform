@@ -1,3 +1,4 @@
+import MHPlatformTesting
 import MHRouteExecution
 import Testing
 
@@ -13,7 +14,7 @@ extension MHRouteExecutionTests {
 
     @Test
     func identity_coordinator_applies_route_when_ready() async throws {
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let coordinator = MHRouteCoordinator<Int, Int>(
             initialReadiness: true
         ) { lhs, rhs in
@@ -28,7 +29,7 @@ extension MHRouteExecutionTests {
             outcome,
             expected: 3
         )
-        #expect(await recorder.events() == ["override:3"])
+        #expect(await recorder.values() == ["override:3"])
         #expect(await coordinator.hasPendingRoute == false)
     }
 

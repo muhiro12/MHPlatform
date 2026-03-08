@@ -1,14 +1,15 @@
 import Foundation
-@testable import MHDeepLinking
-@testable import MHLogging
-@testable import MHRouteExecution
+import MHDeepLinking
+import MHLogging
+import MHPlatformTesting
+import MHRouteExecution
 import Testing
 
 struct MHRouteLifecycleDeepLinkHandoffTests {
     @Test
     func submitLatest_fromInbox_returnsNilWithoutLoggingWhenNoPendingURLExists() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: true,
@@ -24,7 +25,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
         }
 
         #expect(outcome == nil)
-        #expect(await recorder.events().isEmpty)
+        #expect(await recorder.values().isEmpty)
         #expect(await store.events().isEmpty)
     }
 
@@ -32,7 +33,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
     @MainActor
     func submitLatest_fromObservableInbox_appliesRouteAndClearsPendingURL() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: true,
@@ -57,7 +58,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
             expected: 12
         )
         #expect(inbox.pendingURL == nil)
-        #expect(await recorder.events() == ["apply:12"])
+        #expect(await recorder.values() == ["apply:12"])
         let events = await store.events()
         #expect(events.map(\.message) == [
             "accepted deep-link URL for route handling",
@@ -68,7 +69,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
     @Test
     func submitLatest_fromStoreQueuesRouteAndExposesLifecycleState() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: false,
@@ -112,7 +113,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
             expected: 21
         )
         #expect(await lifecycle.hasPendingRoute == false)
-        #expect(await recorder.events() == ["apply:21"])
+        #expect(await recorder.values() == ["apply:21"])
         let events = await store.events()
         #expect(events.map(\.message) == [
             "accepted deep-link URL for route handling",
@@ -124,7 +125,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
     @Test
     func submitLatest_fromInbox_logsParseFailureForInvalidURL() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: true,
@@ -143,7 +144,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
         }
 
         #expect(outcome == nil)
-        #expect(await recorder.events().isEmpty)
+        #expect(await recorder.values().isEmpty)
         let events = await store.events()
         #expect(events.map(\.message) == [
             "ignored deep-link URL because parsing failed"
@@ -153,14 +154,14 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
     @Test
     func submitLatest_fromGenericSource_consumesPendingURLAndAppliesRoute() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: true,
             isDuplicate: ==
         )
-        let source = MHRouteExecutionTestDeepLinkURLSource(
-            url: URL(string: "test://route/42")
+        let source = MHDeepLinkURLRecorder(
+            initialURL: URL(string: "test://route/42")
         )
 
         let outcome = try await lifecycle.submitLatest(
@@ -175,8 +176,8 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
             appliedOutcome,
             expected: 42
         )
-        #expect(await source.consumeCount == 1)
-        #expect(await recorder.events() == ["apply:42"])
+        #expect(await source.consumeCountValue() == 1)
+        #expect(await recorder.values() == ["apply:42"])
         let events = await store.events()
         #expect(events.map(\.message) == [
             "accepted deep-link URL for route handling",
@@ -187,7 +188,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
     @Test
     func activate_setsReadinessAndAppliesQueuedRoute() async throws {
         let (logger, store) = makeLogger()
-        let recorder = MHRouteExecutionEventRecorder()
+        let recorder = MHRouteExecutionRecorder<String>()
         let lifecycle = MHRouteLifecycle<Int>(
             logger: logger,
             initialReadiness: false,
@@ -214,7 +215,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
         )
         #expect(await lifecycle.isReady)
         #expect(await lifecycle.hasPendingRoute == false)
-        #expect(await recorder.events() == ["apply:9"])
+        #expect(await recorder.values() == ["apply:9"])
         let events = await store.events()
         #expect(events.map(\.message) == [
             "route queued until execution becomes ready",
