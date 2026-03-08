@@ -21,9 +21,20 @@ This document is normative for integration design.
   - `nativeAdUnitID`
   - `preferencesSuiteName`
   - `showsLicenses`
+- Optional route bootstrap primitive:
+  - `MHAppRoutePipeline<Route>`
+  - app-owned lifecycle placement for `routePipeline.task(name:)`
 
 ### Outputs
 
+- Bootstrap shell:
+  - `MHAppRuntimeBootstrap`
+    - `runtime`
+    - `lifecyclePlan`
+    - `routeInbox`
+    - `makeLifecycle()`
+  - SwiftUI adapter:
+    - `View.mhAppRuntimeBootstrap(_:)`
 - Startup APIs:
   - `startIfNeeded()`
   - `start()`
@@ -49,13 +60,16 @@ This document is normative for integration design.
 ### Threading / Actor
 
 - `MHAppRuntime` is `@MainActor` and `@Observable`.
+- `MHAppRuntimeBootstrap` is `@MainActor` and keeps runtime/lifecycle/root
+  route integration on main actor.
 - Startup side effects and runtime state transitions are serialized on main actor.
 - `MHAppRuntimeLifecycle` is `@MainActor` and runs ordered lifecycle tasks on
   the main actor.
 
 ### Intended Call Sites
 
-- App launch bootstrap (`.task` / initial appearance hook)
+- App launch bootstrap assembly for production / preview factories
+- SwiftUI roots that want a single package-owned runtime entry point
 - App foreground transitions (`scenePhase == .active`)
 - SwiftUI environment injection for app-wide runtime access
 - App-local startup and foreground work that should stay explicit but no longer

@@ -85,6 +85,15 @@ public final class MHAppRoutePipeline<Route: Sendable> {
         _ = await activateIfNeeded()
         return await drainPendingRoutesIfNeeded()
     }
+
+    /// Builds a lifecycle task that synchronizes pending routes once.
+    public func task(
+        name: String = "synchronizePendingRoutes"
+    ) -> MHAppRuntimeTask {
+        .init(name: name) {
+            _ = await self.synchronizePendingRoutesIfPossible()
+        }
+    }
 }
 
 public extension MHAppRoutePipeline where Route: MHDeepLinkRoute {

@@ -78,16 +78,15 @@ extension MHPlatformIntegrationTests {
             intentSource: intentSource,
             notificationDestination: notificationDestination
         )
-        let runtime = makeRuntime(traceRecorder: traceRecorder)
-        let lifecycle = makeLifecycle(
-            runtime: runtime,
+        let bootstrap = makeBootstrap(
             routePipeline: routePipeline,
             traceRecorder: traceRecorder,
             notificationDestination: notificationDestination
         )
+        let lifecycle = bootstrap.makeLifecycle()
 
         return .init(
-            runtime: runtime,
+            bootstrap: bootstrap,
             lifecycle: lifecycle,
             traceRecorder: traceRecorder,
             sinkRecorder: sinkRecorder,
@@ -140,15 +139,14 @@ extension MHPlatformIntegrationTests {
         )
     }
 
-    func makeLifecycle(
-        runtime: MHAppRuntime,
+    func makeBootstrap(
         routePipeline: MHAppRoutePipeline<IntegrationRoute>,
         traceRecorder: LockedTraceRecorder,
         notificationDestination: MHDeepLinkURLRecorder
-    ) -> MHAppRuntimeLifecycle {
+    ) -> MHAppRuntimeBootstrap {
         .init(
-            runtime: runtime,
-            plan: .init(
+            runtime: makeRuntime(traceRecorder: traceRecorder),
+            lifecyclePlan: .init(
                 startupTasks: [
                     .init(name: "deliverNotificationRoute") {
                         await deliverNotificationRoute(
@@ -165,7 +163,8 @@ extension MHPlatformIntegrationTests {
                         )
                     }
                 ]
-            )
+            ),
+            routePipeline: routePipeline
         )
     }
 
@@ -309,7 +308,7 @@ extension MHPlatformIntegrationTests {
     func assertExpectedState(
         for harness: Harness
     ) async {
-        #expect(harness.runtime.hasStarted)
+        #expect(harness.bootstrap.runtime.hasStarted)
         #expect(await harness.intentSource.consumeCountValue() == 1)
         #expect(await harness.notificationDestination.consumeCountValue() == 1)
         #expect(await harness.notificationDestination.latestURL() == nil)

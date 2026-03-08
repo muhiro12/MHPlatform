@@ -4,7 +4,7 @@ import MHLogging
 import MHPlatformTesting
 
 struct Harness {
-    let runtime: MHAppRuntime
+    let bootstrap: MHAppRuntimeBootstrap
     let lifecycle: MHAppRuntimeLifecycle
     let traceRecorder: LockedTraceRecorder
     let sinkRecorder: MHLogSinkRecorder

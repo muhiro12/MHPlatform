@@ -97,14 +97,12 @@ For a package-owned end-to-end reference, see
 
 ## MHAppRuntime
 
-`MHAppRuntime` provides the current shared runtime-start surface for app startup
-side effects and shared infrastructure state. It is already adopted by both
-Incomes and Cookle via the umbrella `MHPlatform` product. `MHAppRuntimeLifecycle`
-now lets apps move ordered startup and foreground wiring into a package-owned
-shell instead of keeping repeated `.task` and `scenePhase` coordination inline.
-`MHAppRoutePipeline` complements that lifecycle shell by owning the root-level
-deep-link inbox, ordered source handoff, readiness activation, and SwiftUI URL
-ingestion hooks that otherwise stay in app code.
+`MHAppRuntimeBootstrap` is the recommended runtime-start entry point for new
+apps. It assembles `MHAppRuntime`, `MHAppRuntimeLifecyclePlan`, optional route
+pipeline root integration, and SwiftUI runtime environment injection into a
+single package-owned shell. Lower-level `MHAppRuntime`, `MHAppRuntimeLifecycle`,
+and `MHAppRoutePipeline` remain available when an app needs custom integration
+or non-SwiftUI control.
 
 Integration contract:
 [`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)
@@ -115,15 +113,6 @@ import MHDeepLinking
 import MHLogging
 import MHRouteExecution
 
-let runtime = MHAppRuntime(
-    configuration: .init(
-        subscriptionProductIDs: ["com.example.app.premium.monthly"],
-        subscriptionGroupID: "12345678",
-        nativeAdUnitID: "ca-app-pub-xxxxxxxx/yyyyyyyy",
-        preferencesSuiteName: "group.com.example.app",
-        showsLicenses: true
-    )
-)
 let routeCodec = MHDeepLinkCodec<AppRoute>(
     configuration: .init(
         customScheme: "myapp",
@@ -150,31 +139,39 @@ let routePipeline = MHAppRoutePipeline(
 ) { route in
     try await applyRoute(route)
 }
+let bootstrap = MHAppRuntimeBootstrap(
+    configuration: .init(
+        subscriptionProductIDs: ["com.example.app.premium.monthly"],
+        subscriptionGroupID: "12345678",
+        nativeAdUnitID: "ca-app-pub-xxxxxxxx/yyyyyyyy",
+        preferencesSuiteName: "group.com.example.app",
+        showsLicenses: true
+    ),
+    lifecyclePlan: .init(
+        commonTasks: [
+            .init(name: "syncSubscriptionState") {
+                syncSubscriptionStateIfNeeded()
+            }
+        ],
+        startupTasks: [
+            .init(name: "loadConfig") {
+                await configurationService.load()
+            }
+        ],
+        activeTasks: [
+            routePipeline.task(name: "synchronizePendingRoutes")
+        ],
+        skipFirstActivePhase: true
+    ),
+    routePipeline: routePipeline
+)
 
 ContentView()
-    .mhAppRoutePipeline(routePipeline)
-    .mhAppRuntimeLifecycle(
-        runtime: runtime,
-        plan: .init(
-            commonTasks: [
-                .init(name: "syncSubscriptionState") {
-                    syncSubscriptionStateIfNeeded()
-                }
-            ],
-            startupTasks: [
-                .init(name: "loadConfig") {
-                    await configurationService.load()
-                }
-            ],
-            activeTasks: [
-                .init(name: "synchronizePendingRoutes") {
-                    await routePipeline.synchronizePendingRoutesIfPossible()
-                }
-            ],
-            skipFirstActivePhase: true
-        )
-    )
+    .mhAppRuntimeBootstrap(bootstrap)
 ```
+
+Use `bootstrap.routeInbox` when app-owned services need a package-owned pending
+route destination, such as notification or App Intent handoff adapters.
 
 ## MHDeepLinking
 

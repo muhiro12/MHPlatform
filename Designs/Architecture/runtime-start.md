@@ -3,11 +3,26 @@
 ## Why `startIfNeeded` exists
 
 `MHAppRuntime` provides a single startup entry point for shared app platform side
-effects. `MHAppRuntimeLifecycle` layers ordered startup and foreground tasks on
-top so apps can stop repeating view-local lifecycle coordination.
+effects. `MHAppRuntimeBootstrap` is the package-owned assembly shell that now
+binds runtime startup, lifecycle coordination, optional route plumbing, and
+SwiftUI environment injection into one root integration surface.
 
 `startIfNeeded()` is idempotent. Repeated calls are safe and do not repeat
 startup side effects.
+
+## Bootstrap shell
+
+`MHAppRuntimeBootstrap` owns the package side of runtime assembly:
+
+- `MHAppRuntime`
+- `MHAppRuntimeLifecyclePlan`
+- `MHAppRuntimeLifecycle` creation through `makeLifecycle()`
+- optional route inbox exposure for app-owned services
+- SwiftUI root integration through `View.mhAppRuntimeBootstrap(_:)`
+
+This moves the repeated "runtime + lifecycle + route root wiring + environment"
+shape out of app roots and into MHPlatform while leaving app-specific services,
+model containers, and route meanings outside the package.
 
 ## Lifecycle shell
 
@@ -25,8 +40,9 @@ coordination mechanics into MHPlatform.
 `MHAppRuntimeLifecyclePlan` also supports `commonTasks` so apps can define
 shared startup/active work once while preserving explicit per-phase tasks.
 
-For SwiftUI entry points, `View.mhAppRuntimeLifecycle(runtime:plan:)` is the
-default adapter. It keeps `scenePhase` observation and lifecycle object storage
+For SwiftUI entry points, `View.mhAppRuntimeBootstrap(_:)` is now the preferred
+adapter and `View.mhAppRuntimeLifecycle(runtime:plan:)` remains the lower-level
+escape hatch. Both keep `scenePhase` observation and lifecycle object storage
 inside MHPlatform while preserving the same ordered task plan.
 
 ## Route pipeline shell
@@ -38,8 +54,9 @@ runtime lifecycle wiring in app code:
 - ordered pending-source composition with the pipeline inbox appended last
 - one-time route execution activation through `MHRouteLifecycle`
 - one-at-a-time pending URL drain
+- lifecycle task generation through `task(name:)`
 - SwiftUI `onOpenURL` and `NSUserActivityTypeBrowsingWeb` ingestion through
-  `View.mhAppRoutePipeline(_:)`
+  `View.mhAppRoutePipeline(_:)` or `View.mhAppRuntimeBootstrap(_:)`
 
 Apps still own route enums, parsing meaning, and final route application.
 

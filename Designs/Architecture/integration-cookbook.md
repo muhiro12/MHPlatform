@@ -4,9 +4,10 @@ This cookbook focuses on composable end-to-end integration patterns.
 The package-owned canonical end-to-end reference lives in
 `Tests/MHPlatformIntegrationTests/MHPlatformIntegrationTests.swift`.
 
-## Recipe 1: DeepLink Sources -> MHAppRoutePipeline
+## Recipe 1: Runtime Root -> MHAppRuntimeBootstrap
 
-Use this pipeline when URLs can arrive before UI/bootstrap readiness.
+Use this bootstrap when app startup needs runtime, lifecycle, and route root
+integration to be assembled in one package-owned shell.
 
 ```swift
 import MHAppRuntime
@@ -16,20 +17,19 @@ import MHRouteExecution
 
 @MainActor
 final class AppRootModel {
-    private let routePipeline: MHAppRoutePipeline<AppRoute>
+    let bootstrap: MHAppRuntimeBootstrap
 
     init(logger: MHLogger) {
         let codec = MHDeepLinkCodec<AppRoute>(
             configuration: .init(
-            customScheme: "myapp",
-            preferredUniversalLinkHost: "example.com",
-            allowedUniversalLinkHosts: ["example.com"],
-            universalLinkPathPrefix: "MyApp",
+                customScheme: "myapp",
+                preferredUniversalLinkHost: "example.com",
+                allowedUniversalLinkHosts: ["example.com"],
+                universalLinkPathPrefix: "MyApp",
                 preferredTransport: .customScheme
             )
         )
-
-        routePipeline = .init(
+        let routePipeline = MHAppRoutePipeline(
             routeLifecycle: .init(
                 logger: logger,
                 initialReadiness: false,
@@ -43,27 +43,40 @@ final class AppRootModel {
         ) { route in
             try await applyRoute(route)
         }
-    }
-
-    func receiveURL(_ url: URL) async {
-        await routePipeline.ingest(url)
-    }
-
-    func synchronizePendingRoutes() async {
-        await routePipeline.synchronizePendingRoutesIfPossible()
+        bootstrap = .init(
+            configuration: .init(
+                subscriptionProductIDs: ["com.example.app.premium.monthly"],
+                preferencesSuiteName: "group.com.example.app"
+            ),
+            lifecyclePlan: .init(
+                startupTasks: [
+                    .init(name: "loadConfiguration") {
+                        await configurationService.load()
+                    }
+                ],
+                activeTasks: [
+                    routePipeline.task(name: "synchronizePendingRoutes")
+                ],
+                skipFirstActivePhase: true
+            ),
+            routePipeline: routePipeline
+        )
     }
 
     func rootView<Content: View>(
         @ViewBuilder content: () -> Content
     ) -> some View {
         content()
-            .mhAppRoutePipeline(routePipeline)
+            .mhAppRuntimeBootstrap(bootstrap)
     }
 }
 ```
 
-Swap in `MHDeepLinkInbox` when SwiftUI observation is unnecessary, or
-`MHDeepLinkStore` when the pending URL needs persistence across launches.
+`bootstrap.routeInbox` is the package-owned handoff surface for app-owned
+services such as notification, widget, or intent adapters.
+
+Keep lifecycle placement explicit: route synchronization still belongs in the
+`MHAppRuntimeLifecyclePlan` phase you choose for the app.
 
 When multiple handoff sources need a reusable ordering outside route replay,
 compose them first:
@@ -86,7 +99,7 @@ let routePipeline = MHAppRoutePipeline(
 Use `MHRouteCoordinator` directly when the app needs a separate resolve/apply
 pipeline or direct access to pending-queue introspection.
 
-Lifecycle placement checklist:
+Ingress checklist:
 
 - `onOpenURL`: parse and `ingest`
 - `NSUserActivity`: convert to URL and `ingest`

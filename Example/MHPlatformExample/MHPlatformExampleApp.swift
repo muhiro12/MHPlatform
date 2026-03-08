@@ -3,7 +3,7 @@ import SwiftUI
 
 @main
 struct MHPlatformExampleApp: App {
-    @State private var runtime = MHAppRuntime(
+    @State private var bootstrap = MHAppRuntimeBootstrap(
         configuration: .init(
             subscriptionProductIDs: [
                 "com.example.mhplatform.premium.monthly"
@@ -16,8 +16,8 @@ struct MHPlatformExampleApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RuntimeRootView()
-                .environment(runtime)
+            ContentView()
+                .mhAppRuntimeBootstrap(bootstrap)
         }
     }
 }

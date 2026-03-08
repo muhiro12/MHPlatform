@@ -6,6 +6,7 @@ struct MHPlatformTests {
     func umbrella_import_exposes_public_modules() {
         let exportedTypes: [Any.Type] = [
             MHAppRuntime.self,
+            MHAppRuntimeBootstrap.self,
             MHDeepLinkConfiguration.self,
             MHReminderPolicy.self,
             MHNotificationPayload.self,
@@ -20,6 +21,6 @@ struct MHPlatformTests {
             MHLoggerFactory.self
         ]
 
-        #expect(exportedTypes.count == 13)
+        #expect(exportedTypes.count == 14)
     }
 }
