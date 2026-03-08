@@ -114,7 +114,8 @@ let package = Package(
             name: "MHNotificationPlans"
         ),
         .target(
-            name: "MHNotificationPayloads"
+            name: "MHNotificationPayloads",
+            dependencies: ["MHDeepLinking"]
         ),
         .target(
             name: "MHMutationFlow"
@@ -160,7 +161,10 @@ let package = Package(
         ),
         .testTarget(
             name: "MHNotificationPayloadsTests",
-            dependencies: ["MHNotificationPayloads"]
+            dependencies: [
+                "MHNotificationPayloads",
+                "MHDeepLinking"
+            ]
         ),
         .testTarget(
             name: "MHMutationFlowTests",

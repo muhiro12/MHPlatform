@@ -27,4 +27,73 @@ struct MHDeepLinkInboxReplacementTests {
         #expect(inbox.pendingURL == nil)
         #expect(await inbox.consumeLatest() == nil)
     }
+
+    @Test
+    func store_replacePendingURL_updates_and_clears_latest_value() throws {
+        let suiteName = "MHDeepLinkStoreReplacementTests"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        userDefaults.removePersistentDomain(forName: suiteName)
+
+        let store = MHDeepLinkStore(
+            userDefaults: userDefaults,
+            key: "pendingURL"
+        )
+        let firstURL = try #require(URL(string: "mhplatform://item?id=first"))
+        let secondURL = try #require(URL(string: "mhplatform://item?id=second"))
+
+        store.replacePendingURL(firstURL)
+        store.replacePendingURL(secondURL)
+
+        #expect(store.consumeLatest() == secondURL)
+
+        store.replacePendingURL(firstURL)
+        store.clear()
+
+        #expect(store.consumeLatest() == nil)
+    }
+
+    @Test
+    @MainActor
+    func destinations_support_setPendingURL_protocol() async throws {
+        let inbox = MHDeepLinkInbox()
+        let observableInbox = MHObservableDeepLinkInbox()
+        let suiteName = "MHDeepLinkURLDestinationTests"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        userDefaults.removePersistentDomain(forName: suiteName)
+        let store = MHDeepLinkStore(
+            userDefaults: userDefaults,
+            key: "pendingURL"
+        )
+        let url = try #require(URL(string: "mhplatform://settings"))
+
+        await verifyDestinationRoundTrip(
+            destination: inbox,
+            source: inbox,
+            url: url
+        )
+        await verifyDestinationRoundTrip(
+            destination: observableInbox,
+            source: observableInbox,
+            url: url
+        )
+        await verifyDestinationRoundTrip(
+            destination: store,
+            source: store,
+            url: url
+        )
+    }
+}
+
+private extension MHDeepLinkInboxReplacementTests {
+    func verifyDestinationRoundTrip<Destination: MHDeepLinkURLDestination & MHDeepLinkURLSource>(
+        destination: Destination,
+        source: Destination,
+        url: URL
+    ) async {
+        await destination.setPendingURL(url)
+        #expect(await source.consumeLatestURL() == url)
+
+        await destination.setPendingURL(nil)
+        #expect(await source.consumeLatestURL() == nil)
+    }
 }

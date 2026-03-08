@@ -163,6 +163,7 @@ Integration contract:
 [`MHNotificationPayloads`](Designs/Architecture/integration-contracts.md#mhnotificationpayloads)
 
 ```swift
+import MHDeepLinking
 import MHNotificationPayloads
 import UserNotifications
 
@@ -173,6 +174,7 @@ let payload = MHNotificationPayload(
         actionRouteURLs: ["view-month": URL(string: "myapp://month?year=2026&month=1")!]
     )
 )
+let inbox = MHDeepLinkInbox()
 
 let status = await MHNotificationOrchestrator.requestAuthorizationIfNeeded(
     center: UNUserNotificationCenter.current(),
@@ -184,6 +186,13 @@ let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
     isManagedIdentifier: { identifier in
         identifier.hasPrefix("upcoming-payment:")
     }
+)
+let deliveryOutcome = await MHNotificationOrchestrator.deliverRouteURL(
+    payload: payload,
+    response: .init(
+        actionIdentifier: UNNotificationDefaultActionIdentifier
+    ),
+    destination: inbox
 )
 ```
 
@@ -288,9 +297,7 @@ await routeLifecycle.setReadiness(hasLoadedInitialState)
 
 _ = try await routeLifecycle.submitLatest(
     from: inbox,
-    parse: { url in
-        codec.parse(url)
-    },
+    using: codec,
     applyOnMainActor: { route in
         try await applyRoute(route)
     }

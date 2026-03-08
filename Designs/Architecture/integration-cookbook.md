@@ -52,9 +52,7 @@ final class AppRoutePipeline {
     func drainPendingURL() async {
         _ = try? await routeLifecycle.submitLatest(
             from: inbox,
-            parse: { incomingURL in
-                codec.parse(incomingURL)
-            },
+            using: codec,
             applyOnMainActor: { route in
                 try await applyRoute(route)
             }
@@ -117,6 +115,7 @@ Optional bridge layer (app adapter responsibility):
 
 ```swift
 #if canImport(UserNotifications)
+import MHDeepLinking
 import MHNotificationPayloads
 import UserNotifications
 
@@ -129,6 +128,18 @@ func syncRequests(
         center: center,
         requests: requests,
         isManagedIdentifier: { $0.hasPrefix(managedPrefix) }
+    )
+}
+
+func deliverNotificationTap(
+    userInfo: [AnyHashable: Any],
+    actionIdentifier: String,
+    inbox: some MHDeepLinkURLDestination
+) async -> MHNotificationRouteDeliveryOutcome {
+    await MHNotificationOrchestrator.deliverRouteURL(
+        userInfo: userInfo,
+        actionIdentifier: actionIdentifier,
+        destination: inbox
     )
 }
 #endif

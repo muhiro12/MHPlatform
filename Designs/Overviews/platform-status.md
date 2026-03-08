@@ -7,9 +7,14 @@
 - Added codec-backed route helpers in `MHDeepLinking` so inbox, observable
   inbox, and store handoff can ingest and consume app-owned routes while still
   storing `URL` values.
-- Added `MHRouteLifecycle.submitLatest(...)` helpers and lifecycle state
-  passthrough so apps can drain pending deep-link sources without hand-written
-  bridging.
+- Added `MHDeepLinkURLDestination` plus aligned pending-slot APIs so inbox,
+  observable inbox, and store can all act as notification or intent handoff
+  targets.
+- Added codec-based `MHRouteLifecycle.submit(...)` / `submitLatest(...)`
+  helpers and lifecycle state passthrough so apps can drain pending deep-link
+  sources without hand-written parse closures.
+- Added notification route delivery overloads that can write directly into
+  deep-link handoff destinations instead of forcing app-local closure glue.
 - Refreshed the route pipeline demo and docs so `MHRouteLifecycle` is the
   current helper-first adoption path, while `MHRouteCoordinator` remains the
   low-level execution surface.

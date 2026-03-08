@@ -6,7 +6,8 @@ struct PayloadOrchestrationSnapshot {
         removedPendingIdentifiers: ["none"],
         addedRequestIdentifiers: ["none"],
         failedRequestIdentifiers: ["none"],
-        resolvedRouteURLString: "pending",
+        deliveredPendingRouteURLString: "pending",
+        deliverySourceDescription: "pending",
         pendingIdentifiersAfterSync: ["none"]
     )
 
@@ -15,7 +16,8 @@ struct PayloadOrchestrationSnapshot {
     let removedPendingIdentifiers: [String]
     let addedRequestIdentifiers: [String]
     let failedRequestIdentifiers: [String]
-    let resolvedRouteURLString: String
+    let deliveredPendingRouteURLString: String
+    let deliverySourceDescription: String
     let pendingIdentifiersAfterSync: [String]
 }
 #endif

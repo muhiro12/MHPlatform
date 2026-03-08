@@ -65,7 +65,7 @@ This document is normative for integration design.
 
 - Built deep-link URL (`url(for:transport:)`, `preferredURL(for:)`)
 - Parsed route (`parse(_:)`)
-- Pending URL handoff (`ingest(_:)`, `consumeLatest()`)
+- Pending URL handoff (`ingest(_:)`, `consumeLatest()`, `setPendingURL(_:)`)
 - Route-aware URL bridge helpers:
   `ingest(_:using:transport:)`, `consumeLatest(using:)`
 
@@ -114,7 +114,9 @@ This document is normative for integration design.
   - `setReadiness(_:)`
   - `submit(_:applyOnMainActor:)`
   - `submit(_:parse:applyOnMainActor:)`
+  - `submit(_:using:applyOnMainActor:)`
   - `submitLatest(from:parse:applyOnMainActor:)`
+  - `submitLatest(from:using:applyOnMainActor:)`
   - `applyPendingIfReady(applyOnMainActor:)`
 - `MHRouteExecutionOutcome<Outcome>`:
   - `.applied(Outcome)`
@@ -271,11 +273,13 @@ This document is normative for integration design.
   - `MHNotificationResponseContext`
 - Optional bridge dependency:
   - `MHNotificationCentering` (`UserNotifications` adapter surface)
+  - `MHDeepLinkURLDestination` (pending route handoff target)
 
 ### Outputs
 
 - Payload codec (`MHNotificationPayloadCodec.encode/decode`)
 - Route resolution (`MHNotificationRouteResolver.resolveRouteURL`)
+- Route delivery (`MHNotificationOrchestrator.deliverRouteURL`)
 - Optional orchestration outcome (`MHNotificationRequestSyncOutcome`)
 
 ### Threading / Actor
@@ -288,12 +292,14 @@ This document is normative for integration design.
 - Pure layer:
   - payload composition and route mapping in app services
 - Bridge layer:
-  - category registration, auth request, pending request sync
+  - category registration, auth request, pending request sync, notification tap handoff
 
 ### Boundary Rule (Normative)
 
 - Payload composition/resolution is independent of `UNUserNotificationCenter`.
 - Request construction/scheduling responsibility stays in app adapter layer.
+- Route delivery may target a shared deep-link destination, but the app still owns
+  fallback policy and the chosen handoff primitive.
 
 ## MHPreferences
 

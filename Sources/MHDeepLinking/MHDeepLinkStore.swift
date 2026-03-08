@@ -31,19 +31,39 @@ public final class MHDeepLinkStore: @unchecked Sendable {
 
     /// Persists a pending URL.
     public func ingest(_ url: URL) {
-        userDefaults.set(url.absoluteString, forKey: key)
+        replacePendingURL(url)
     }
 
     /// Consumes and clears the latest pending URL.
     public func consumeLatest() -> URL? {
         defer {
-            userDefaults.removeObject(forKey: key)
+            clear()
         }
 
         guard let urlString = userDefaults.string(forKey: key) else {
             return nil
         }
         return URL(string: urlString)
+    }
+
+    /// Clears any pending URL without consuming it.
+    public func clear() {
+        userDefaults.removeObject(forKey: key)
+    }
+
+    /// Replaces the pending URL, or clears it when `nil` is provided.
+    public func replacePendingURL(_ url: URL?) {
+        guard let url else {
+            clear()
+            return
+        }
+
+        userDefaults.set(url.absoluteString, forKey: key)
+    }
+
+    /// Stores a pending URL, or clears the store when `nil` is provided.
+    public func setPendingURL(_ url: URL?) async { // swiftlint:disable:this async_without_await
+        replacePendingURL(url)
     }
 }
 
@@ -53,6 +73,8 @@ extension MHDeepLinkStore: MHDeepLinkURLSource {
         consumeLatest()
     }
 }
+
+extension MHDeepLinkStore: MHDeepLinkURLDestination {}
 
 public extension MHDeepLinkStore {
     /// Builds a URL for the route, stores it, and returns the stored URL.

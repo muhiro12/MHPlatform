@@ -126,13 +126,10 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
             do {
                 let outcome = try await routeLifecycle.submitLatest(
                     from: inbox,
-                    parse: { incomingURL in
-                        codec.parse(incomingURL)
-                    },
-                    applyOnMainActor: { [self] route in
-                        try await apply(route)
-                    }
-                )
+                    using: codec
+                ) { [self] route in
+                    try await apply(route)
+                }
                 await refreshLifecycleState()
                 guard let outcome else {
                     let message = hadPendingURL

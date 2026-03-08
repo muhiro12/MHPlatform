@@ -73,7 +73,8 @@ Integration contract:
 - Owns URL grammar primitives:
   `MHDeepLinkConfiguration`, `MHDeepLinkDescriptor`, `MHDeepLinkCodec`
 - Owns pending-route handoff primitives:
-  `MHDeepLinkInbox`, `MHObservableDeepLinkInbox`, `MHDeepLinkStore`
+  `MHDeepLinkInbox`, `MHObservableDeepLinkInbox`, `MHDeepLinkStore`,
+  `MHDeepLinkURLDestination`
 - Owns codec-backed route handoff helpers on inbox, observable inbox, and
   store while keeping URL storage as the persisted representation
 - Does not own app navigation state or route execution
@@ -99,7 +100,10 @@ Integration contract:
 - Owns action/category descriptors and route resolution:
   `MHNotificationActionDescriptor`, `MHNotificationCategoryDescriptor`, `MHNotificationRouteResolver`
 - Owns optional `UserNotifications` bridge and orchestration helpers behind `#if canImport(UserNotifications)`:
-  `MHNotificationCentering`, `MHNotificationOrchestrator`, `MHNotificationRequestSyncOutcome`
+  `MHNotificationCentering`, `MHNotificationOrchestrator`,
+  `MHNotificationRequestSyncOutcome`
+- Owns notification-to-deep-link destination delivery helpers without taking
+  ownership of app-specific fallback policy or route semantics
 - Does not own notification text templates, attachment generation, or app-specific scheduling policy
 
 ### `MHMutationFlow`
@@ -196,7 +200,8 @@ Integration contract:
   `GoogleMobileAdsWrapper` (iOS), and `LicenseList` (iOS).
 - `MHDeepLinking` has no dependency on the other modules.
 - `MHNotificationPlans` has no dependency on the other modules.
-- `MHNotificationPayloads` has no dependency on the other modules.
+- `MHNotificationPayloads` depends on `MHDeepLinking` for shared pending-route
+  destination delivery.
 - `MHMutationFlow` has no dependency on the other modules.
 - `MHRouteExecution` depends on `MHDeepLinking` for pending-source handoff
   helpers and on `MHLogging` for `MHRouteLifecycle` outcome logging.

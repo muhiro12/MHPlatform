@@ -117,7 +117,7 @@ public actor MHRouteLifecycle<Route: Sendable> {
         )
     }
 
-    /// Consumes the latest pending URL from an in-memory inbox and submits it when present.
+    /// Consumes the latest pending URL from a deep-link source and submits it when present.
     @discardableResult
     @preconcurrency
     public func submitLatest<Source: MHDeepLinkURLSource>(
@@ -127,51 +127,6 @@ public actor MHRouteLifecycle<Route: Sendable> {
     ) async throws -> MHRouteExecutionOutcome<Route>? {
         try await submitLatestFromSource(
             source,
-            parse: parse,
-            applyOnMainActor: applyOnMainActor
-        )
-    }
-
-    /// Consumes the latest pending URL from an in-memory inbox and submits it when present.
-    @discardableResult
-    @preconcurrency
-    public func submitLatest(
-        from inbox: MHDeepLinkInbox,
-        parse: RouteParser,
-        applyOnMainActor: @escaping RouteApplier
-    ) async throws -> MHRouteExecutionOutcome<Route>? {
-        try await submitLatestFromSource(
-            inbox,
-            parse: parse,
-            applyOnMainActor: applyOnMainActor
-        )
-    }
-
-    /// Consumes the latest pending URL from an observable inbox and submits it when present.
-    @discardableResult
-    @preconcurrency
-    public func submitLatest(
-        from inbox: MHObservableDeepLinkInbox,
-        parse: RouteParser,
-        applyOnMainActor: @escaping RouteApplier
-    ) async throws -> MHRouteExecutionOutcome<Route>? {
-        try await submitLatestFromSource(
-            inbox,
-            parse: parse,
-            applyOnMainActor: applyOnMainActor
-        )
-    }
-
-    /// Consumes the latest pending URL from persistent storage and submits it when present.
-    @discardableResult
-    @preconcurrency
-    public func submitLatest(
-        from store: MHDeepLinkStore,
-        parse: RouteParser,
-        applyOnMainActor: @escaping RouteApplier
-    ) async throws -> MHRouteExecutionOutcome<Route>? {
-        try await submitLatestFromSource(
-            store,
             parse: parse,
             applyOnMainActor: applyOnMainActor
         )
@@ -216,5 +171,43 @@ private extension MHRouteLifecycle {
                 "route deduplicated against pending route"
             )
         }
+    }
+}
+
+public extension MHRouteLifecycle where Route: MHDeepLinkRoute {
+    /// Parses an incoming URL with the supplied codec and submits the resolved route
+    /// when parsing succeeds.
+    @discardableResult
+    @preconcurrency
+    func submit(
+        _ url: URL,
+        using codec: MHDeepLinkCodec<Route>,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        try await submit(
+            url,
+            parse: { incomingURL in
+                codec.parse(incomingURL)
+            },
+            applyOnMainActor: applyOnMainActor
+        )
+    }
+
+    /// Consumes the latest pending URL from a deep-link source, parses it with the
+    /// supplied codec, and submits the resolved route when present.
+    @discardableResult
+    @preconcurrency
+    func submitLatest<Source: MHDeepLinkURLSource>(
+        from source: Source,
+        using codec: MHDeepLinkCodec<Route>,
+        applyOnMainActor: @escaping RouteApplier
+    ) async throws -> MHRouteExecutionOutcome<Route>? {
+        try await submitLatestFromSource(
+            source,
+            parse: { incomingURL in
+                codec.parse(incomingURL)
+            },
+            applyOnMainActor: applyOnMainActor
+        )
     }
 }

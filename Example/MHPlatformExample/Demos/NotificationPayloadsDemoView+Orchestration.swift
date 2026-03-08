@@ -27,6 +27,7 @@ private enum NotificationPayloadOrchestrationFixture {
             pendingRequests: simulatedPendingRequests(for: scenario),
             failingAddIdentifiers: failingAddIdentifiers(for: scenario)
         )
+        let routeInbox = MHObservableDeepLinkInbox()
         let descriptor = categoryDescriptor(for: scenario)
         let payload = payload(for: scenario)
         let actionIdentifier = actionIdentifier(for: actionSelection, scenario: scenario)
@@ -50,9 +51,10 @@ private enum NotificationPayloadOrchestrationFixture {
             requests: simulatedRequests(for: scenario),
             isManagedIdentifier: isManagedIdentifier
         )
-        let resolvedRouteURL = MHNotificationOrchestrator.resolveRouteURL(
+        let deliveryOutcome = await MHNotificationOrchestrator.deliverRouteURL(
             userInfo: codec.encode(payload),
             actionIdentifier: actionIdentifier,
+            destination: routeInbox,
             codec: codec
         )
         let snapshot = center.snapshot()
@@ -63,7 +65,8 @@ private enum NotificationPayloadOrchestrationFixture {
             removedPendingIdentifiers: normalizedList(syncResult.removedPendingIdentifiers),
             addedRequestIdentifiers: normalizedList(syncResult.addedRequestIdentifiers),
             failedRequestIdentifiers: normalizedList(syncResult.failedRequestIdentifiers),
-            resolvedRouteURLString: resolvedRouteURL?.absoluteString ?? "nil",
+            deliveredPendingRouteURLString: routeInbox.pendingURL?.absoluteString ?? "nil",
+            deliverySourceDescription: String(describing: deliveryOutcome.source),
             pendingIdentifiersAfterSync: normalizedList(snapshot.pendingIdentifiers)
         )
     }
@@ -304,8 +307,12 @@ extension NotificationPayloadsDemoView {
                 orchestrationSnapshot.failedRequestIdentifiers.joined(separator: ", ")
             ),
             (
-                "resolvedRouteURL",
-                orchestrationSnapshot.resolvedRouteURLString
+                "deliverySource",
+                orchestrationSnapshot.deliverySourceDescription
+            ),
+            (
+                "deliveredPendingURL",
+                orchestrationSnapshot.deliveredPendingRouteURLString
             ),
             (
                 "pendingAfterSync",

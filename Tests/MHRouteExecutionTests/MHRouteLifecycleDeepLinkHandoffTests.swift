@@ -160,7 +160,7 @@ struct MHRouteLifecycleDeepLinkHandoffTests {
             isDuplicate: ==
         )
         let source = TestDeepLinkURLSource(
-            url: try #require(URL(string: "test://route/42"))
+            url: URL(string: "test://route/42")
         )
 
         let outcome = try await lifecycle.submitLatest(

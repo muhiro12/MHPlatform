@@ -18,8 +18,7 @@ public final class MHObservableDeepLinkInbox: @unchecked Sendable {
 
     /// Ingests a pending URL and replaces any previous one.
     public func ingest(_ url: URL) async {
-        await inbox.ingest(url)
-        pendingURL = url
+        await setPendingURL(url)
     }
 
     /// Consumes and clears the latest pending URL.
@@ -31,13 +30,17 @@ public final class MHObservableDeepLinkInbox: @unchecked Sendable {
 
     /// Clears any pending URL and updates the observable mirror.
     public func clear() async {
-        await inbox.clear()
-        pendingURL = nil
+        await setPendingURL(nil)
     }
 
     /// Replaces the pending URL, or clears it when `nil` is provided.
     public func replacePendingURL(_ url: URL?) async {
-        await inbox.replacePendingURL(url)
+        await setPendingURL(url)
+    }
+
+    /// Stores a pending URL, or clears the inbox when `nil` is provided.
+    public func setPendingURL(_ url: URL?) async {
+        await inbox.setPendingURL(url)
         pendingURL = url
     }
 }
@@ -48,6 +51,8 @@ extension MHObservableDeepLinkInbox: MHDeepLinkURLSource {
         await consumeLatest()
     }
 }
+
+extension MHObservableDeepLinkInbox: MHDeepLinkURLDestination {}
 
 public extension MHObservableDeepLinkInbox {
     /// Builds a URL for the route, stores it in memory, and returns the stored URL.

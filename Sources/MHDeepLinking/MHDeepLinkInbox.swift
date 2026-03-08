@@ -23,11 +23,16 @@ public actor MHDeepLinkInbox {
 
     /// Clears any pending URL without consuming it.
     public func clear() {
-        pendingURL = nil
+        setPendingURL(nil)
     }
 
     /// Replaces the pending URL, or clears it when `nil` is provided.
     public func replacePendingURL(_ url: URL?) {
+        setPendingURL(url)
+    }
+
+    /// Stores a pending URL, or clears the inbox when `nil` is provided.
+    public func setPendingURL(_ url: URL?) {
         pendingURL = url
     }
 }
@@ -38,6 +43,8 @@ extension MHDeepLinkInbox: MHDeepLinkURLSource {
         consumeLatest()
     }
 }
+
+extension MHDeepLinkInbox: MHDeepLinkURLDestination {}
 
 public extension MHDeepLinkInbox {
     /// Builds a URL for the route, stores it in memory, and returns the stored URL.
