@@ -64,6 +64,19 @@ final class AppRoutePipeline {
 Swap in `MHDeepLinkInbox` when SwiftUI observation is unnecessary, or
 `MHDeepLinkStore` when the pending URL needs persistence across launches.
 
+When multiple handoff sources can produce a pending URL, compose them first and
+keep the route pipeline single-sourced:
+
+```swift
+let routeInbox = MHObservableDeepLinkInbox()
+let handoffSources = MHDeepLinkSourceChain(
+    intentStore,
+    notificationInbox
+)
+
+await handoffSources.forwardLatestURL(to: routeInbox)
+```
+
 Use `MHRouteCoordinator` directly when the app needs a separate resolve/apply
 pipeline or direct access to pending-queue introspection.
 

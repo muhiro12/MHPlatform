@@ -73,12 +73,16 @@ This document is normative for integration design.
   - `MHDeepLinkInbox` (consume-once, in-memory)
   - `MHObservableDeepLinkInbox` (consume-once, main-actor observable)
   - `MHDeepLinkStore` (consume-once, persistent)
+  - `MHDeepLinkSourceChain` (ordered composite source)
 
 ### Outputs
 
 - Built deep-link URL (`url(for:transport:)`, `preferredURL(for:)`)
 - Parsed route (`parse(_:)`)
 - Pending URL handoff (`ingest(_:)`, `consumeLatest()`, `setPendingURL(_:)`)
+- Ordered source composition:
+  - `MHDeepLinkSourceChain.consumeLatestURL()`
+  - `MHDeepLinkSourceChain.forwardLatestURL(to:)`
 - Route-aware URL bridge helpers:
   `ingest(_:using:transport:)`, `consumeLatest(using:)`
 
@@ -97,11 +101,15 @@ This document is normative for integration design.
 - push-notification tap handoff
 - widget tap handoff
 - App Intent -> app route handoff
+- ordered intent + notification + in-memory source composition before route
+  replay
 
 ### Boundary Rule (Normative)
 
 - Route-aware helpers remain codec-backed bridges over URL storage/inbox
   state, including the main-actor observable inbox mirror.
+- `MHDeepLinkSourceChain` remains an ordered composition shell over existing
+  URL sources and does not introduce a separate queue or persistence model.
 - MHPlatform does not persist app route values directly outside their encoded
   `URL` representation.
 

@@ -130,7 +130,8 @@ ContentView()
 `MHDeepLinking` handles route URL building, parsing, and pending-route handoff
 without owning app-specific route enums. Inbox, observable inbox, and store
 helpers can round-trip app-owned routes through a codec while keeping the
-stored payload as a `URL`.
+stored payload as a `URL`. `MHDeepLinkSourceChain` lets apps combine intent,
+notification, and in-memory handoff slots into a single ordered source.
 
 Integration contract:
 [`MHDeepLinking`](Designs/Architecture/integration-contracts.md#mhdeeplinking)
@@ -147,10 +148,20 @@ let codec = MHDeepLinkCodec<MyRoute>(
         preferredTransport: .customScheme
     )
 )
-let inbox = MHObservableDeepLinkInbox()
+let routeInbox = MHObservableDeepLinkInbox()
+let notificationInbox = MHDeepLinkInbox()
+let intentStore = MHDeepLinkStore(
+    userDefaults: .standard,
+    key: "pendingIntentRouteURL"
+)
+let handoffSources = MHDeepLinkSourceChain(
+    intentStore,
+    notificationInbox
+)
 
-await inbox.ingest(.settings, using: codec)
-let pendingRoute = await inbox.consumeLatest(using: codec)
+await notificationInbox.ingest(.settings, using: codec)
+let forwardedURL = await handoffSources.forwardLatestURL(to: routeInbox)
+let pendingRoute = await routeInbox.consumeLatest(using: codec)
 ```
 
 ## MHNotificationPlans
