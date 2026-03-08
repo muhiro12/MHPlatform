@@ -2,22 +2,12 @@ import MHPlatform
 import SwiftUI
 
 struct RuntimeRootView: View {
-    @Environment(\.scenePhase)
-    private var scenePhase
     @Environment(MHAppRuntime.self)
     private var runtime
 
     var body: some View {
         ContentView()
-            .task {
-                runtime.startIfNeeded()
-            }
-            .onChange(of: scenePhase) {
-                guard scenePhase == .active else {
-                    return
-                }
-                runtime.startIfNeeded()
-            }
+            .mhAppRuntimeLifecycle(runtime: runtime)
     }
 }
 

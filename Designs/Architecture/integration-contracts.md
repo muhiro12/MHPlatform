@@ -33,6 +33,8 @@ This document is normative for integration design.
   - `MHAppRuntimeLifecycle`
     - `handleInitialAppearance()`
     - `handleScenePhase(_:)`
+  - SwiftUI adapter:
+    - `View.mhAppRuntimeLifecycle(runtime:plan:)`
 - Runtime state:
   - `hasStarted`
   - `premiumStatus`
@@ -58,6 +60,7 @@ This document is normative for integration design.
 - SwiftUI environment injection for app-wide runtime access
 - App-local startup and foreground work that should stay explicit but no longer
   repeat runtime-start coordination boilerplate
+- SwiftUI roots that want MHPlatform to own the `scenePhase` observation shell
 
 ## MHDeepLinking
 

@@ -106,25 +106,23 @@ let runtime = MHAppRuntime(
     )
 )
 
-let lifecycle = MHAppRuntimeLifecycle(
-    runtime: runtime,
-    plan: .init(
-        startupTasks: [
-            .init(name: "loadConfig") {
-                await configurationService.load()
-            }
-        ],
-        activeTasks: [
-            .init(name: "refreshNotifications") {
-                await notificationService.update()
-            }
-        ],
-        skipFirstActivePhase: true
+ContentView()
+    .mhAppRuntimeLifecycle(
+        runtime: runtime,
+        plan: .init(
+            startupTasks: [
+                .init(name: "loadConfig") {
+                    await configurationService.load()
+                }
+            ],
+            activeTasks: [
+                .init(name: "refreshNotifications") {
+                    await notificationService.update()
+                }
+            ],
+            skipFirstActivePhase: true
+        )
     )
-)
-
-await lifecycle.handleInitialAppearance()
-await lifecycle.handleScenePhase(.active)
 ```
 
 ## MHDeepLinking

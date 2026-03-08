@@ -22,6 +22,10 @@ startup side effects.
 This keeps app-specific work items explicit while moving the lifecycle
 coordination mechanics into MHPlatform.
 
+For SwiftUI entry points, `View.mhAppRuntimeLifecycle(runtime:plan:)` is the
+default adapter. It keeps `scenePhase` observation and lifecycle object storage
+inside MHPlatform while preserving the same ordered task plan.
+
 ## What runtime initializes
 
 `MHAppRuntime` currently initializes:

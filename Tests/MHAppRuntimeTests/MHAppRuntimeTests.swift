@@ -242,6 +242,26 @@ struct MHAppRuntimeTests {
         )
         #expect(runtime.hasStarted)
     }
+
+    @MainActor
+    @Test
+    func lifecycle_modifier_builds_without_eagerly_starting_runtime() {
+        let runtime = makeRuntime()
+
+        let view = EmptyView().mhAppRuntimeLifecycle(
+            runtime: runtime,
+            plan: .init(
+                startupTasks: [
+                    .init(name: "bootstrap") {
+                        // no-op
+                    }
+                ]
+            )
+        )
+
+        #expect(String(describing: type(of: view)).contains("ModifiedContent"))
+        #expect(runtime.hasStarted == false)
+    }
 }
 
 @MainActor
