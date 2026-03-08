@@ -86,7 +86,9 @@ import MHRouteExecution
 
 `MHAppRuntime` provides the current shared runtime-start surface for app startup
 side effects and shared infrastructure state. It is already adopted by both
-Incomes and Cookle via the umbrella `MHPlatform` product.
+Incomes and Cookle via the umbrella `MHPlatform` product. `MHAppRuntimeLifecycle`
+now lets apps move ordered startup and foreground wiring into a package-owned
+shell instead of keeping repeated `.task` and `scenePhase` coordination inline.
 
 Integration contract:
 [`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)
@@ -104,7 +106,25 @@ let runtime = MHAppRuntime(
     )
 )
 
-runtime.startIfNeeded()
+let lifecycle = MHAppRuntimeLifecycle(
+    runtime: runtime,
+    plan: .init(
+        startupTasks: [
+            .init(name: "loadConfig") {
+                await configurationService.load()
+            }
+        ],
+        activeTasks: [
+            .init(name: "refreshNotifications") {
+                await notificationService.update()
+            }
+        ],
+        skipFirstActivePhase: true
+    )
+)
+
+await lifecycle.handleInitialAppearance()
+await lifecycle.handleScenePhase(.active)
 ```
 
 ## MHDeepLinking

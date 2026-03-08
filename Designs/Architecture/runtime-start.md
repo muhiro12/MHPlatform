@@ -3,11 +3,24 @@
 ## Why `startIfNeeded` exists
 
 `MHAppRuntime` provides a single startup entry point for shared app platform side
-effects. Apps can call `startIfNeeded()` from initial launch and foreground
-transitions without duplicating boot wiring.
+effects. `MHAppRuntimeLifecycle` layers ordered startup and foreground tasks on
+top so apps can stop repeating view-local lifecycle coordination.
 
 `startIfNeeded()` is idempotent. Repeated calls are safe and do not repeat
 startup side effects.
+
+## Lifecycle shell
+
+`MHAppRuntimeLifecycle` owns three pieces of repeated app wiring:
+
+- calling `runtime.startIfNeeded()` from initial appearance and active-phase hooks
+- running ordered `startupTasks` once
+- running ordered `activeTasks` whenever the app becomes active, with optional
+  `skipFirstActivePhase` behavior for apps that already performed equivalent
+  work during startup
+
+This keeps app-specific work items explicit while moving the lifecycle
+coordination mechanics into MHPlatform.
 
 ## What runtime initializes
 
@@ -42,3 +55,4 @@ startup side effects.
 - SwiftData schema ownership or migration policy
 - remote configuration policy
 - SDK-specific types in app-facing configuration APIs
+- the meaning of startup or active tasks beyond their execution order

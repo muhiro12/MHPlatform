@@ -126,4 +126,143 @@ struct MHAppRuntimeTests {
 
         #expect(userDefaults.bool(forKey: key.storageKey))
     }
+
+    @MainActor
+    @Test
+    func lifecycle_runs_startup_then_active_tasks_in_order() async {
+        var events = [String]()
+
+        let runtime = makeRuntime { _ in
+            events.append("startStore")
+        }
+        let lifecycle = MHAppRuntimeLifecycle(
+            runtime: runtime,
+            plan: .init(
+                startupTasks: [
+                    .init(name: "loadConfig") {
+                        events.append("startup.loadConfig")
+                    },
+                    .init(name: "refreshNotifications") {
+                        events.append("startup.refreshNotifications")
+                    }
+                ],
+                activeTasks: [
+                    .init(name: "review") {
+                        events.append("active.review")
+                    },
+                    .init(name: "deepLink") {
+                        events.append("active.deepLink")
+                    }
+                ]
+            )
+        )
+
+        await lifecycle.handleInitialAppearance()
+        await lifecycle.handleScenePhase(.background)
+        await lifecycle.handleScenePhase(.active)
+
+        #expect(
+            events == [
+                "startStore",
+                "startup.loadConfig",
+                "startup.refreshNotifications",
+                "active.review",
+                "active.deepLink"
+            ]
+        )
+    }
+
+    @MainActor
+    @Test
+    func lifecycle_skips_first_active_phase_when_requested() async {
+        var events = [String]()
+
+        let runtime = makeRuntime { _ in
+            events.append("startStore")
+        }
+        let lifecycle = MHAppRuntimeLifecycle(
+            runtime: runtime,
+            plan: .init(
+                activeTasks: [
+                    .init(name: "sync") {
+                        events.append("active.sync")
+                    }
+                ],
+                skipFirstActivePhase: true
+            )
+        )
+
+        await lifecycle.handleInitialAppearance()
+        await lifecycle.handleScenePhase(.active)
+        await lifecycle.handleScenePhase(.inactive)
+        await lifecycle.handleScenePhase(.active)
+
+        #expect(
+            events == [
+                "startStore",
+                "active.sync"
+            ]
+        )
+    }
+
+    @MainActor
+    @Test
+    func lifecycle_initial_appearance_is_idempotent_even_after_active_phase() async {
+        var events = [String]()
+
+        let runtime = makeRuntime { _ in
+            events.append("startStore")
+        }
+        let lifecycle = MHAppRuntimeLifecycle(
+            runtime: runtime,
+            plan: .init(
+                startupTasks: [
+                    .init(name: "bootstrap") {
+                        events.append("startup.bootstrap")
+                    }
+                ],
+                activeTasks: [
+                    .init(name: "refresh") {
+                        events.append("active.refresh")
+                    }
+                ]
+            )
+        )
+
+        await lifecycle.handleScenePhase(.active)
+        await lifecycle.handleInitialAppearance()
+        await lifecycle.handleInitialAppearance()
+
+        #expect(
+            events == [
+                "startStore",
+                "active.refresh",
+                "startup.bootstrap"
+            ]
+        )
+        #expect(runtime.hasStarted)
+    }
+}
+
+@MainActor
+private extension MHAppRuntimeTests {
+    func makeRuntime(
+        startStore: @escaping (@MainActor (Set<String>) -> Void) -> Void = { _ in
+            // no-op
+        }
+    ) -> MHAppRuntime {
+        MHAppRuntime(
+            configuration: .init(
+                subscriptionProductIDs: ["premium.monthly"],
+                nativeAdUnitID: "ad-unit"
+            ),
+            preferenceStore: .init(),
+            startStore: startStore,
+            subscriptionSectionViewBuilder: {
+                AnyView(EmptyView())
+            },
+            startAds: nil,
+            nativeAdViewBuilder: nil
+        )
+    }
 }

@@ -27,6 +27,12 @@ This document is normative for integration design.
 - Startup APIs:
   - `startIfNeeded()`
   - `start()`
+- Lifecycle shell:
+  - `MHAppRuntimeTask`
+  - `MHAppRuntimeLifecyclePlan`
+  - `MHAppRuntimeLifecycle`
+    - `handleInitialAppearance()`
+    - `handleScenePhase(_:)`
 - Runtime state:
   - `hasStarted`
   - `premiumStatus`
@@ -42,12 +48,16 @@ This document is normative for integration design.
 
 - `MHAppRuntime` is `@MainActor` and `@Observable`.
 - Startup side effects and runtime state transitions are serialized on main actor.
+- `MHAppRuntimeLifecycle` is `@MainActor` and runs ordered lifecycle tasks on
+  the main actor.
 
 ### Intended Call Sites
 
-- App launch bootstrap (`.task`)
+- App launch bootstrap (`.task` / initial appearance hook)
 - App foreground transitions (`scenePhase == .active`)
 - SwiftUI environment injection for app-wide runtime access
+- App-local startup and foreground work that should stay explicit but no longer
+  repeat runtime-start coordination boilerplate
 
 ## MHDeepLinking
 
