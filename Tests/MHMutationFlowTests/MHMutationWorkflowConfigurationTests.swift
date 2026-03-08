@@ -32,6 +32,7 @@ struct MHMutationWorkflowConfigurationTests {
                 return "saved"
             },
             adapter: MHMutationAdapter<String>.none,
+            projection: .identity,
             configuration: .init(
                 retryPolicy: .init(
                     maximumAttempts: 2,
@@ -56,6 +57,7 @@ struct MHMutationWorkflowConfigurationTests {
                     "saved"
                 },
                 adapter: MHMutationAdapter<String>.none,
+                projection: .identity,
                 configuration: .init(
                     cancellationHandle: cancellationHandle
                 )

@@ -314,15 +314,15 @@ let adapter = MHMutationAdapter<SaveItemFollowUp>.build { followUp in
 let result = try await MHMutationWorkflow.runThrowing(
     name: "save-item",
     operation: {
-        .init(
-            adapterValue: .init(
-                shouldReloadWidgets: true,
-                shouldSyncNotifications: true
-            ),
-            resultValue: "saved"
-        )
+        "saved"
     },
     adapter: adapter,
+    projection: .fixedAdapterValue(
+        .init(
+            shouldReloadWidgets: true,
+            shouldSyncNotifications: true
+        )
+    ),
     configuration: .init(
         retryPolicy: .default
     )
@@ -332,9 +332,12 @@ let result = try await MHMutationWorkflow.runThrowing(
 The lower-level `MHMutationRunner` remains available when the app needs
 observable event streams or direct run-handle ownership. Retry policy,
 cancellation handles, and operation failure formatting now fit in
-`MHMutationWorkflowConfiguration`. When an app already owns a combined
-success carrier, `afterSuccess` / `returning` and the key-path projection
-overloads remain available. Add `onEvent:` to `MHMutationRunner` or
+`MHMutationWorkflowConfiguration`. Projection strategies keep adapter input
+and result shaping explicit with `.identity`, `.fixedAdapterValue(_:)`,
+`.keyPaths(adapterValue:resultValue:)`, and
+`.closures(afterSuccess:returning:)`. When an app already owns a combined
+success carrier, `MHMutationProjection` still works with a `.keyPaths`
+strategy. Add `onEvent:` to `MHMutationRunner` or
 `MHMutationWorkflow.runThrowing` when the app wants ordered mutation
 callbacks without storing an `AsyncStream`.
 

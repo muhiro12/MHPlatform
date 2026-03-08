@@ -45,7 +45,10 @@ struct MHMutationWorkflowKeyPathProjectionTests {
                 )
             },
             adapter: adapter,
-            adapterValue: \.followUp
+            projection: .keyPaths(
+                adapterValue: \.followUp,
+                resultValue: \.self
+            )
         )
 
         #expect(result.value == "saved")
@@ -74,8 +77,10 @@ struct MHMutationWorkflowKeyPathProjectionTests {
                 )
             },
             adapter: adapter,
-            adapterValue: \.followUp,
-            resultValue: \.value
+            projection: .keyPaths(
+                adapterValue: \.followUp,
+                resultValue: \.value
+            )
         )
 
         #expect(result == "saved")
@@ -100,8 +105,10 @@ struct MHMutationWorkflowKeyPathProjectionTests {
                     throw OperationTestError.failed
                 },
                 adapter: MHMutationAdapter<FollowUp>.none,
-                adapterValue: \.followUp,
-                resultValue: \.value,
+                projection: .keyPaths(
+                    adapterValue: \.followUp,
+                    resultValue: \.value
+                ),
                 configuration: .init(
                     operationErrorDescription: operationErrorDescription
                 )
@@ -137,8 +144,10 @@ struct MHMutationWorkflowKeyPathProjectionTests {
                     )
                 },
                 adapter: adapter,
-                adapterValue: \.followUp,
-                resultValue: \.value
+                projection: .keyPaths(
+                    adapterValue: \.followUp,
+                    resultValue: \.value
+                )
             )
         }
     }
@@ -152,8 +161,10 @@ struct MHMutationWorkflowKeyPathProjectionTests {
                     throw CancellationError()
                 },
                 adapter: MHMutationAdapter<FollowUp>.none,
-                adapterValue: \.followUp,
-                resultValue: \.value
+                projection: .keyPaths(
+                    adapterValue: \.followUp,
+                    resultValue: \.value
+                )
             )
         }
     }

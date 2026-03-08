@@ -27,7 +27,7 @@ struct MHMutationWorkflowEventCallbackTests {
         // swiftlint:disable trailing_closure
         let result = try await MHMutationWorkflow.runThrowing(
             name: "saveProjectedDraft",
-            operation: {
+            operation: { () -> MHMutationProjection<Bool, String> in
                 .init(
                     adapterValue: true,
                     resultValue: "saved"
@@ -44,6 +44,10 @@ struct MHMutationWorkflowEventCallbackTests {
 
                 return []
             },
+            projection: .keyPaths(
+                adapterValue: \MHMutationProjection<Bool, String>.adapterValue,
+                resultValue: \MHMutationProjection<Bool, String>.resultValue
+            ),
             onEvent: { event in
                 recorder.record(event)
             }
@@ -68,7 +72,7 @@ struct MHMutationWorkflowEventCallbackTests {
 
         let result = try await MHMutationWorkflow.runThrowing(
             name: "saveProjectedDraft",
-            operation: {
+            operation: { () -> MHMutationProjection<Bool, String> in
                 let attempt = state.nextAttempt()
 
                 if attempt == 1 {
@@ -81,6 +85,10 @@ struct MHMutationWorkflowEventCallbackTests {
                 )
             },
             adapter: MHMutationAdapter<Bool>.none,
+            projection: .keyPaths(
+                adapterValue: \MHMutationProjection<Bool, String>.adapterValue,
+                resultValue: \MHMutationProjection<Bool, String>.resultValue
+            ),
             onEvent: { event in
                 recorder.record(event)
             },
@@ -119,7 +127,7 @@ struct MHMutationWorkflowEventCallbackTests {
             // swiftlint:disable trailing_closure
             try await MHMutationWorkflow.runThrowing(
                 name: "saveProjectedDraft",
-                operation: {
+                operation: { () -> MHMutationProjection<Bool, String> in
                     .init(
                         adapterValue: true,
                         resultValue: "saved"
@@ -131,6 +139,10 @@ struct MHMutationWorkflowEventCallbackTests {
                             throw MutationTestError.sideEffectFailed
                         }
                     ]
+                ),
+                projection: .keyPaths(
+                    adapterValue: \MHMutationProjection<Bool, String>.adapterValue,
+                    resultValue: \MHMutationProjection<Bool, String>.resultValue
                 ),
                 onEvent: { event in
                     recorder.record(event)
@@ -162,6 +174,7 @@ struct MHMutationWorkflowEventCallbackTests {
                     throw CancellationError()
                 },
                 adapter: MHMutationAdapter<String>.none,
+                projection: .identity,
                 onEvent: { event in
                     recorder.record(event)
                 }

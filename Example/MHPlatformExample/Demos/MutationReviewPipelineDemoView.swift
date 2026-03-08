@@ -173,11 +173,17 @@ struct MutationReviewPipelineDemoView: View {
         return try await MHMutationWorkflow.runThrowing(
             name: "saveDraft",
             operation: {
-                try Self.projectedResult(for: scenario)
+                try Self.saveDraftResult(for: scenario)
             },
             adapter: Self.makeAdapter(
                 reviewPolicy: reviewPolicy,
                 recorder: recorder
+            ),
+            projection: .fixedAdapterValue(
+                .init(
+                    shouldSynchronizeNotifications: true,
+                    shouldRequestReview: true
+                )
             ),
             configuration: .init(
                 operationErrorDescription: Self.operationErrorDescription
@@ -248,21 +254,15 @@ private extension MutationReviewPipelineDemoView {
         }
     }
 
-    private static func projectedResult(
+    private static func saveDraftResult(
         for scenario: Scenario
-    ) throws -> MHMutationProjection<PipelineFollowUp, SaveDraftResult> {
+    ) throws -> SaveDraftResult {
         if scenario == .failure {
             throw PipelineError.mutationFailed
         }
 
         return .init(
-            adapterValue: .init(
-                shouldSynchronizeNotifications: true,
-                shouldRequestReview: true
-            ),
-            resultValue: .init(
-                message: "saved"
-            )
+            message: "saved"
         )
     }
 

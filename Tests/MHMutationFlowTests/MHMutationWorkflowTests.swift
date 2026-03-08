@@ -53,6 +53,7 @@ struct MHMutationWorkflowTests {
                 "saved"
             },
             adapter: adapter,
+            projection: .identity,
             mapFailure: Self.expectedError(from:)
         )
 
@@ -64,7 +65,7 @@ struct MHMutationWorkflowTests {
     }
 
     @Test
-    func runThrowing_projects_after_success_input_and_return_value() async throws {
+    func runThrowing_projects_closure_projection_and_return_value() async throws {
         let recorder = Recorder()
         let adapter = MHMutationAdapter<FollowUp> { followUp in
             var steps = [MHMutationStep]()
@@ -100,12 +101,14 @@ struct MHMutationWorkflowTests {
                 )
             },
             adapter: adapter,
-            afterSuccess: { (wrappedValue: WrappedValue) in
-                wrappedValue.followUp
-            },
-            returning: { (wrappedValue: WrappedValue) in
-                wrappedValue.value
-            },
+            projection: .closures(
+                afterSuccess: { (wrappedValue: WrappedValue) in
+                    wrappedValue.followUp
+                },
+                returning: { (wrappedValue: WrappedValue) in
+                    wrappedValue.value
+                }
+            ),
             mapFailure: Self.expectedError(from:)
         )
 
@@ -129,6 +132,7 @@ struct MHMutationWorkflowTests {
                     throw OperationTestError.failed
                 },
                 adapter: MHMutationAdapter<String>.none,
+                projection: .identity,
                 mapFailure: Self.expectedError(from:),
                 configuration: .init(
                     operationErrorDescription: operationErrorDescription
@@ -159,6 +163,7 @@ struct MHMutationWorkflowTests {
                     "saved"
                 },
                 adapter: adapter,
+                projection: .identity,
                 mapFailure: Self.expectedError(from:)
             )
         }
@@ -173,6 +178,7 @@ struct MHMutationWorkflowTests {
                     throw CancellationError()
                 },
                 adapter: MHMutationAdapter<String>.none,
+                projection: .identity,
                 mapFailure: Self.expectedError(from:)
             )
         }

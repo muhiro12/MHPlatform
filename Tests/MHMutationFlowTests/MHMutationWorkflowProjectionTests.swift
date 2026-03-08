@@ -29,13 +29,13 @@ struct MHMutationWorkflowProjectionTests {
     }
 
     @Test
-    func runThrowing_projection_returns_result_and_runs_adapter_steps() async throws {
+    func runThrowing_projection_carrier_supports_key_path_projection() async throws {
         let recorder = Recorder()
         let adapter = Self.followUpAdapter(recorder: recorder)
 
         let result = try await MHMutationWorkflow.runThrowing(
             name: "saveProjectedDraft",
-            operation: {
+            operation: { () -> MHMutationProjection<FollowUp, String> in
                 .init(
                     adapterValue: .init(
                         reloadWidgets: true,
@@ -45,6 +45,10 @@ struct MHMutationWorkflowProjectionTests {
                 )
             },
             adapter: adapter,
+            projection: .keyPaths(
+                adapterValue: \MHMutationProjection<FollowUp, String>.adapterValue,
+                resultValue: \MHMutationProjection<FollowUp, String>.resultValue
+            ),
             mapFailure: Self.expectedError(from:)
         )
 
@@ -56,7 +60,33 @@ struct MHMutationWorkflowProjectionTests {
     }
 
     @Test
-    func runThrowing_projection_maps_operation_failure_with_custom_description() async {
+    func runThrowing_fixed_adapter_value_supports_void_mutations() async throws {
+        let recorder = Recorder()
+        let adapter = Self.followUpAdapter(recorder: recorder)
+
+        try await MHMutationWorkflow.runThrowing(
+            name: "refreshProjectedDraft",
+            operation: {
+                // Intentionally empty.
+            },
+            adapter: adapter,
+            projection: .fixedAdapterValue(
+                .init(
+                    reloadWidgets: true,
+                    synchronizeNotifications: true
+                )
+            ),
+            mapFailure: Self.expectedError(from:)
+        )
+
+        #expect(await recorder.allValues() == [
+            "reloadWidgets",
+            "synchronizeNotifications"
+        ])
+    }
+
+    @Test
+    func runThrowing_fixed_adapter_value_maps_operation_failure_with_custom_description() async {
         let operationErrorDescription: @Sendable (any Error) -> String = { _ in
             "displayable failure"
         }
@@ -68,6 +98,12 @@ struct MHMutationWorkflowProjectionTests {
                     throw OperationTestError.failed
                 },
                 adapter: MHMutationAdapter<FollowUp>.none,
+                projection: .fixedAdapterValue(
+                    .init(
+                        reloadWidgets: true,
+                        synchronizeNotifications: true
+                    )
+                ),
                 mapFailure: Self.expectedError(from:),
                 configuration: .init(
                     operationErrorDescription: operationErrorDescription
@@ -94,7 +130,7 @@ struct MHMutationWorkflowProjectionTests {
         ) {
             try await MHMutationWorkflow.runThrowing(
                 name: "saveProjectedDraft",
-                operation: {
+                operation: { () -> MHMutationProjection<FollowUp, String> in
                     .init(
                         adapterValue: .init(
                             reloadWidgets: true,
@@ -104,6 +140,10 @@ struct MHMutationWorkflowProjectionTests {
                     )
                 },
                 adapter: adapter,
+                projection: .keyPaths(
+                    adapterValue: \MHMutationProjection<FollowUp, String>.adapterValue,
+                    resultValue: \MHMutationProjection<FollowUp, String>.resultValue
+                ),
                 mapFailure: Self.expectedError(from:)
             )
         }
@@ -118,6 +158,12 @@ struct MHMutationWorkflowProjectionTests {
                     throw CancellationError()
                 },
                 adapter: MHMutationAdapter<FollowUp>.none,
+                projection: .fixedAdapterValue(
+                    .init(
+                        reloadWidgets: true,
+                        synchronizeNotifications: true
+                    )
+                ),
                 mapFailure: Self.expectedError(from:)
             )
         }

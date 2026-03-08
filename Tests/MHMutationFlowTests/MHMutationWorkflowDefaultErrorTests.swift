@@ -47,7 +47,8 @@ struct MHMutationWorkflowDefaultErrorTests {
             operation: {
                 "saved"
             },
-            adapter: adapter
+            adapter: adapter,
+            projection: .identity
         )
 
         #expect(result == "saved")
@@ -58,7 +59,7 @@ struct MHMutationWorkflowDefaultErrorTests {
     }
 
     @Test
-    func runThrowing_projects_after_success_input_and_return_value() async throws {
+    func runThrowing_projects_closure_projection_and_return_value() async throws {
         let recorder = Recorder()
         let adapter = MHMutationAdapter<FollowUp> { followUp in
             var steps = [MHMutationStep]()
@@ -94,12 +95,14 @@ struct MHMutationWorkflowDefaultErrorTests {
                 )
             },
             adapter: adapter,
-            afterSuccess: { (wrappedValue: WrappedValue) in
-                wrappedValue.followUp
-            },
-            returning: { (wrappedValue: WrappedValue) in
-                wrappedValue.value
-            }
+            projection: .closures(
+                afterSuccess: { (wrappedValue: WrappedValue) in
+                    wrappedValue.followUp
+                },
+                returning: { (wrappedValue: WrappedValue) in
+                    wrappedValue.value
+                }
+            )
         )
 
         #expect(result == "saved")
@@ -122,6 +125,7 @@ struct MHMutationWorkflowDefaultErrorTests {
                     throw OperationTestError.failed
                 },
                 adapter: MHMutationAdapter<String>.none,
+                projection: .identity,
                 configuration: .init(
                     operationErrorDescription: operationErrorDescription
                 )
@@ -150,7 +154,8 @@ struct MHMutationWorkflowDefaultErrorTests {
                 operation: {
                     "saved"
                 },
-                adapter: adapter
+                adapter: adapter,
+                projection: .identity
             )
         }
     }
@@ -163,7 +168,8 @@ struct MHMutationWorkflowDefaultErrorTests {
                 operation: {
                     throw CancellationError()
                 },
-                adapter: MHMutationAdapter<String>.none
+                adapter: MHMutationAdapter<String>.none,
+                projection: .identity
             )
         }
     }

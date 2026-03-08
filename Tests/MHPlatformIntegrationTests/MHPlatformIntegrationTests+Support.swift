@@ -255,12 +255,17 @@ extension MHPlatformIntegrationTests {
                     throw IntegrationError.temporaryFailure
                 }
 
-                return .init(
-                    adapterValue: route.identifier,
-                    resultValue: "synced:\(route.identifier)"
-                )
+                return route.identifier
             },
             adapter: adapter,
+            projection: .closures(
+                afterSuccess: { identifier in
+                    identifier
+                },
+                returning: { identifier in
+                    "synced:\(identifier)"
+                }
+            ),
             onEvent: { event in
                 traceRecorder.record(Self.describe(event))
             },

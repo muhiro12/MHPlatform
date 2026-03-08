@@ -204,17 +204,21 @@ func runSaveAndMaybeRequestReview() async {
         let itemID = try await MHMutationWorkflow.runThrowing(
             name: "saveItem",
             operation: {
-                let item = try await saveItem()
-                return MHMutationProjection(
-                    adapterValue: SaveSummary(
+                try await saveItem()
+            },
+            adapter: adapter,
+            projection: .closures(
+                afterSuccess: { item in
+                    SaveSummary(
                         itemID: item.id,
                         shouldSyncNotifications: true,
                         shouldRequestReview: true
-                    ),
-                    resultValue: item.id
-                )
-            },
-            adapter: adapter,
+                    )
+                },
+                returning: { item in
+                    item.id
+                }
+            ),
             onEvent: { event in
                 logMutationEvent(event)
             },
