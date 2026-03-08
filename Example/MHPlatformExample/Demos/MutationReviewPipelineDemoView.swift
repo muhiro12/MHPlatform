@@ -222,7 +222,17 @@ private extension MutationReviewPipelineDemoView {
         reviewPolicy: MHReviewPolicy,
         recorder: PipelineRecorder
     ) -> MHMutationAdapter<PipelineFollowUp> {
-        .init { followUp in
+        let reviewFlow = MHReviewFlow(
+            policy: reviewPolicy,
+            randomValueProvider: { _ in
+                Constants.forcedReviewLotteryHit
+            },
+            sleep: { _ in
+                // Intentionally empty.
+            }
+        )
+
+        return .init { followUp in
             var steps = [MHMutationStep]()
 
             if followUp.shouldSynchronizeNotifications {
@@ -236,15 +246,7 @@ private extension MutationReviewPipelineDemoView {
             if followUp.shouldRequestReview {
                 steps.append(
                     .mainActor(name: "requestReview") {
-                        let outcome = await MHReviewRequester.requestIfNeeded(
-                            policy: reviewPolicy,
-                            randomValueProvider: { _ in
-                                Constants.forcedReviewLotteryHit
-                            },
-                            sleep: { _ in
-                                // Intentionally empty.
-                            }
-                        )
+                        let outcome = await reviewFlow.requestIfNeeded()
                         await recorder.recordReviewOutcome(outcome)
                     }
                 )

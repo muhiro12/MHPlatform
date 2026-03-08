@@ -29,7 +29,8 @@ public enum MHReviewRequester {
             policy: policy,
             randomValueProvider: randomValueProvider,
             sleep: sleep,
-            environment: .live
+            environment: .live,
+            logger: nil
         )
     }
 
@@ -51,6 +52,7 @@ public enum MHReviewRequester {
             randomValueProvider: randomValueProvider,
             sleep: sleep,
             environment: .live,
+            logger: nil,
             onOutcome: onOutcome
         )
     }
@@ -83,22 +85,28 @@ public enum MHReviewRequester {
         randomValueProvider: RandomValueProvider,
         sleep: Sleep,
         environment: MHReviewRequestEnvironment,
+        logger: MHLogger? = nil,
         onOutcome: @Sendable (MHReviewRequestOutcome) -> Void = { _ in
             // no-op
-        }
+        },
+        logMetadata: [String: String] = [:]
     ) async -> MHReviewRequestOutcome {
         guard policy.lotteryMaxExclusive > 0 else {
-            return finish(
+            return await finish(
                 .skippedInvalidLotteryRange,
-                onOutcome: onOutcome
+                logger: logger,
+                onOutcome: onOutcome,
+                logMetadata: logMetadata
             )
         }
 
         let randomValue = randomValueProvider(0..<policy.lotteryMaxExclusive)
         guard policy.shouldRequestReview(randomValue: randomValue) else {
-            return finish(
+            return await finish(
                 .skippedByPolicy,
-                onOutcome: onOutcome
+                logger: logger,
+                onOutcome: onOutcome,
+                logMetadata: logMetadata
             )
         }
 
@@ -106,59 +114,45 @@ public enum MHReviewRequester {
             await sleep(policy.requestDelay)
         }
 
-        return finish(
+        return await finish(
             environment.requestReview(),
-            onOutcome: onOutcome
+            logger: logger,
+            onOutcome: onOutcome,
+            logMetadata: logMetadata
         )
-    }
-
-    @MainActor
-    static func requestIfNeeded(
-        policy: MHReviewPolicy,
-        randomValueProvider: RandomValueProvider,
-        sleep: Sleep,
-        environment: MHReviewRequestEnvironment,
-        logger: MHLogger
-    ) async -> MHReviewRequestOutcome {
-        let outcome = await requestIfNeeded(
-            policy: policy,
-            randomValueProvider: randomValueProvider,
-            sleep: sleep,
-            environment: environment
-        )
-        await logOutcome(
-            outcome,
-            logger: logger
-        )
-        return outcome
     }
 }
 
 extension MHReviewRequester {
     static func logOutcome(
         _ outcome: MHReviewRequestOutcome,
-        logger: MHLogger
+        logger: MHLogger,
+        metadata: [String: String] = [:]
     ) async {
         switch outcome {
         case .requested:
             await logger.logImmediately(
                 .notice,
-                "review request invoked"
+                "review request invoked",
+                metadata: metadata
             )
         case .skippedInvalidLotteryRange:
             await logger.logImmediately(
                 .warning,
-                "review request skipped because the lottery range was invalid"
+                "review request skipped because the lottery range was invalid",
+                metadata: metadata
             )
         case .skippedNoForegroundScene:
             await logger.logImmediately(
                 .info,
-                "review request skipped because no foreground scene was available"
+                "review request skipped because no foreground scene was available",
+                metadata: metadata
             )
         case .unsupportedPlatform:
             await logger.logImmediately(
                 .info,
-                "review request skipped because the platform is unsupported"
+                "review request skipped because the platform is unsupported",
+                metadata: metadata
             )
         case .skippedByPolicy:
             break
@@ -167,11 +161,23 @@ extension MHReviewRequester {
 }
 
 private extension MHReviewRequester {
+    @MainActor
     static func finish(
         _ outcome: MHReviewRequestOutcome,
-        onOutcome: @Sendable (MHReviewRequestOutcome) -> Void
-    ) -> MHReviewRequestOutcome {
+        logger: MHLogger?,
+        onOutcome: @Sendable (MHReviewRequestOutcome) -> Void,
+        logMetadata: [String: String]
+    ) async -> MHReviewRequestOutcome {
         onOutcome(outcome)
+
+        if let logger {
+            await logOutcome(
+                outcome,
+                logger: logger,
+                metadata: logMetadata
+            )
+        }
+
         return outcome
     }
 }

@@ -451,7 +451,7 @@ store.set(false, for: key)
 
 ## MHReviewPolicy
 
-`MHReviewPolicy` provides review-request lottery policy and a high-level requester with platform-aware fallback behavior.
+`MHReviewPolicy` provides review-request lottery policy plus a higher-level flow shell with runtime and mutation wiring.
 
 Integration contract:
 [`MHReviewPolicy`](Designs/Architecture/integration-contracts.md#mhreviewpolicy)
@@ -464,7 +464,8 @@ let policy = MHReviewPolicy(
     requestDelay: .seconds(2)
 )
 
-let outcome = await MHReviewRequester.requestIfNeeded(policy: policy)
+let reviewFlow = MHReviewFlow(policy: policy)
+let outcome = await reviewFlow.requestIfNeeded()
 ```
 
 ## MHLogging

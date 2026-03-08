@@ -100,15 +100,20 @@ struct ReviewPolicyDemoView: View {
         let currentRandomValue = randomValue
 
         isRunning = true
-        requestOutcome = "Running requester..."
+        requestOutcome = "Running review flow..."
 
         Task {
-            let outcome = await MHReviewRequester.requestIfNeeded(policy: policy) { _ in
+            let randomValueProvider: MHReviewRequester.RandomValueProvider = { _ in
                 currentRandomValue
             }
+            let flow = MHReviewFlow(
+                policy: policy,
+                randomValueProvider: randomValueProvider
+            )
+            let outcome = await flow.requestIfNeeded()
 
             await MainActor.run {
-                requestOutcome = "Requester outcome: \(String(describing: outcome))"
+                requestOutcome = "Review flow outcome: \(String(describing: outcome))"
                 isRunning = false
             }
         }

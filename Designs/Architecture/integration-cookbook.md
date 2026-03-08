@@ -184,6 +184,7 @@ func runSaveAndMaybeRequestReview() async {
         lotteryMaxExclusive: 10,
         requestDelay: .seconds(1)
     )
+    let reviewFlow = MHReviewFlow(policy: reviewPolicy)
     let adapter = MHMutationAdapter<SaveSummary>.build { summary in
         if summary.shouldSyncNotifications {
             MHMutationStep.mainActor(name: "syncNotifications") {
@@ -192,11 +193,7 @@ func runSaveAndMaybeRequestReview() async {
         }
 
         if summary.shouldRequestReview {
-            MHMutationStep.mainActor(name: "requestReview") {
-                _ = await MHReviewRequester.requestIfNeeded(
-                    policy: reviewPolicy
-                )
-            }
+            reviewFlow.step(name: "requestReview")
         }
     }
 

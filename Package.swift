@@ -142,7 +142,11 @@ let package = Package(
         ),
         .target(
             name: "MHReviewPolicy",
-            dependencies: ["MHLogging"]
+            dependencies: [
+                "MHAppRuntime",
+                "MHLogging",
+                "MHMutationFlow"
+            ]
         ),
         .target(
             name: "MHLogging"
@@ -209,6 +213,8 @@ let package = Package(
         .testTarget(
             name: "MHReviewPolicyTests",
             dependencies: [
+                "MHAppRuntime",
+                "MHMutationFlow",
                 "MHReviewPolicy",
                 "MHLogging"
             ]
