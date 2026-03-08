@@ -212,7 +212,9 @@ struct MutationReviewPipelineDemoView: View {
                 )
             },
             adapter: adapter,
-            operationErrorDescription: Self.operationErrorDescription
+            configuration: .init(
+                operationErrorDescription: Self.operationErrorDescription
+            )
         )
     }
 

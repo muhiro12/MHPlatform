@@ -222,7 +222,10 @@ func runSaveAndMaybeRequestReview() async {
             },
             returning: { item in
                 item.id
-            }
+            },
+            configuration: .init(
+                retryPolicy: .default
+            )
         )
         logMutationSuccess(itemID)
     } catch let error as MHMutationWorkflowError {

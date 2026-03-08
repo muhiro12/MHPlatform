@@ -102,7 +102,9 @@ struct MHMutationWorkflowKeyPathProjectionTests {
                 adapter: MHMutationAdapter<FollowUp>.none,
                 adapterValue: \.followUp,
                 resultValue: \.value,
-                operationErrorDescription: operationErrorDescription
+                configuration: .init(
+                    operationErrorDescription: operationErrorDescription
+                )
             )
         }
     }

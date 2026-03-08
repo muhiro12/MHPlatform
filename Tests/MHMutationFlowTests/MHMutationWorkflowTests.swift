@@ -130,7 +130,9 @@ struct MHMutationWorkflowTests {
                 },
                 adapter: MHMutationAdapter<String>.none,
                 mapFailure: Self.expectedError(from:),
-                operationErrorDescription: operationErrorDescription
+                configuration: .init(
+                    operationErrorDescription: operationErrorDescription
+                )
             )
         }
     }

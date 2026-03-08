@@ -122,7 +122,9 @@ struct MHMutationWorkflowDefaultErrorTests {
                     throw OperationTestError.failed
                 },
                 adapter: MHMutationAdapter<String>.none,
-                operationErrorDescription: operationErrorDescription
+                configuration: .init(
+                    operationErrorDescription: operationErrorDescription
+                )
             )
         }
     }

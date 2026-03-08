@@ -199,6 +199,7 @@ This document is normative for integration design.
 - `MHMutation<Value>` (named operation unit)
 - Optional `MHMutationRetryPolicy`
 - Optional `MHCancellationHandle`
+- Optional `MHMutationWorkflowConfiguration`
 - Optional high-level workflow shell:
   - `MHMutationWorkflow`
 - Optional post-success bridge:
@@ -217,6 +218,7 @@ This document is normative for integration design.
 
 - Throwing workflow shell:
   - `MHMutationWorkflow.runThrowing`
+  - `MHMutationWorkflowConfiguration`
   - `MHMutationWorkflowError`
 - `MHMutationRun<Value>` (from `start`):
   - `events: AsyncStream<MHMutationEvent<Value>>`

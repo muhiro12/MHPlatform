@@ -278,12 +278,17 @@ let result = try await MHMutationWorkflow.runThrowing(
     },
     adapter: adapter,
     adapterValue: \.followUp,
-    resultValue: \.value
+    resultValue: \.value,
+    configuration: .init(
+        retryPolicy: .default
+    )
 )
 ```
 
-The lower-level `MHMutationRunner` remains available when the app needs custom
-retry policy, cancellation handles, or observable event streams.
+The lower-level `MHMutationRunner` remains available when the app needs
+observable event streams or direct run-handle ownership. Retry policy,
+cancellation handles, and operation failure formatting now fit in
+`MHMutationWorkflowConfiguration`.
 
 ## MHRouteExecution
 
