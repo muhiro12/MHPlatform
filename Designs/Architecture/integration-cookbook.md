@@ -152,7 +152,7 @@ func syncRequests(
     await MHNotificationOrchestrator.replaceManagedPendingRequests(
         center: center,
         requests: requests,
-        isManagedIdentifier: { $0.hasPrefix(managedPrefix) }
+        matcher: .init(prefixes: [managedPrefix])
     )
 }
 

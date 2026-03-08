@@ -31,13 +31,12 @@ private enum NotificationPayloadOrchestrationFixture {
         let descriptor = categoryDescriptor(for: scenario)
         let payload = payload(for: scenario)
         let actionIdentifier = actionIdentifier(for: actionSelection, scenario: scenario)
-        let isManagedIdentifier: @Sendable (String) -> Bool = { identifier in
-            switch scenario {
-            case .incomes:
-                return identifier.hasPrefix("upcoming-payment:")
-            case .cookle:
-                return identifier.hasPrefix("daily-suggestion:")
-            }
+        let matcher: MHNotificationIdentifierMatcher
+        switch scenario {
+        case .incomes:
+            matcher = .init(prefixes: ["upcoming-payment:"])
+        case .cookle:
+            matcher = .init(prefixes: ["daily-suggestion:"])
         }
 
         MHNotificationOrchestrator.registerCategories([descriptor], center: center)
@@ -49,7 +48,7 @@ private enum NotificationPayloadOrchestrationFixture {
         let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
             center: center,
             requests: simulatedRequests(for: scenario),
-            isManagedIdentifier: isManagedIdentifier
+            matcher: matcher
         )
         let deliveryOutcome = await MHNotificationOrchestrator.deliverRouteURL(
             userInfo: codec.encode(payload),

@@ -76,29 +76,6 @@ struct MHNotificationOrchestratorTests {
     }
 
     @Test
-    func replaceManagedPendingRequests_removes_managed_only() async {
-        let center = NotificationCenterDouble(
-            authorizationStatus: .authorized,
-            pendingRequests: [
-                request(identifier: "managed.old"),
-                request(identifier: "foreign.keep")
-            ]
-        )
-
-        let result = await MHNotificationOrchestrator.replaceManagedPendingRequests(
-            center: center,
-            requests: [request(identifier: "managed.new")]
-        ) { identifier in
-            identifier.hasPrefix("managed.")
-        }
-
-        #expect(result.removedPendingIdentifiers == ["managed.old"])
-        #expect(result.addedRequestIdentifiers == ["managed.new"])
-        #expect(result.failedRequestIdentifiers.isEmpty)
-        #expect(center.pendingIdentifiers() == ["foreign.keep", "managed.new"])
-    }
-
-    @Test
     func replaceManagedPendingRequests_continues_after_add_failures() async {
         let center = NotificationCenterDouble(
             authorizationStatus: .authorized,
@@ -150,10 +127,9 @@ struct MHNotificationOrchestratorTests {
             requests: [
                 request(identifier: "managed.keep"),
                 request(identifier: "managed.new")
-            ]
-        ) { identifier in
-            identifier.hasPrefix("managed.")
-        }
+            ],
+            matcher: .init(prefixes: ["managed."])
+        )
 
         #expect(result.removedPendingIdentifiers == ["managed.remove"])
         #expect(result.addedRequestIdentifiers == ["managed.new"])
@@ -221,7 +197,7 @@ struct MHNotificationOrchestratorTests {
     }
 }
 
-private func request(identifier: String) -> UNNotificationRequest {
+func request(identifier: String) -> UNNotificationRequest {
     let content = UNMutableNotificationContent()
     content.title = "Title"
     content.body = "Body"

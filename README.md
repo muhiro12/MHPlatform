@@ -212,9 +212,7 @@ let status = await MHNotificationOrchestrator.requestAuthorizationIfNeeded(
 let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
     center: UNUserNotificationCenter.current(),
     requests: requestsToSchedule,
-    isManagedIdentifier: { identifier in
-        identifier.hasPrefix("upcoming-payment:")
-    }
+    matcher: .init(prefixes: ["upcoming-payment:"])
 )
 let deliveryOutcome = await MHNotificationOrchestrator.deliverRouteURL(
     payload: payload,

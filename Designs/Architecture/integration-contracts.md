@@ -301,6 +301,7 @@ This document is normative for integration design.
 - Optional bridge dependency:
   - `MHNotificationCentering` (`UserNotifications` adapter surface)
   - `MHDeepLinkURLDestination` (pending route handoff target)
+  - `MHNotificationIdentifierMatcher` (managed-request matching policy)
 
 ### Outputs
 
@@ -308,6 +309,7 @@ This document is normative for integration design.
 - Route resolution (`MHNotificationRouteResolver.resolveRouteURL`)
 - Route delivery (`MHNotificationOrchestrator.deliverRouteURL`)
 - Optional orchestration outcome (`MHNotificationRequestSyncOutcome`)
+- Value-typed managed request matcher (`MHNotificationIdentifierMatcher`)
 
 ### Threading / Actor
 
