@@ -102,12 +102,18 @@ side effects and shared infrastructure state. It is already adopted by both
 Incomes and Cookle via the umbrella `MHPlatform` product. `MHAppRuntimeLifecycle`
 now lets apps move ordered startup and foreground wiring into a package-owned
 shell instead of keeping repeated `.task` and `scenePhase` coordination inline.
+`MHAppRoutePipeline` complements that lifecycle shell by owning the root-level
+deep-link inbox, ordered source handoff, readiness activation, and SwiftUI URL
+ingestion hooks that otherwise stay in app code.
 
 Integration contract:
 [`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)
 
 ```swift
 import MHAppRuntime
+import MHDeepLinking
+import MHLogging
+import MHRouteExecution
 
 let runtime = MHAppRuntime(
     configuration: .init(
@@ -118,19 +124,51 @@ let runtime = MHAppRuntime(
         showsLicenses: true
     )
 )
+let routeCodec = MHDeepLinkCodec<AppRoute>(
+    configuration: .init(
+        customScheme: "myapp",
+        preferredUniversalLinkHost: "example.com",
+        allowedUniversalLinkHosts: ["example.com"],
+        universalLinkPathPrefix: "MyApp",
+        preferredTransport: .customScheme
+    )
+)
+let routePipeline = MHAppRoutePipeline(
+    routeLifecycle: MHRouteLifecycle<AppRoute>(
+        logger: MHLoggerFactory.osLogDefault.logger(
+            category: "route",
+            source: #fileID
+        ),
+        initialReadiness: false,
+        isDuplicate: ==
+    ),
+    using: routeCodec,
+    pendingSources: [
+        intentStore,
+        notificationInbox
+    ]
+) { route in
+    try await applyRoute(route)
+}
 
 ContentView()
+    .mhAppRoutePipeline(routePipeline)
     .mhAppRuntimeLifecycle(
         runtime: runtime,
         plan: .init(
+            commonTasks: [
+                .init(name: "syncSubscriptionState") {
+                    syncSubscriptionStateIfNeeded()
+                }
+            ],
             startupTasks: [
                 .init(name: "loadConfig") {
                     await configurationService.load()
                 }
             ],
             activeTasks: [
-                .init(name: "refreshNotifications") {
-                    await notificationService.update()
+                .init(name: "synchronizePendingRoutes") {
+                    await routePipeline.synchronizePendingRoutesIfPossible()
                 }
             ],
             skipFirstActivePhase: true
@@ -307,6 +345,10 @@ callbacks without storing an `AsyncStream`.
 URLs, pending-source drain, readiness gating, and queued-route replay. Drop to
 `MHRouteCoordinator` directly only when the app needs explicit resolve/apply
 separation or direct pending-queue introspection.
+
+When the app also wants package-owned root-view wiring for ordered source
+composition, URL ingestion, and activation/drain coordination, layer
+`MHAppRoutePipeline` on top from `MHAppRuntime`.
 
 Integration contract:
 [`MHRouteExecution`](Designs/Architecture/integration-contracts.md#mhrouteexecution)

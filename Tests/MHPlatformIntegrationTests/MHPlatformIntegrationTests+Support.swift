@@ -71,17 +71,18 @@ extension MHPlatformIntegrationTests {
         let logger = makeLogger(logStore: logStore)
         let notificationDestination = MHDeepLinkURLRecorder()
         let intentSource = MHDeepLinkURLRecorder()
-        let routeLifecycle = MHRouteLifecycle<IntegrationRoute>(
+        let routePipeline = makeRoutePipeline(
             logger: logger,
-            initialReadiness: true,
-            isDuplicate: ==
+            traceRecorder: traceRecorder,
+            mutationAttemptCounter: LockedCounter(),
+            intentSource: intentSource,
+            notificationDestination: notificationDestination
         )
         let runtime = makeRuntime(traceRecorder: traceRecorder)
         let lifecycle = makeLifecycle(
             runtime: runtime,
-            routeLifecycle: routeLifecycle,
+            routePipeline: routePipeline,
             traceRecorder: traceRecorder,
-            intentSource: intentSource,
             notificationDestination: notificationDestination
         )
 
@@ -141,14 +142,11 @@ extension MHPlatformIntegrationTests {
 
     func makeLifecycle(
         runtime: MHAppRuntime,
-        routeLifecycle: MHRouteLifecycle<IntegrationRoute>,
+        routePipeline: MHAppRoutePipeline<IntegrationRoute>,
         traceRecorder: LockedTraceRecorder,
-        intentSource: MHDeepLinkURLRecorder,
         notificationDestination: MHDeepLinkURLRecorder
     ) -> MHAppRuntimeLifecycle {
-        let mutationAttemptCounter = LockedCounter()
-
-        return .init(
+        .init(
             runtime: runtime,
             plan: .init(
                 startupTasks: [
@@ -160,13 +158,10 @@ extension MHPlatformIntegrationTests {
                     }
                 ],
                 activeTasks: [
-                    .init(name: "drainRoutePipeline") {
-                        await drainRoutePipeline(
-                            routeLifecycle: routeLifecycle,
+                    .init(name: "synchronizePendingRoutes") {
+                        await synchronizePendingRoutes(
+                            routePipeline: routePipeline,
                             traceRecorder: traceRecorder,
-                            intentSource: intentSource,
-                            notificationDestination: notificationDestination,
-                            mutationAttemptCounter: mutationAttemptCounter
                         )
                     }
                 ]
@@ -191,35 +186,42 @@ extension MHPlatformIntegrationTests {
         )
     }
 
-    func drainRoutePipeline(
-        routeLifecycle: MHRouteLifecycle<IntegrationRoute>,
+    func makeRoutePipeline(
+        logger: MHLogger,
         traceRecorder: LockedTraceRecorder,
+        mutationAttemptCounter: LockedCounter,
         intentSource: MHDeepLinkURLRecorder,
-        notificationDestination: MHDeepLinkURLRecorder,
-        mutationAttemptCounter: LockedCounter
-    ) async {
-        do {
-            let sourceChain = MHDeepLinkSourceChain(
+        notificationDestination: MHDeepLinkURLRecorder
+    ) -> MHAppRoutePipeline<IntegrationRoute> {
+        .init(
+            routeLifecycle: .init(
+                logger: logger,
+                initialReadiness: false,
+                isDuplicate: ==
+            ),
+            using: Self.codec,
+            pendingSources: [
                 intentSource,
                 notificationDestination
-            )
-            let outcome = try await routeLifecycle.submitLatest(
-                from: sourceChain,
-                using: Self.codec
-            ) { route in
+            ]
+        ) { route in
                 try await applyRoute(
                     route,
                     traceRecorder: traceRecorder,
                     mutationAttemptCounter: mutationAttemptCounter
                 )
-            }
-            recordRouteOutcome(
-                outcome,
-                traceRecorder: traceRecorder
-            )
-        } catch {
-            Issue.record("Integration pipeline failed: \(error)")
         }
+    }
+
+    func synchronizePendingRoutes(
+        routePipeline: MHAppRoutePipeline<IntegrationRoute>,
+        traceRecorder: LockedTraceRecorder
+    ) async {
+        let outcome = await routePipeline.synchronizePendingRoutesIfPossible()
+        recordRouteOutcome(
+            outcome,
+            traceRecorder: traceRecorder
+        )
     }
 
     func applyRoute(

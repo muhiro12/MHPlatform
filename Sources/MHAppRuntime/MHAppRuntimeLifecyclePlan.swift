@@ -23,4 +23,17 @@ public struct MHAppRuntimeLifecyclePlan: Sendable, Hashable {
         self.activeTasks = activeTasks
         self.skipFirstActivePhase = skipFirstActivePhase
     }
+
+    /// Creates a lifecycle plan that prepends shared tasks to startup and
+    /// active phases.
+    public init(
+        commonTasks: [MHAppRuntimeTask] = [],
+        startupTasks: [MHAppRuntimeTask] = [],
+        activeTasks: [MHAppRuntimeTask] = [],
+        skipFirstActivePhase: Bool = false
+    ) {
+        self.startupTasks = commonTasks + startupTasks
+        self.activeTasks = commonTasks + activeTasks
+        self.skipFirstActivePhase = skipFirstActivePhase
+    }
 }

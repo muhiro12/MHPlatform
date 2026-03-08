@@ -4,68 +4,60 @@ This cookbook focuses on composable end-to-end integration patterns.
 The package-owned canonical end-to-end reference lives in
 `Tests/MHPlatformIntegrationTests/MHPlatformIntegrationTests.swift`.
 
-## Recipe 1: DeepLink Sources -> RouteLifecycle
+## Recipe 1: DeepLink Sources -> MHAppRoutePipeline
 
 Use this pipeline when URLs can arrive before UI/bootstrap readiness.
 
 ```swift
+import MHAppRuntime
 import MHDeepLinking
 import MHLogging
 import MHRouteExecution
 
 @MainActor
-final class AppRoutePipeline {
-    private let codec: MHDeepLinkCodec<AppRoute>
-    let routeInbox: MHObservableDeepLinkInbox
-    let notificationInbox: MHDeepLinkInbox
-    private let routeLifecycle: MHRouteLifecycle<AppRoute>
+final class AppRootModel {
+    private let routePipeline: MHAppRoutePipeline<AppRoute>
 
     init(logger: MHLogger) {
-        codec = .init(configuration: .init(
+        let codec = MHDeepLinkCodec<AppRoute>(
+            configuration: .init(
             customScheme: "myapp",
             preferredUniversalLinkHost: "example.com",
             allowedUniversalLinkHosts: ["example.com"],
             universalLinkPathPrefix: "MyApp",
                 preferredTransport: .customScheme
-        ))
-        routeInbox = .init()
-        notificationInbox = .init()
-
-        routeLifecycle = .init(
-            logger: logger,
-            initialReadiness: false,
-            isDuplicate: ==
+            )
         )
-    }
 
-    func receiveRoute(_ route: AppRoute) async {
-        await routeInbox.ingest(route, using: codec)
-    }
-
-    func receiveNotificationRoute(_ url: URL) async {
-        await notificationInbox.setPendingURL(url)
-    }
-
-    func receiveURL(_ url: URL) async {
-        await routeInbox.ingest(url)
-    }
-
-    func setReady(_ ready: Bool) async {
-        await routeLifecycle.setReadiness(ready)
-        _ = try? await routeLifecycle.applyPendingIfReady { route in
+        routePipeline = .init(
+            routeLifecycle: .init(
+                logger: logger,
+                initialReadiness: false,
+                isDuplicate: ==
+            ),
+            using: codec,
+            pendingSources: [
+                intentStore,
+                notificationInbox
+            ]
+        ) { route in
             try await applyRoute(route)
         }
     }
 
-    func drainPendingURL() async {
-        _ = try? await routeLifecycle.submitLatest(
-            from: routeInbox,
-            notificationInbox,
-            using: codec,
-            applyOnMainActor: { route in
-                try await applyRoute(route)
-            }
-        )
+    func receiveURL(_ url: URL) async {
+        await routePipeline.ingest(url)
+    }
+
+    func synchronizePendingRoutes() async {
+        await routePipeline.synchronizePendingRoutesIfPossible()
+    }
+
+    func rootView<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .mhAppRoutePipeline(routePipeline)
     }
 }
 ```
@@ -82,13 +74,13 @@ let handoffSources = MHDeepLinkSourceChain(
     notificationInbox
 )
 
-_ = try? await routeLifecycle.submitLatest(
-    from: handoffSources,
+let routePipeline = MHAppRoutePipeline(
+    routeLifecycle: routeLifecycle,
     using: codec,
-    applyOnMainActor: { route in
-        try await applyRoute(route)
-    }
-)
+    pendingSources: [handoffSources],
+) { route in
+    try await applyRoute(route)
+}
 ```
 
 Use `MHRouteCoordinator` directly when the app needs a separate resolve/apply

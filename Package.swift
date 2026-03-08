@@ -93,7 +93,10 @@ let package = Package(
         .target(
             name: "MHAppRuntime",
             dependencies: [
+                "MHDeepLinking",
+                "MHLogging",
                 "MHPreferences",
+                "MHRouteExecution",
                 .product(
                     name: "StoreKitWrapper",
                     package: "StoreKitWrapper",
@@ -160,7 +163,10 @@ let package = Package(
             name: "MHAppRuntimeTests",
             dependencies: [
                 "MHAppRuntime",
-                "MHPreferences"
+                "MHLogging",
+                "MHPlatformTesting",
+                "MHPreferences",
+                "MHRouteExecution"
             ]
         ),
         .testTarget(

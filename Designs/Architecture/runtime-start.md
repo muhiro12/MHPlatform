@@ -22,9 +22,26 @@ startup side effects.
 This keeps app-specific work items explicit while moving the lifecycle
 coordination mechanics into MHPlatform.
 
+`MHAppRuntimeLifecyclePlan` also supports `commonTasks` so apps can define
+shared startup/active work once while preserving explicit per-phase tasks.
+
 For SwiftUI entry points, `View.mhAppRuntimeLifecycle(runtime:plan:)` is the
 default adapter. It keeps `scenePhase` observation and lifecycle object storage
 inside MHPlatform while preserving the same ordered task plan.
+
+## Route pipeline shell
+
+`MHAppRoutePipeline` owns repeated root-level route plumbing that sat next to
+runtime lifecycle wiring in app code:
+
+- a pipeline-owned `MHObservableDeepLinkInbox`
+- ordered pending-source composition with the pipeline inbox appended last
+- one-time route execution activation through `MHRouteLifecycle`
+- one-at-a-time pending URL drain
+- SwiftUI `onOpenURL` and `NSUserActivityTypeBrowsingWeb` ingestion through
+  `View.mhAppRoutePipeline(_:)`
+
+Apps still own route enums, parsing meaning, and final route application.
 
 ## What runtime initializes
 
