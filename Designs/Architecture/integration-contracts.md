@@ -209,6 +209,8 @@ This document is normative for integration design.
     control flow instead of manual array mutation
   - `[MHMutationStep]` through `afterSuccess` for fixed ordered steps
 - Optional success projection from an app-owned carrier value:
+  - `MHMutationProjection<AdapterValue, ResultValue>` when the operation can
+    emit adapter input and return value directly
   - closure-based `afterSuccess` / `returning`
   - key-path-based `adapterValue` / `resultValue`
 - Optional adapter composition through `MHMutationAdapter.appending(_:)`
@@ -246,6 +248,8 @@ This document is normative for integration design.
   post-success steps
 - Mutation services whose success values already carry app-owned follow-up
   hints or effect metadata
+- Mutation services that want to return app data and adapter input together
+  without external value stores
 - Mutation services that return an app-owned carrier value and only need
   key-path projection into adapter input and result value
 - Retriable network + local side-effect flows

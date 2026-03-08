@@ -246,11 +246,6 @@ struct SaveItemFollowUp: Sendable {
     let shouldSyncNotifications: Bool
 }
 
-struct SaveItemResult: Sendable {
-    let value: String
-    let followUp: SaveItemFollowUp
-}
-
 let adapter = MHMutationAdapter<SaveItemFollowUp>.build { followUp in
     if followUp.shouldReloadWidgets {
         MHMutationStep.mainActor(name: "reloadWidgets") {
@@ -269,16 +264,14 @@ let result = try await MHMutationWorkflow.runThrowing(
     name: "save-item",
     operation: {
         .init(
-            value: "saved",
-            followUp: .init(
+            adapterValue: .init(
                 shouldReloadWidgets: true,
                 shouldSyncNotifications: true
-            )
+            ),
+            resultValue: "saved"
         )
     },
     adapter: adapter,
-    adapterValue: \.followUp,
-    resultValue: \.value,
     configuration: .init(
         retryPolicy: .default
     )
@@ -288,7 +281,9 @@ let result = try await MHMutationWorkflow.runThrowing(
 The lower-level `MHMutationRunner` remains available when the app needs
 observable event streams or direct run-handle ownership. Retry policy,
 cancellation handles, and operation failure formatting now fit in
-`MHMutationWorkflowConfiguration`.
+`MHMutationWorkflowConfiguration`. When an app already owns a combined
+success carrier, `afterSuccess` / `returning` and the key-path projection
+overloads remain available.
 
 ## MHRouteExecution
 

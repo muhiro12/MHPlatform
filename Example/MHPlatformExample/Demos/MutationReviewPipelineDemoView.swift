@@ -18,6 +18,9 @@ struct MutationReviewPipelineDemoView: View {
 
     nonisolated private struct SaveDraftResult: Sendable {
         let message: String
+    }
+
+    nonisolated private struct PipelineFollowUp: Sendable {
         let shouldSynchronizeNotifications: Bool
         let shouldRequestReview: Bool
     }
@@ -167,51 +170,15 @@ struct MutationReviewPipelineDemoView: View {
             requestDelay: .zero
         )
 
-        let adapter = MHMutationAdapter<SaveDraftResult> { result in
-            var steps = [MHMutationStep]()
-
-            if result.shouldSynchronizeNotifications {
-                steps.append(
-                    .mainActor(name: "syncNotifications") {
-                        await recorder.markNotificationsSynchronized()
-                    }
-                )
-            }
-
-            if result.shouldRequestReview {
-                steps.append(
-                    .mainActor(name: "requestReview") {
-                        let outcome = await MHReviewRequester.requestIfNeeded(
-                            policy: reviewPolicy,
-                            randomValueProvider: { _ in
-                                Constants.forcedReviewLotteryHit
-                            },
-                            sleep: { _ in
-                                // Intentionally empty.
-                            }
-                        )
-                        await recorder.recordReviewOutcome(outcome)
-                    }
-                )
-            }
-
-            return steps
-        }
-
         return try await MHMutationWorkflow.runThrowing(
             name: "saveDraft",
             operation: {
-                if scenario == .failure {
-                    throw PipelineError.mutationFailed
-                }
-
-                return .init(
-                    message: "saved",
-                    shouldSynchronizeNotifications: true,
-                    shouldRequestReview: true
-                )
+                try Self.projectedResult(for: scenario)
             },
-            adapter: adapter,
+            adapter: Self.makeAdapter(
+                reviewPolicy: reviewPolicy,
+                recorder: recorder
+            ),
             configuration: .init(
                 operationErrorDescription: Self.operationErrorDescription
             )
@@ -243,6 +210,60 @@ struct MutationReviewPipelineDemoView: View {
 private extension MutationReviewPipelineDemoView {
     nonisolated enum PipelineError: Error {
         case mutationFailed
+    }
+
+    private static func makeAdapter(
+        reviewPolicy: MHReviewPolicy,
+        recorder: PipelineRecorder
+    ) -> MHMutationAdapter<PipelineFollowUp> {
+        .init { followUp in
+            var steps = [MHMutationStep]()
+
+            if followUp.shouldSynchronizeNotifications {
+                steps.append(
+                    .mainActor(name: "syncNotifications") {
+                        await recorder.markNotificationsSynchronized()
+                    }
+                )
+            }
+
+            if followUp.shouldRequestReview {
+                steps.append(
+                    .mainActor(name: "requestReview") {
+                        let outcome = await MHReviewRequester.requestIfNeeded(
+                            policy: reviewPolicy,
+                            randomValueProvider: { _ in
+                                Constants.forcedReviewLotteryHit
+                            },
+                            sleep: { _ in
+                                // Intentionally empty.
+                            }
+                        )
+                        await recorder.recordReviewOutcome(outcome)
+                    }
+                )
+            }
+
+            return steps
+        }
+    }
+
+    private static func projectedResult(
+        for scenario: Scenario
+    ) throws -> MHMutationProjection<PipelineFollowUp, SaveDraftResult> {
+        if scenario == .failure {
+            throw PipelineError.mutationFailed
+        }
+
+        return .init(
+            adapterValue: .init(
+                shouldSynchronizeNotifications: true,
+                shouldRequestReview: true
+            ),
+            resultValue: .init(
+                message: "saved"
+            )
+        )
     }
 
     nonisolated static func operationErrorDescription(

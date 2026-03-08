@@ -210,19 +210,17 @@ func runSaveAndMaybeRequestReview() async {
         let itemID = try await MHMutationWorkflow.runThrowing(
             name: "saveItem",
             operation: {
-                try await saveItem()
-            },
-            adapter: adapter,
-            afterSuccess: { item in
-                SaveSummary(
-                    itemID: item.id,
-                    shouldSyncNotifications: true,
-                    shouldRequestReview: true
+                let item = try await saveItem()
+                return MHMutationProjection(
+                    adapterValue: SaveSummary(
+                        itemID: item.id,
+                        shouldSyncNotifications: true,
+                        shouldRequestReview: true
+                    ),
+                    resultValue: item.id
                 )
             },
-            returning: { item in
-                item.id
-            },
+            adapter: adapter,
             configuration: .init(
                 retryPolicy: .default
             )
