@@ -175,6 +175,8 @@ This document is normative for integration design.
 - Optional post-success bridge:
   - `MHMutationAdapter<Value>` for deriving ordered steps from a successful
     app-owned mutation value
+  - `MHMutationStepListBuilder` for writing ordered steps with `if` / `for`
+    control flow instead of manual array mutation
   - `[MHMutationStep]` through `afterSuccess` for fixed ordered steps
 - Optional success projection from an app-owned carrier value:
   - closure-based `afterSuccess` / `returning`

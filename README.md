@@ -215,22 +215,18 @@ struct SaveItemResult: Sendable {
     let followUp: SaveItemFollowUp
 }
 
-let adapter = MHMutationAdapter<SaveItemFollowUp> { followUp in
-    var steps = [MHMutationStep]()
-
+let adapter = MHMutationAdapter<SaveItemFollowUp>.build { followUp in
     if followUp.shouldReloadWidgets {
-        steps.append(.mainActor(name: "reloadWidgets") {
+        MHMutationStep.mainActor(name: "reloadWidgets") {
             reloadWidgets()
-        })
+        }
     }
 
     if followUp.shouldSyncNotifications {
-        steps.append(.mainActor(name: "syncNotifications") {
+        MHMutationStep.mainActor(name: "syncNotifications") {
             await syncNotifications()
-        })
+        }
     }
-
-    return steps
 }
 
 let result = try await MHMutationWorkflow.runThrowing(
