@@ -1,6 +1,8 @@
 # MHPlatform Integration Cookbook
 
 This cookbook focuses on composable end-to-end integration patterns.
+The package-owned canonical end-to-end reference lives in
+`Tests/MHPlatformIntegrationTests/MHPlatformIntegrationTests.swift`.
 
 ## Recipe 1: DeepLink Sources -> RouteLifecycle
 

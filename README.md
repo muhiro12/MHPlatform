@@ -68,6 +68,8 @@ Testing support:
 helpers such as `MHNotificationCenterDouble`, `MHDeepLinkURLRecorder`,
 `MHLogSinkRecorder`, and `MHRouteExecutionRecorder` without re-exporting them
 through the umbrella `MHPlatform` module.
+For a package-owned end-to-end reference, see
+`Tests/MHPlatformIntegrationTests/MHPlatformIntegrationTests.swift`.
 
 ## Current Adoption Snapshot
 

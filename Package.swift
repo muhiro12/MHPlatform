@@ -213,6 +213,19 @@ let package = Package(
                 "MHLogging",
                 "MHPlatformTesting"
             ]
+        ),
+        .testTarget(
+            name: "MHPlatformIntegrationTests",
+            dependencies: [
+                "MHAppRuntime",
+                "MHDeepLinking",
+                "MHLogging",
+                "MHMutationFlow",
+                "MHNotificationPayloads",
+                "MHPlatformTesting",
+                "MHPreferences",
+                "MHRouteExecution"
+            ]
         )
     ]
 )
