@@ -214,6 +214,8 @@ This document is normative for integration design.
   - closure-based `afterSuccess` / `returning`
   - key-path-based `adapterValue` / `resultValue`
 - Optional adapter composition through `MHMutationAdapter.appending(_:)`
+- Optional inline observability through `onEvent` on `MHMutationRunner` and
+  `MHMutationWorkflow.runThrowing`
 - Optional injected sleep for deterministic retry testing (`MHMutationRunner.Sleep`)
 
 ### Outputs

@@ -1,19 +1,28 @@
+import Foundation
 import MHPlatform
 
 extension MutationFlowDemoView {
-    func collectEventLog(
-        from events: AsyncStream<MHMutationEvent<SaveDraftResult>>
-    ) async -> [String] {
-        var values = [String]()
+    final class EventLogRecorder: @unchecked Sendable {
+        private let lock = NSLock()
+        private var values = [String]()
 
-        for await event in events {
-            values.append(eventTitle(event))
+        func record(_ value: String) {
+            lock.lock()
+            values.append(value)
+            lock.unlock()
         }
 
-        return values
+        func all() -> [String] {
+            lock.lock()
+            defer {
+                lock.unlock()
+            }
+
+            return values
+        }
     }
 
-    func eventTitle(_ event: MHMutationEvent<SaveDraftResult>) -> String {
+    static func eventTitle(_ event: MHMutationEvent<SaveDraftResult>) -> String {
         switch event {
         case let .started(mutation, attempt):
             return "started(\(mutation), attempt=\(attempt))"
@@ -37,7 +46,7 @@ extension MutationFlowDemoView {
         }
     }
 
-    func progressTitle(_ progress: MHMutationProgress) -> String {
+    static func progressTitle(_ progress: MHMutationProgress) -> String {
         switch progress {
         case let .retryScheduled(nextAttempt, delay):
             return "progress.retryScheduled(nextAttempt=\(nextAttempt), delay=\(delay))"
@@ -48,7 +57,7 @@ extension MutationFlowDemoView {
         }
     }
 
-    func summarize(_ outcome: MHMutationOutcome<SaveDraftResult>) -> String {
+    static func summarize(_ outcome: MHMutationOutcome<SaveDraftResult>) -> String {
         switch outcome {
         case let .succeeded(value, attempts, completedSteps):
             return [

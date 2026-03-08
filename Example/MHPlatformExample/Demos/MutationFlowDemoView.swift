@@ -215,8 +215,8 @@ struct MutationFlowDemoView: View {
             scenario: scenario,
             cancellationHandle: cancellationHandle
         )
-
-        let runHandle = MHMutationRunner.start(
+        let eventLogRecorder = Self.EventLogRecorder()
+        let outcome = await MHMutationRunner.run(
             mutation: mutation,
             adapter: adapter,
             retryPolicy: .init(
@@ -224,15 +224,16 @@ struct MutationFlowDemoView: View {
                 backoff: .immediate
             ),
             cancellationHandle: cancellationHandle
-        )
-
-        async let eventLogTask = collectEventLog(from: runHandle.events)
-        let outcome = await runHandle.outcome.value
-        let events = await eventLogTask
+        ) { event in
+            eventLogRecorder.record(
+                Self.eventTitle(event)
+            )
+        }
+        let events = eventLogRecorder.all()
 
         await MainActor.run {
             eventLog = events
-            outcomeSummary = summarize(outcome)
+            outcomeSummary = Self.summarize(outcome)
             isRunning = false
         }
     }

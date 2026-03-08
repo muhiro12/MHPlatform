@@ -221,6 +221,9 @@ func runSaveAndMaybeRequestReview() async {
                 )
             },
             adapter: adapter,
+            onEvent: { event in
+                logMutationEvent(event)
+            },
             configuration: .init(
                 retryPolicy: .default
             )

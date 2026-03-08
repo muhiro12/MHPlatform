@@ -75,6 +75,9 @@ struct MHMutationFlowTests {
             return "saved"
         }
 
+        // `sleep` is the second closure-shaped parameter, so Swift cannot
+        // express this call with trailing-closure syntax only.
+        // swiftlint:disable trailing_closure
         let outcome = await MHMutationRunner.run(
             mutation: mutation,
             retryPolicy: .init(
@@ -84,10 +87,12 @@ struct MHMutationFlowTests {
                     factor: 2,
                     maximumDelay: .milliseconds(40)
                 )
-            )
-        ) { duration in
+            ),
+            sleep: { duration in
             await durationRecorder.append(duration)
-        }
+            }
+        )
+        // swiftlint:enable trailing_closure
 
         switch outcome {
         case let .succeeded(value, attempts, completedSteps):

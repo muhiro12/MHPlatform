@@ -42,6 +42,9 @@ public extension MHMutationWorkflow {
         name: String,
         operation: @escaping @MainActor @Sendable () throws -> Value,
         adapter: MHMutationAdapter<Value>,
+        onEvent: @escaping EventSink<Value> = { _ in
+            // Intentionally empty.
+        },
         configuration: MHMutationWorkflowConfiguration
     ) async throws -> Value {
         try await runThrowing(
@@ -49,6 +52,7 @@ public extension MHMutationWorkflow {
             operation: operation,
             adapter: adapter,
             mapFailure: defaultFailure(from:),
+            onEvent: onEvent,
             configuration: configuration
         )
     }
@@ -62,6 +66,9 @@ public extension MHMutationWorkflow {
         name: String,
         operation: @escaping @MainActor @Sendable () throws -> MHMutationProjection<AdapterValue, ResultValue>,
         adapter: MHMutationAdapter<AdapterValue>,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         configuration: MHMutationWorkflowConfiguration
     ) async throws -> ResultValue {
         try await runThrowing(
@@ -69,6 +76,7 @@ public extension MHMutationWorkflow {
             operation: operation,
             adapter: adapter,
             mapFailure: defaultFailure(from:),
+            onEvent: onEvent,
             configuration: configuration
         )
     }
@@ -80,6 +88,9 @@ public extension MHMutationWorkflow {
         operation: @escaping @MainActor @Sendable () throws -> Value,
         adapter: MHMutationAdapter<Value>,
         mapFailure: @escaping @Sendable (MHMutationFailure) -> Failure,
+        onEvent: @escaping EventSink<Value> = { _ in
+            // Intentionally empty.
+        },
         configuration: MHMutationWorkflowConfiguration
     ) async throws -> Value {
         try await runThrowing(
@@ -93,6 +104,7 @@ public extension MHMutationWorkflow {
                 value
             },
             mapFailure: mapFailure,
+            onEvent: onEvent,
             configuration: configuration
         )
     }
@@ -108,6 +120,9 @@ public extension MHMutationWorkflow {
         operation: @escaping @MainActor @Sendable () throws -> MHMutationProjection<AdapterValue, ResultValue>,
         adapter: MHMutationAdapter<AdapterValue>,
         mapFailure: @escaping @Sendable (MHMutationFailure) -> Failure,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         configuration: MHMutationWorkflowConfiguration
     ) async throws -> ResultValue {
         try await runThrowing(
@@ -121,6 +136,7 @@ public extension MHMutationWorkflow {
                 projection.resultValue
             },
             mapFailure: mapFailure,
+            onEvent: onEvent,
             configuration: configuration
         )
     }
@@ -136,6 +152,9 @@ public extension MHMutationWorkflow {
         operation: @escaping @MainActor @Sendable () throws -> OperationValue,
         adapter: MHMutationAdapter<AdapterValue>,
         adapterValue: KeyPath<OperationValue, AdapterValue>,
+        onEvent: @escaping EventSink<OperationValue> = { _ in
+            // Intentionally empty.
+        },
         configuration: MHMutationWorkflowConfiguration
     ) async throws -> OperationValue {
         let projection = AdapterValueProjection(keyPath: adapterValue)
@@ -150,6 +169,7 @@ public extension MHMutationWorkflow {
             returning: { operationValue in
                 operationValue
             },
+            onEvent: onEvent,
             configuration: configuration
         )
     }
@@ -167,6 +187,9 @@ public extension MHMutationWorkflow {
         adapter: MHMutationAdapter<AdapterValue>,
         afterSuccess: @escaping @MainActor @Sendable (OperationValue) -> AdapterValue,
         returning: @escaping @MainActor @Sendable (OperationValue) -> ResultValue,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         configuration: MHMutationWorkflowConfiguration
     ) async throws -> ResultValue {
         try await runThrowing(
@@ -176,6 +199,7 @@ public extension MHMutationWorkflow {
             afterSuccess: afterSuccess,
             returning: returning,
             mapFailure: defaultFailure(from:),
+            onEvent: onEvent,
             configuration: configuration
         )
     }
@@ -193,6 +217,9 @@ public extension MHMutationWorkflow {
         adapter: MHMutationAdapter<AdapterValue>,
         adapterValue: KeyPath<OperationValue, AdapterValue>,
         resultValue: KeyPath<OperationValue, ResultValue>,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         configuration: MHMutationWorkflowConfiguration
     ) async throws -> ResultValue {
         let extraction = ProjectedValueExtraction(
@@ -210,6 +237,7 @@ public extension MHMutationWorkflow {
             returning: { operationValue in
                 extraction.projectedResultValue(from: operationValue)
             },
+            onEvent: onEvent,
             configuration: configuration
         )
     }
@@ -228,6 +256,9 @@ public extension MHMutationWorkflow {
         afterSuccess: @escaping @MainActor @Sendable (OperationValue) -> AdapterValue,
         returning: @escaping @MainActor @Sendable (OperationValue) -> ResultValue,
         mapFailure: @Sendable (MHMutationFailure) -> Failure,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
     ) async throws -> ResultValue {
         try await runThrowing(
@@ -237,6 +268,7 @@ public extension MHMutationWorkflow {
             afterSuccess: afterSuccess,
             returning: returning,
             mapFailure: mapFailure,
+            onEvent: onEvent,
             configuration: .init(
                 operationErrorDescription: operationErrorDescription
             )

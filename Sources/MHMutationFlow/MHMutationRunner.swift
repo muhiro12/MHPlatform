@@ -4,6 +4,8 @@ import Foundation
 public enum MHMutationRunner {
     /// Sleep abstraction for deterministic retry testing.
     public typealias Sleep = @Sendable (Duration) async throws -> Void
+    /// Ordered event callback emitted alongside the run's `AsyncStream`.
+    public typealias EventSink<Value: Sendable> = @Sendable (MHMutationEvent<Value>) -> Void
 
     enum StepExecutionResult {
         case succeeded(completedSteps: [String])
@@ -36,6 +38,9 @@ public enum MHMutationRunner {
         adapter: MHMutationAdapter<Value>,
         retryPolicy: MHMutationRetryPolicy = .none,
         cancellationHandle: MHCancellationHandle? = nil,
+        onEvent: @escaping EventSink<Value> = { _ in
+            // Intentionally empty.
+        },
         sleep: @escaping Sleep = { duration in
             if duration > .zero {
                 try await Task.sleep(for: duration)
@@ -44,6 +49,7 @@ public enum MHMutationRunner {
     ) -> MHMutationRun<Value> {
         let stream = AsyncStream<MHMutationEvent<Value>>.makeStream()
         let emit: @Sendable (MHMutationEvent<Value>) -> Void = { event in
+            onEvent(event)
             stream.continuation.yield(event)
         }
 
@@ -76,6 +82,9 @@ public enum MHMutationRunner {
         retryPolicy: MHMutationRetryPolicy = .none,
         cancellationHandle: MHCancellationHandle? = nil,
         afterSuccess: [MHMutationStep] = [],
+        onEvent: @escaping EventSink<Value> = { _ in
+            // Intentionally empty.
+        },
         sleep: @escaping Sleep = { duration in
             if duration > .zero {
                 try await Task.sleep(for: duration)
@@ -87,6 +96,7 @@ public enum MHMutationRunner {
             adapter: .fixed(afterSuccess),
             retryPolicy: retryPolicy,
             cancellationHandle: cancellationHandle,
+            onEvent: onEvent,
             sleep: sleep
         )
     }
@@ -98,6 +108,9 @@ public enum MHMutationRunner {
         adapter: MHMutationAdapter<Value>,
         retryPolicy: MHMutationRetryPolicy = .none,
         cancellationHandle: MHCancellationHandle? = nil,
+        onEvent: @escaping EventSink<Value> = { _ in
+            // Intentionally empty.
+        },
         sleep: @escaping Sleep = { duration in
             if duration > .zero {
                 try await Task.sleep(for: duration)
@@ -109,6 +122,7 @@ public enum MHMutationRunner {
             adapter: adapter,
             retryPolicy: retryPolicy,
             cancellationHandle: cancellationHandle,
+            onEvent: onEvent,
             sleep: sleep
         )
 
@@ -122,6 +136,9 @@ public enum MHMutationRunner {
         retryPolicy: MHMutationRetryPolicy = .none,
         cancellationHandle: MHCancellationHandle? = nil,
         afterSuccess: [MHMutationStep] = [],
+        onEvent: @escaping EventSink<Value> = { _ in
+            // Intentionally empty.
+        },
         sleep: @escaping Sleep = { duration in
             if duration > .zero {
                 try await Task.sleep(for: duration)
@@ -133,6 +150,7 @@ public enum MHMutationRunner {
             adapter: .fixed(afterSuccess),
             retryPolicy: retryPolicy,
             cancellationHandle: cancellationHandle,
+            onEvent: onEvent,
             sleep: sleep
         )
     }

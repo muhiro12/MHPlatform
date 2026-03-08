@@ -4,6 +4,8 @@ import Foundation
 public enum MHMutationWorkflow {
     /// Converts an operation error into the string recorded by `MHMutationRunner`.
     public typealias OperationErrorDescription = @Sendable (any Error) -> String
+    /// Ordered event callback emitted while running the workflow shell.
+    public typealias EventSink<Value: Sendable> = MHMutationRunner.EventSink<Value>
 
     private struct OperationFailure: Error, LocalizedError, CustomStringConvertible, Sendable {
         let description: String
@@ -26,12 +28,16 @@ public enum MHMutationWorkflow {
         name: String,
         operation: @escaping @MainActor @Sendable () throws -> Value,
         adapter: MHMutationAdapter<Value>,
+        onEvent: @escaping EventSink<Value> = { _ in
+            // Intentionally empty.
+        },
         operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
     ) async throws -> Value {
         try await runThrowing(
             name: name,
             operation: operation,
             adapter: adapter,
+            onEvent: onEvent,
             configuration: .init(
                 operationErrorDescription: operationErrorDescription
             )
@@ -47,12 +53,16 @@ public enum MHMutationWorkflow {
         name: String,
         operation: @escaping @MainActor @Sendable () throws -> MHMutationProjection<AdapterValue, ResultValue>,
         adapter: MHMutationAdapter<AdapterValue>,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
     ) async throws -> ResultValue {
         try await runThrowing(
             name: name,
             operation: operation,
             adapter: adapter,
+            onEvent: onEvent,
             configuration: .init(
                 operationErrorDescription: operationErrorDescription
             )
@@ -66,6 +76,9 @@ public enum MHMutationWorkflow {
         operation: @escaping @MainActor @Sendable () throws -> Value,
         adapter: MHMutationAdapter<Value>,
         mapFailure: @escaping @Sendable (MHMutationFailure) -> Failure,
+        onEvent: @escaping EventSink<Value> = { _ in
+            // Intentionally empty.
+        },
         operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
     ) async throws -> Value {
         try await runThrowing(
@@ -73,6 +86,7 @@ public enum MHMutationWorkflow {
             operation: operation,
             adapter: adapter,
             mapFailure: mapFailure,
+            onEvent: onEvent,
             configuration: .init(
                 operationErrorDescription: operationErrorDescription
             )
@@ -90,6 +104,9 @@ public enum MHMutationWorkflow {
         operation: @escaping @MainActor @Sendable () throws -> MHMutationProjection<AdapterValue, ResultValue>,
         adapter: MHMutationAdapter<AdapterValue>,
         mapFailure: @escaping @Sendable (MHMutationFailure) -> Failure,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
     ) async throws -> ResultValue {
         try await runThrowing(
@@ -97,6 +114,7 @@ public enum MHMutationWorkflow {
             operation: operation,
             adapter: adapter,
             mapFailure: mapFailure,
+            onEvent: onEvent,
             configuration: .init(
                 operationErrorDescription: operationErrorDescription
             )
@@ -115,6 +133,9 @@ public enum MHMutationWorkflow {
         operation: @escaping @MainActor @Sendable () throws -> OperationValue,
         adapter: MHMutationAdapter<AdapterValue>,
         adapterValue: KeyPath<OperationValue, AdapterValue>,
+        onEvent: @escaping EventSink<OperationValue> = { _ in
+            // Intentionally empty.
+        },
         operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
     ) async throws -> OperationValue {
         try await runThrowing(
@@ -122,6 +143,7 @@ public enum MHMutationWorkflow {
             operation: operation,
             adapter: adapter,
             adapterValue: adapterValue,
+            onEvent: onEvent,
             configuration: .init(
                 operationErrorDescription: operationErrorDescription
             )
@@ -142,6 +164,9 @@ public enum MHMutationWorkflow {
         adapter: MHMutationAdapter<AdapterValue>,
         afterSuccess: @escaping @MainActor @Sendable (OperationValue) -> AdapterValue,
         returning: @escaping @MainActor @Sendable (OperationValue) -> ResultValue,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
     ) async throws -> ResultValue {
         try await runThrowing(
@@ -150,6 +175,7 @@ public enum MHMutationWorkflow {
             adapter: adapter,
             afterSuccess: afterSuccess,
             returning: returning,
+            onEvent: onEvent,
             configuration: .init(
                 operationErrorDescription: operationErrorDescription
             )
@@ -169,6 +195,9 @@ public enum MHMutationWorkflow {
         adapter: MHMutationAdapter<AdapterValue>,
         adapterValue: KeyPath<OperationValue, AdapterValue>,
         resultValue: KeyPath<OperationValue, ResultValue>,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
     ) async throws -> ResultValue {
         try await runThrowing(
@@ -177,6 +206,7 @@ public enum MHMutationWorkflow {
             adapter: adapter,
             adapterValue: adapterValue,
             resultValue: resultValue,
+            onEvent: onEvent,
             configuration: .init(
                 operationErrorDescription: operationErrorDescription
             )
@@ -197,6 +227,9 @@ public enum MHMutationWorkflow {
         afterSuccess: @escaping @MainActor @Sendable (OperationValue) -> AdapterValue,
         returning: @escaping @MainActor @Sendable (OperationValue) -> ResultValue,
         mapFailure: @Sendable (MHMutationFailure) -> Failure,
+        onEvent: @escaping EventSink<ResultValue> = { _ in
+            // Intentionally empty.
+        },
         configuration: MHMutationWorkflowConfiguration
     ) async throws -> ResultValue {
         let mutation = MHMutation.mainActor(name: name) {
@@ -219,7 +252,15 @@ public enum MHMutationWorkflow {
             mutation: mutation,
             adapter: adapter.contramap(\.adapterValue),
             retryPolicy: configuration.retryPolicy,
-            cancellationHandle: configuration.cancellationHandle
+            cancellationHandle: configuration.cancellationHandle,
+            // swiftlint:disable:next trailing_closure
+            onEvent: { event in
+                onEvent(
+                    event.mapValue { projection in
+                        projection.resultValue
+                    }
+                )
+            }
         )
 
         switch outcome {

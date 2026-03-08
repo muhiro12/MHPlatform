@@ -283,7 +283,9 @@ observable event streams or direct run-handle ownership. Retry policy,
 cancellation handles, and operation failure formatting now fit in
 `MHMutationWorkflowConfiguration`. When an app already owns a combined
 success carrier, `afterSuccess` / `returning` and the key-path projection
-overloads remain available.
+overloads remain available. Add `onEvent:` to `MHMutationRunner` or
+`MHMutationWorkflow.runThrowing` when the app wants ordered mutation
+callbacks without storing an `AsyncStream`.
 
 ## MHRouteExecution
 
