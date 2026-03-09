@@ -55,6 +55,8 @@ inside MHPlatform while preserving the same ordered task plan.
 
 For previews and tests that should not start lifecycle tasks, use
 `View.mhAppRuntimeEnvironment(_:)`.
+MHPlatform intentionally leaves preview/test model container ownership and
+other app-specific fixtures outside this surface.
 
 ## Route pipeline shell
 

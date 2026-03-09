@@ -17,7 +17,19 @@ Own one app-side assembly object that keeps:
 Keep `MHAppRuntimeBootstrap` at the root boundary. Apply it once from the app's
 root view with `View.mhAppRuntimeBootstrap(_:)`.
 
-## Route Handoff
+## Runtime-only Path
+
+If the app does not use route, mutation, or review shells, stop here:
+
+- import `MHAppRuntimeCore`
+- create one `MHAppRuntimeBootstrap`
+- use `.mhAppRuntimeBootstrap(...)` for a real app root
+- use `.mhAppRuntimeEnvironment(...)` for preview/test runtime injection only
+
+Keep preview/test-only model containers and service doubles in the app factory.
+MHPlatform intentionally does not own that assembly.
+
+## Route-enabled Path
 
 Keep route meaning in the app.
 
@@ -80,5 +92,7 @@ Keep preview assembly shape close to production:
 - use preview-safe services or an empty `MHAppRuntimeLifecyclePlan`
 - omit route handoff sources only when the preview does not exercise them
 - do not invent preview-only route semantics inside MHPlatform
+- keep model container ownership and other app-specific test fixtures in the
+  app factory
 - use `View.mhAppRuntimeEnvironment(_:)` when the preview only needs runtime
   environment without lifecycle start

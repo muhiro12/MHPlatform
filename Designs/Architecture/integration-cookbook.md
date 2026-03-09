@@ -57,8 +57,8 @@ final class AppAssembly {
 Recommended placement:
 
 - root SwiftUI entry: `.mhAppRuntimeBootstrap(assembly.bootstrap)`
-- app-owned navigation mutations: observe `routeInbox.pendingRoute`, then
-  `consumeLatest()` inside the app's navigation layer
+- app-owned navigation mutations: register the apply closure with
+  `.mhRouteHandler(routeInbox) { route in ... }`
 - direct route apply is still valid when no replace-latest handoff slot is
   needed
 
@@ -68,6 +68,45 @@ Preview guidance:
 - make preview bootstrap with preview-safe services or an empty lifecycle plan
 - omit external handoff sources only when the preview truly does not exercise
   route entry points
+- keep model container ownership in the app's preview factory rather than
+  moving it into MHPlatform
+
+## Recipe 0A: Runtime-only App Setup
+
+Apps that only need runtime/bootstrap mechanics can stop at
+`MHAppRuntimeCore`.
+
+```swift
+import MHAppRuntimeCore
+
+@MainActor
+final class RuntimeOnlyAssembly {
+    let bootstrap = MHAppRuntimeBootstrap(
+        runtimeOnlyConfiguration: .init(
+            preferencesSuiteName: "group.com.example.runtime-only"
+        ),
+        lifecyclePlan: .init()
+    )
+}
+
+struct RuntimeOnlyRootView: View {
+    let assembly: RuntimeOnlyAssembly
+
+    var body: some View {
+        ContentView()
+            .mhAppRuntimeBootstrap(assembly.bootstrap)
+    }
+}
+```
+
+Preview/test guidance:
+
+- use `.mhAppRuntimeEnvironment(_:)` when the view only needs runtime state
+  injection
+- keep preview-safe stores, model containers, and service doubles in the app
+  factory
+- do not adopt route/review/mutation shells unless the screen actually uses
+  them
 
 ## Recipe 1: Runtime Root -> MHAppRuntimeBootstrap
 
@@ -320,6 +359,34 @@ Recommended review-flow placement:
 - use `reviewFlow.task(name:)` for lifecycle or activation-style prompts
 - keep app-specific effect/result to review-eligibility mapping outside
   MHPlatform
+- use `MHMutationAdapter.build { ... }` when app-owned effect flags need
+  conditional review, async, or main-actor follow-up steps
+
+## Recipe 3A: Invalid Deep-link Handling
+
+Treat invalid deep links as app-owned UX while keeping the intake mechanics in
+MHPlatform.
+
+```swift
+@MainActor
+func handleInvalidDeepLinks(
+    routePipeline: MHAppRoutePipeline<AppRoute>,
+    presentInvalidLinkAlert: (URL) -> Void
+) {
+    guard let invalidURL = routePipeline.lastParseFailureURL else {
+        return
+    }
+
+    presentInvalidLinkAlert(invalidURL)
+    routePipeline.clearLastParseFailure()
+}
+```
+
+Recommended pattern:
+
+- observe `routePipeline.lastParseFailureURL` near the root or navigation layer
+- present app-owned error UI or logging based on that URL
+- clear the retained URL after the app has handled it
 
 ## Recipe 4: Structured Logging + JSONL Analysis
 

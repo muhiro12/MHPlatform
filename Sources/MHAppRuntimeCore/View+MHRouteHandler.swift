@@ -34,6 +34,8 @@ public extension View {
     ///
     /// Use this when the app wants package-owned latest-route buffering and
     /// replay while keeping route meaning and navigation mutations app-owned.
+    /// This replaces manual register/unregister/resynchronize glue in root
+    /// views.
     @MainActor
     func mhRouteHandler<Route: Sendable>(
         _ routeInbox: MHObservableRouteInbox<Route>,

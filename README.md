@@ -28,6 +28,9 @@ MHPlatform supports two integration styles:
 
 - Use the umbrella `MHPlatform` product for app adoption convenience.
 - Use individual module products when the app wants a narrower dependency set.
+- Use `MHAppRuntimeCore` directly when the app only needs runtime/bootstrap
+  mechanics and should avoid the heavier default StoreKit, ads, or license
+  dependencies.
 
 Umbrella adoption:
 
@@ -193,6 +196,10 @@ When the app wants latest-route handoff before mutating navigation state, pair
 `MHAppRoutePipeline` with `MHObservableRouteInbox<Route>` and
 `View.mhRouteHandler(_:apply:)`. Observe `routePipeline.lastParseFailureURL`
 when invalid deep links should present app-owned error UI.
+Runtime-bootstrap-only adoption is a first-class path. Apps that do not use
+route, review, or mutation shells can stop at `MHAppRuntimeBootstrap` and
+`View.mhAppRuntimeEnvironment(_:)` without pulling additional workflow APIs
+into their root.
 
 For previews and tests that only need runtime injection, prefer:
 
@@ -315,7 +322,10 @@ explicit retry, cancellation, or event streaming control.
 `MHMutationAdapter` lets an app map its own success value metadata or effect
 hints into ordered steps without introducing a shared cross-app mutation
 outcome model. Adapters can also be composed to keep fixed and value-derived
-follow-up steps explicit.
+follow-up steps explicit. For conditionally appending review, async, or
+main-actor work from app-owned effect flags, prefer
+`MHMutationAdapter.build { ... }` plus `MHMutationStepListBuilder` rather than
+adding another package-owned builder layer.
 
 Integration contract:
 [`MHMutationFlow`](Designs/Architecture/integration-contracts.md#mhmutationflow)

@@ -26,6 +26,9 @@ public struct MHMutationAdapter<Value: Sendable>: Sendable {
 
     /// Creates an adapter from a step builder with a trailing-closure-friendly
     /// factory.
+    ///
+    /// This is the preferred semantics-free surface for conditionally
+    /// composing ordered follow-up steps from app-owned effect flags.
     @preconcurrency
     public static func build(
         @MHMutationStepListBuilder _ steps: @escaping StepBuilder
