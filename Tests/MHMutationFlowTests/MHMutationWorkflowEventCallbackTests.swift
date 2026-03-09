@@ -111,6 +111,47 @@ struct MHMutationWorkflowEventCallbackTests {
     }
 
     @Test
+    func runThrowing_adapterValue_onEvent_reports_retry_sequence_once() async throws {
+        let state = AttemptState()
+        let recorder = MHMutationEventTraceRecorder<String>(
+            traceBuilder: Self.trace
+        )
+
+        let result = try await MHMutationWorkflow.runThrowing(
+            name: "saveProjectedDraft",
+            operation: { () -> String in
+                let attempt = state.nextAttempt()
+
+                if attempt == 1 {
+                    throw MutationTestError.operationFailed
+                }
+
+                return "saved"
+            },
+            adapter: MHMutationAdapter<Bool>.none,
+            adapterValue: false,
+            onEvent: { event in
+                recorder.record(event)
+            },
+            configuration: .init(
+                retryPolicy: .init(
+                    maximumAttempts: 2,
+                    backoff: .immediate
+                )
+            )
+        )
+
+        #expect(result == "saved")
+        #expect(recorder.all() == [
+            "started:saveProjectedDraft:1",
+            "failed:1:true",
+            "progress:retryScheduled:2",
+            "started:saveProjectedDraft:2",
+            "succeeded:saved:2"
+        ])
+    }
+
+    @Test
     func runThrowing_onEvent_reports_step_failure_once() async {
         let recorder = MHMutationEventTraceRecorder<String>(
             traceBuilder: Self.trace

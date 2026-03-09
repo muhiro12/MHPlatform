@@ -10,6 +10,31 @@ public extension MHMutationWorkflow {
     /// Runs a main-actor mutation using the default workflow error mapping.
     @preconcurrency
     static func runThrowing<
+        OperationValue: Sendable,
+        AdapterValue: Sendable
+    >(
+        name: String,
+        operation: @escaping @MainActor @Sendable () throws -> OperationValue,
+        adapter: MHMutationAdapter<AdapterValue>,
+        adapterValue: AdapterValue,
+        onEvent: @escaping EventSink<OperationValue> = { _ in
+            // Intentionally empty.
+        },
+        configuration: MHMutationWorkflowConfiguration
+    ) async throws -> OperationValue {
+        try await runThrowing(
+            name: name,
+            operation: operation,
+            adapter: adapter,
+            projection: .fixedAdapterValue(adapterValue),
+            onEvent: onEvent,
+            configuration: configuration
+        )
+    }
+
+    /// Runs a main-actor mutation using the default workflow error mapping.
+    @preconcurrency
+    static func runThrowing<
         OperationValue,
         AdapterValue: Sendable,
         ResultValue: Sendable
@@ -39,6 +64,34 @@ public extension MHMutationWorkflow {
     }
 
     // swiftlint:disable function_parameter_count
+    /// Runs a main-actor mutation with custom workflow failure mapping.
+    @preconcurrency
+    static func runThrowing<
+        OperationValue: Sendable,
+        AdapterValue: Sendable,
+        Failure: Error & Sendable
+    >(
+        name: String,
+        operation: @escaping @MainActor @Sendable () throws -> OperationValue,
+        adapter: MHMutationAdapter<AdapterValue>,
+        adapterValue: AdapterValue,
+        mapFailure: @Sendable (MHMutationFailure) -> Failure,
+        onEvent: @escaping EventSink<OperationValue> = { _ in
+            // Intentionally empty.
+        },
+        configuration: MHMutationWorkflowConfiguration
+    ) async throws -> OperationValue {
+        try await runThrowing(
+            name: name,
+            operation: operation,
+            adapter: adapter,
+            projection: .fixedAdapterValue(adapterValue),
+            mapFailure: mapFailure,
+            onEvent: onEvent,
+            configuration: configuration
+        )
+    }
+
     /// Runs a main-actor mutation with custom workflow failure mapping.
     @preconcurrency
     static func runThrowing<

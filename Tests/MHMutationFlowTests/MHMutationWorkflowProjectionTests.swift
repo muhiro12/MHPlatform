@@ -19,6 +19,10 @@ struct MHMutationWorkflowProjectionTests {
         let synchronizeNotifications: Bool
     }
 
+    private struct Identifier: Equatable, Sendable {
+        let rawValue: Int
+    }
+
     private enum ExpectedError: Error, Equatable, Sendable {
         case operation(String)
         case step(name: String, description: String)
@@ -86,6 +90,52 @@ struct MHMutationWorkflowProjectionTests {
     }
 
     @Test
+    func runThrowing_adapterValue_supports_void_mutations_without_explicit_projection() async throws {
+        let recorder = Recorder()
+        let adapter = Self.followUpAdapter(recorder: recorder)
+
+        try await MHMutationWorkflow.runThrowing(
+            name: "refreshProjectedDraft",
+            operation: {
+                // Intentionally empty.
+            },
+            adapter: adapter,
+            adapterValue: .init(
+                reloadWidgets: true,
+                synchronizeNotifications: true
+            ),
+            mapFailure: Self.expectedError(from:)
+        )
+
+        #expect(await recorder.allValues() == [
+            "reloadWidgets",
+            "synchronizeNotifications"
+        ])
+    }
+
+    @Test
+    func runThrowing_adapterValue_returns_operation_value_without_explicit_projection() async throws {
+        let recorder = Recorder()
+        let adapter = Self.followUpAdapter(recorder: recorder)
+
+        let result = try await MHMutationWorkflow.runThrowing(
+            name: "createProjectedDraft",
+            operation: { () -> Identifier in
+                .init(rawValue: 42)
+            },
+            adapter: adapter,
+            adapterValue: .init(
+                reloadWidgets: true,
+                synchronizeNotifications: false
+            ),
+            mapFailure: Self.expectedError(from:)
+        )
+
+        #expect(result == .init(rawValue: 42))
+        #expect(await recorder.allValues() == ["reloadWidgets"])
+    }
+
+    @Test
     func runThrowing_fixed_adapter_value_maps_operation_failure_with_custom_description() async {
         let operationErrorDescription: @Sendable (any Error) -> String = { _ in
             "displayable failure"
@@ -103,6 +153,31 @@ struct MHMutationWorkflowProjectionTests {
                         reloadWidgets: true,
                         synchronizeNotifications: true
                     )
+                ),
+                mapFailure: Self.expectedError(from:),
+                configuration: .init(
+                    operationErrorDescription: operationErrorDescription
+                )
+            )
+        }
+    }
+
+    @Test
+    func runThrowing_adapterValue_maps_operation_failure_with_custom_description() async {
+        let operationErrorDescription: @Sendable (any Error) -> String = { _ in
+            "displayable failure"
+        }
+
+        await #expect(throws: ExpectedError.operation("displayable failure")) {
+            try await MHMutationWorkflow.runThrowing(
+                name: "saveProjectedDraft",
+                operation: {
+                    throw OperationTestError.failed
+                },
+                adapter: MHMutationAdapter<FollowUp>.none,
+                adapterValue: .init(
+                    reloadWidgets: true,
+                    synchronizeNotifications: true
                 ),
                 mapFailure: Self.expectedError(from:),
                 configuration: .init(

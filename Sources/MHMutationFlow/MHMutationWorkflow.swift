@@ -23,6 +23,34 @@ public enum MHMutationWorkflow {
     }
 
     /// Runs a main-actor mutation using the default workflow error mapping.
+    ///
+    /// Prefer this overload when the successful operation value should be
+    /// returned as-is and only the adapter input is fixed.
+    @preconcurrency
+    public static func runThrowing<
+        OperationValue: Sendable,
+        AdapterValue: Sendable
+    >(
+        name: String,
+        operation: @escaping @MainActor @Sendable () throws -> OperationValue,
+        adapter: MHMutationAdapter<AdapterValue>,
+        adapterValue: AdapterValue,
+        onEvent: @escaping EventSink<OperationValue> = { _ in
+            // Intentionally empty.
+        },
+        operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
+    ) async throws -> OperationValue {
+        try await runThrowing(
+            name: name,
+            operation: operation,
+            adapter: adapter,
+            projection: .fixedAdapterValue(adapterValue),
+            onEvent: onEvent,
+            operationErrorDescription: operationErrorDescription
+        )
+    }
+
+    /// Runs a main-actor mutation using the default workflow error mapping.
     @preconcurrency
     public static func runThrowing<
         OperationValue,
@@ -51,6 +79,37 @@ public enum MHMutationWorkflow {
             configuration: .init(
                 operationErrorDescription: operationErrorDescription
             )
+        )
+    }
+
+    /// Runs a main-actor mutation with custom workflow failure mapping.
+    ///
+    /// Prefer this overload when the successful operation value should be
+    /// returned as-is and only the adapter input is fixed.
+    @preconcurrency
+    public static func runThrowing<
+        OperationValue: Sendable,
+        AdapterValue: Sendable,
+        Failure: Error & Sendable
+    >(
+        name: String,
+        operation: @escaping @MainActor @Sendable () throws -> OperationValue,
+        adapter: MHMutationAdapter<AdapterValue>,
+        adapterValue: AdapterValue,
+        mapFailure: @escaping @Sendable (MHMutationFailure) -> Failure,
+        onEvent: @escaping EventSink<OperationValue> = { _ in
+            // Intentionally empty.
+        },
+        operationErrorDescription: @escaping OperationErrorDescription = defaultOperationErrorDescription
+    ) async throws -> OperationValue {
+        try await runThrowing(
+            name: name,
+            operation: operation,
+            adapter: adapter,
+            projection: .fixedAdapterValue(adapterValue),
+            mapFailure: mapFailure,
+            onEvent: onEvent,
+            operationErrorDescription: operationErrorDescription
         )
     }
 
