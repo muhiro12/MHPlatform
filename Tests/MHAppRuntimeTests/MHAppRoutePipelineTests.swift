@@ -1,5 +1,6 @@
 import Foundation
-@testable import MHAppRuntime
+import MHAppRuntime
+@testable import MHAppRuntimeCore
 import MHLogging
 import MHPlatformTesting
 import MHRouteExecution

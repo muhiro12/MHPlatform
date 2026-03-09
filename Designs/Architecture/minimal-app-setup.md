@@ -2,6 +2,10 @@
 
 Use this as the default starting point for a brand-new app.
 
+If the app is runtime-only, import `MHAppRuntimeCore` and stop at the runtime,
+bootstrap, and environment helpers. The full `MHAppRuntime` product is only for
+apps that want the default StoreKit, ads, or license integrations.
+
 ## Root Ownership
 
 Own one app-side assembly object that keeps:
@@ -74,3 +78,5 @@ Keep preview assembly shape close to production:
 - use preview-safe services or an empty `MHAppRuntimeLifecyclePlan`
 - omit route handoff sources only when the preview does not exercise them
 - do not invent preview-only route semantics inside MHPlatform
+- use `View.mhAppRuntimeEnvironment(_:)` when the preview only needs runtime
+  environment without lifecycle start

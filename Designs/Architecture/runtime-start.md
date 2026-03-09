@@ -24,6 +24,10 @@ For a brand-new app starting point, pair this design note with
 [`minimal-app-setup.md`](minimal-app-setup.md). For older app-side glue, use
 [`migrating-to-current-shells.md`](migrating-to-current-shells.md).
 
+Runtime-only apps can import `MHAppRuntimeCore` instead of the full
+`MHAppRuntime` product when they do not use StoreKit, ads, or runtime-owned
+license views.
+
 This moves the repeated "runtime + lifecycle + route root wiring + environment"
 shape out of app roots and into MHPlatform while leaving app-specific services,
 model containers, and route meanings outside the package.
@@ -48,6 +52,9 @@ For SwiftUI entry points, `View.mhAppRuntimeBootstrap(_:)` is now the preferred
 adapter and `View.mhAppRuntimeLifecycle(runtime:plan:)` remains the lower-level
 escape hatch. Both keep `scenePhase` observation and lifecycle object storage
 inside MHPlatform while preserving the same ordered task plan.
+
+For previews and tests that should not start lifecycle tasks, use
+`View.mhAppRuntimeEnvironment(_:)`.
 
 ## Route pipeline shell
 

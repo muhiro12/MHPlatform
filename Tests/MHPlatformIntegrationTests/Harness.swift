@@ -1,4 +1,4 @@
-import MHAppRuntime
+import MHAppRuntimeCore
 import MHDeepLinking
 import MHLogging
 import MHPlatformTesting

@@ -1,4 +1,5 @@
 @_exported import MHAppRuntime
+@_exported import MHAppRuntimeCore
 @_exported import MHDeepLinking
 @_exported import MHLogging
 @_exported import MHMutationFlow

@@ -20,6 +20,10 @@ let package = Package(
             targets: ["MHAppRuntime"]
         ),
         .library(
+            name: "MHAppRuntimeCore",
+            targets: ["MHAppRuntimeCore"]
+        ),
+        .library(
             name: "MHDeepLinking",
             targets: ["MHDeepLinking"]
         ),
@@ -78,6 +82,7 @@ let package = Package(
         .target(
             name: "MHPlatform",
             dependencies: [
+                "MHAppRuntimeCore",
                 "MHAppRuntime",
                 "MHDeepLinking",
                 "MHNotificationPlans",
@@ -91,12 +96,19 @@ let package = Package(
             ]
         ),
         .target(
-            name: "MHAppRuntime",
+            name: "MHAppRuntimeCore",
             dependencies: [
                 "MHDeepLinking",
                 "MHLogging",
                 "MHPreferences",
-                "MHRouteExecution",
+                "MHRouteExecution"
+            ]
+        ),
+        .target(
+            name: "MHAppRuntime",
+            dependencies: [
+                "MHAppRuntimeCore",
+                "MHPreferences",
                 .product(
                     name: "StoreKitWrapper",
                     package: "StoreKitWrapper",
@@ -143,7 +155,7 @@ let package = Package(
         .target(
             name: "MHReviewPolicy",
             dependencies: [
-                "MHAppRuntime",
+                "MHAppRuntimeCore",
                 "MHLogging",
                 "MHMutationFlow"
             ]
@@ -167,6 +179,7 @@ let package = Package(
             name: "MHAppRuntimeTests",
             dependencies: [
                 "MHAppRuntime",
+                "MHAppRuntimeCore",
                 "MHLogging",
                 "MHPlatformTesting",
                 "MHPreferences",
@@ -214,6 +227,7 @@ let package = Package(
             name: "MHReviewPolicyTests",
             dependencies: [
                 "MHAppRuntime",
+                "MHAppRuntimeCore",
                 "MHMutationFlow",
                 "MHReviewPolicy",
                 "MHLogging"
@@ -230,6 +244,7 @@ let package = Package(
             name: "MHPlatformIntegrationTests",
             dependencies: [
                 "MHAppRuntime",
+                "MHAppRuntimeCore",
                 "MHDeepLinking",
                 "MHLogging",
                 "MHMutationFlow",

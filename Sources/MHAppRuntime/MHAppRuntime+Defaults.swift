@@ -1,4 +1,6 @@
 import Foundation
+import MHAppRuntimeCore
+import MHPreferences
 import SwiftUI
 
 #if canImport(StoreKitWrapper)
@@ -9,7 +11,54 @@ import StoreKitWrapper
 import GoogleMobileAdsWrapper
 #endif
 
-extension MHAppRuntime {
+public extension MHAppRuntime {
+    /// Creates a runtime with the default StoreKit, ads, and license adapters.
+    convenience init(
+        configuration: MHAppConfiguration
+    ) {
+        let normalizedSubscriptionProductIDs = Self.normalizeTextSet(
+            configuration.subscriptionProductIDs
+        )
+        let normalizedSubscriptionGroupID = Self.normalizeText(
+            configuration.subscriptionGroupID
+        )
+        let normalizedNativeAdUnitID = Self.normalizeText(
+            configuration.nativeAdUnitID
+        )
+        let preferenceStore = Self.makePreferenceStore(
+            suiteName: configuration.preferencesSuiteName
+        )
+        let storeBridge = Self.makeStoreBridge()
+        let adsBridge = Self.makeAdsBridge(
+            nativeAdUnitID: normalizedNativeAdUnitID
+        )
+        let licensesViewBuilder: LicensesViewBuilder = {
+            if configuration.showsLicenses {
+                AnyView(MHRuntimeLicenseListView())
+            } else {
+                AnyView(EmptyView())
+            }
+        }
+
+        self.init(
+            configuration: configuration,
+            preferenceStore: preferenceStore,
+            startStore: { purchasedProductIDsDidSet in
+                storeBridge.start(
+                    normalizedSubscriptionGroupID,
+                    normalizedSubscriptionProductIDs,
+                    purchasedProductIDsDidSet
+                )
+            },
+            subscriptionSectionViewBuilder: storeBridge.subscriptionSection,
+            startAds: adsBridge.start,
+            nativeAdViewBuilder: adsBridge.nativeAdView,
+            licensesViewBuilder: licensesViewBuilder
+        )
+    }
+}
+
+private extension MHAppRuntime {
     static func normalizeText(_ text: String?) -> String? {
         guard let text else {
             return nil
@@ -23,7 +72,7 @@ extension MHAppRuntime {
         return normalized
     }
 
-    static func normalizeProductIDs(_ productIDs: [String]) -> [String] {
+    static func normalizeTextSet(_ productIDs: [String]) -> [String] {
         var normalizedProductIDs: [String] = []
         var uniqueProductIDs = Set<String>()
 
@@ -42,13 +91,15 @@ extension MHAppRuntime {
         return normalizedProductIDs
     }
 
-    static func makeUserDefaults(suiteName: String?) -> UserDefaults {
+    static func makePreferenceStore(
+        suiteName: String?
+    ) -> MHPreferenceStore {
         guard let normalizedSuiteName = normalizeText(suiteName),
               let userDefaults = UserDefaults(suiteName: normalizedSuiteName) else {
-            return .standard
+            return .init()
         }
 
-        return userDefaults
+        return .init(userDefaults: userDefaults)
     }
 
     static func makeStoreBridge() -> (

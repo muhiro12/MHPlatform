@@ -12,6 +12,7 @@ or mutation setup.
 | thin app-owned replace-latest route inbox | `MHObservableRouteInbox<Route>` | keep route meaning in app; move only route handoff mechanics into MHPlatform |
 | `MHReviewPolicy` + `MHReviewRequester` + custom logger/source/task/step glue | `MHReviewFlow` | use `task(name:)` and `step(name:)` instead of rewiring triggers |
 | wrappers around `.fixedAdapterValue(...)` for `Void` or identifier mutations | `MHMutationWorkflow.runThrowing(..., adapterValue:)` | keep `projection:` for non-trivial shaping |
+| manual `.environment(bootstrap.runtime)` in previews or tests | `mhAppRuntimeEnvironment(_:)` | inject runtime without starting lifecycle tasks |
 
 ## Migration Notes
 

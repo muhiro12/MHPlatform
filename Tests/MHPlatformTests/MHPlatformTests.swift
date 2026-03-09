@@ -5,8 +5,8 @@ struct MHPlatformTests {
     @Test
     func umbrella_import_exposes_public_modules() {
         let exportedTypes: [Any.Type] = [
-            MHAppRuntime.self,
-            MHAppRuntimeBootstrap.self,
+            MHAppRuntimeCore.MHAppRuntime.self,
+            MHAppRuntimeCore.MHAppRuntimeBootstrap.self,
             MHDeepLinkConfiguration.self,
             MHReminderPolicy.self,
             MHNotificationPayload.self,

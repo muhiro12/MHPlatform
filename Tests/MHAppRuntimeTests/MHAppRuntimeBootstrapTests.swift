@@ -1,5 +1,6 @@
 import Foundation
-@testable import MHAppRuntime
+import MHAppRuntime
+@testable import MHAppRuntimeCore
 import MHLogging
 import MHPlatformTesting
 import MHRouteExecution
@@ -33,6 +34,26 @@ struct MHAppRuntimeBootstrapTests {
 
         let bootstrap = MHAppRuntimeBootstrap(
             configuration: configuration,
+            lifecyclePlan: lifecyclePlan
+        )
+
+        #expect(bootstrap.runtime.configuration == configuration)
+        #expect(bootstrap.lifecyclePlan == lifecyclePlan)
+        #expect(bootstrap.routeInbox == nil)
+    }
+
+    @MainActor
+    @Test
+    func runtime_only_configuration_init_keeps_runtime_and_plan() {
+        let configuration = MHAppConfiguration(
+            preferencesSuiteName: "MHPlatform.Bootstrap.RuntimeOnly.Tests"
+        )
+        let lifecyclePlan = MHAppRuntimeLifecyclePlan(
+            skipFirstActivePhase: true
+        )
+
+        let bootstrap = MHAppRuntimeBootstrap(
+            runtimeOnlyConfiguration: configuration,
             lifecyclePlan: lifecyclePlan
         )
 

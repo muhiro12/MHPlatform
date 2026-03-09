@@ -28,13 +28,13 @@ public struct MHAppRuntimeBootstrap {
         self.routeHooks = nil
     }
 
-    /// Creates a bootstrap with a runtime configuration.
+    /// Creates a bootstrap with a runtime-only configuration.
     public init(
-        configuration: MHAppConfiguration,
+        runtimeOnlyConfiguration configuration: MHAppConfiguration,
         lifecyclePlan: MHAppRuntimeLifecyclePlan = .empty
     ) {
         self.init(
-            runtime: .init(configuration: configuration),
+            runtime: .init(runtimeOnly: configuration),
             lifecyclePlan: lifecyclePlan
         )
     }
@@ -52,15 +52,15 @@ public struct MHAppRuntimeBootstrap {
         self.routeHooks = .init(routePipeline: routePipeline)
     }
 
-    /// Creates a bootstrap with a runtime configuration and route pipeline.
+    /// Creates a bootstrap with a runtime-only configuration and route pipeline.
     @preconcurrency
     public init<Route: Sendable>(
-        configuration: MHAppConfiguration,
+        runtimeOnlyConfiguration configuration: MHAppConfiguration,
         lifecyclePlan: MHAppRuntimeLifecyclePlan = .empty,
         routePipeline: MHAppRoutePipeline<Route>
     ) {
         self.init(
-            runtime: .init(configuration: configuration),
+            runtime: .init(runtimeOnly: configuration),
             lifecyclePlan: lifecyclePlan,
             routePipeline: routePipeline
         )

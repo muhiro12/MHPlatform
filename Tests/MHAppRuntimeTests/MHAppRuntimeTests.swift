@@ -1,5 +1,6 @@
 import Foundation
-@testable import MHAppRuntime
+import MHAppRuntime
+@testable import MHAppRuntimeCore
 import MHPreferences
 import SwiftUI
 import Testing
@@ -260,6 +261,24 @@ struct MHAppRuntimeTests {
         )
 
         #expect(String(describing: type(of: view)).contains("ModifiedContent"))
+        #expect(runtime.hasStarted == false)
+    }
+
+    @MainActor
+    @Test
+    func runtime_environment_modifier_builds_without_eagerly_starting_runtime() {
+        let runtime = makeRuntime()
+
+        let runtimeView = EmptyView().mhAppRuntimeEnvironment(runtime)
+        let bootstrapView = EmptyView().mhAppRuntimeEnvironment(
+            MHAppRuntimeBootstrap(
+                runtime: runtime,
+                lifecyclePlan: .empty
+            )
+        )
+
+        #expect(String(describing: type(of: runtimeView)).contains("ModifiedContent"))
+        #expect(String(describing: type(of: bootstrapView)).contains("ModifiedContent"))
         #expect(runtime.hasStarted == false)
     }
 }

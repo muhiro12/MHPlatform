@@ -100,6 +100,8 @@ For a package-owned end-to-end reference, see
 Recommended starting paths:
 
 - app root assembly: `MHAppRuntimeBootstrap`
+- runtime-only product: `MHAppRuntimeCore`
+- preview/test runtime injection: `View.mhAppRuntimeEnvironment(_:)`
 - route root wiring: `MHAppRoutePipeline`
 - route handoff into app-owned navigation state: `MHObservableRouteInbox`
 - review trigger wiring: `MHReviewFlow`
@@ -113,6 +115,11 @@ pipeline root integration, and SwiftUI runtime environment injection into a
 single package-owned shell. Lower-level `MHAppRuntime`, `MHAppRuntimeLifecycle`,
 and `MHAppRoutePipeline` remain available when an app needs custom integration
 or non-SwiftUI control.
+
+Use `MHAppRuntime` when the app wants the default StoreKit, ads, and runtime-
+owned license integrations. Use `MHAppRuntimeCore` when the app only needs
+runtime/bootstrap/lifecycle/route mechanics without those external
+dependencies.
 
 Integration contract:
 [`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)
@@ -184,6 +191,19 @@ Use `bootstrap.routeInbox` when app-owned services need a package-owned pending
 route destination, such as notification or App Intent handoff adapters.
 When the app wants latest-route handoff before mutating navigation state, pair
 `MHAppRoutePipeline` with `MHObservableRouteInbox<Route>`.
+
+For previews and tests that only need runtime injection, prefer:
+
+```swift
+let bootstrap = MHAppRuntimeBootstrap(
+    runtimeOnlyConfiguration: .init(
+        preferencesSuiteName: "group.com.example.preview"
+    )
+)
+
+ContentView()
+    .mhAppRuntimeEnvironment(bootstrap)
+```
 
 ## MHDeepLinking
 

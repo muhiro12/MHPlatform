@@ -1,3 +1,4 @@
+import Foundation
 import MHPreferences
 import Observation
 import SwiftUI
@@ -7,10 +8,18 @@ import SwiftUI
 @preconcurrency
 @Observable
 public final class MHAppRuntime {
-    typealias StartStore = (@escaping @MainActor (Set<String>) -> Void) -> Void
-    typealias SubscriptionSectionViewBuilder = () -> AnyView
-    typealias StartAds = () -> Void
-    typealias NativeAdViewBuilder = (MHNativeAdSize) -> AnyView
+    /// Startup bridge that reports the current purchased product identifiers.
+    public typealias StartStore = (
+        @escaping @MainActor (Set<String>) -> Void
+    ) -> Void
+    /// Builder for the runtime-owned subscription section.
+    public typealias SubscriptionSectionViewBuilder = () -> AnyView
+    /// Startup bridge for ads initialization.
+    public typealias StartAds = () -> Void
+    /// Builder for runtime-owned native ad views.
+    public typealias NativeAdViewBuilder = (MHNativeAdSize) -> AnyView
+    /// Builder for the runtime-owned license view.
+    public typealias LicensesViewBuilder = () -> AnyView
 
     /// Immutable app runtime configuration.
     public let configuration: MHAppConfiguration
@@ -45,54 +54,23 @@ public final class MHAppRuntime {
     private let subscriptionSectionViewBuilder: SubscriptionSectionViewBuilder
     private let startAds: StartAds?
     private let nativeAdViewBuilder: NativeAdViewBuilder?
+    private let licensesViewBuilder: LicensesViewBuilder
 
     private var isAdsFeatureConfigured: Bool {
         nativeAdUnitID != nil && nativeAdViewBuilder != nil
     }
 
-    /// Creates a runtime with default StoreKit/Ads/License adapters.
-    public init(configuration: MHAppConfiguration) {
-        let normalizedSubscriptionProductIDs = Self.normalizeProductIDs(
-            configuration.subscriptionProductIDs
-        )
-        let normalizedSubscriptionGroupID = Self.normalizeText(
-            configuration.subscriptionGroupID
-        )
-        let normalizedNativeAdUnitID = Self.normalizeText(
-            configuration.nativeAdUnitID
-        )
-        let preferenceStore = MHPreferenceStore(
-            userDefaults: Self.makeUserDefaults(
-                suiteName: configuration.preferencesSuiteName
-            )
-        )
-        let storeBridge = Self.makeStoreBridge()
-        let adsBridge = Self.makeAdsBridge(nativeAdUnitID: normalizedNativeAdUnitID)
-
-        self.configuration = configuration
-        self.preferenceStore = preferenceStore
-        self.subscriptionProductIDs = normalizedSubscriptionProductIDs
-        self.subscriptionGroupID = normalizedSubscriptionGroupID
-        self.nativeAdUnitID = normalizedNativeAdUnitID
-        self.startStore = { purchasedProductIDsDidSet in
-            storeBridge.start(
-                normalizedSubscriptionGroupID,
-                normalizedSubscriptionProductIDs,
-                purchasedProductIDsDidSet
-            )
-        }
-        self.subscriptionSectionViewBuilder = storeBridge.subscriptionSection
-        self.startAds = adsBridge.start
-        self.nativeAdViewBuilder = adsBridge.nativeAdView
-    }
-
-    init(
+    /// Creates a runtime with explicit bridges and runtime-owned view builders.
+    public init(
         configuration: MHAppConfiguration,
         preferenceStore: MHPreferenceStore,
         startStore: @escaping StartStore,
         subscriptionSectionViewBuilder: @escaping SubscriptionSectionViewBuilder,
         startAds: StartAds?,
-        nativeAdViewBuilder: NativeAdViewBuilder?
+        nativeAdViewBuilder: NativeAdViewBuilder?,
+        licensesViewBuilder: @escaping LicensesViewBuilder = {
+            AnyView(EmptyView())
+        }
     ) {
         self.configuration = configuration
         self.preferenceStore = preferenceStore
@@ -109,6 +87,29 @@ public final class MHAppRuntime {
         self.subscriptionSectionViewBuilder = subscriptionSectionViewBuilder
         self.startAds = startAds
         self.nativeAdViewBuilder = nativeAdViewBuilder
+        self.licensesViewBuilder = licensesViewBuilder
+    }
+
+    /// Creates a runtime-only environment without StoreKit, ads, or licenses.
+    public convenience init(
+        runtimeOnly configuration: MHAppConfiguration
+    ) {
+        self.init(
+            configuration: configuration,
+            preferenceStore: .init(
+                userDefaults: Self.makeUserDefaults(
+                    suiteName: configuration.preferencesSuiteName
+                )
+            ),
+            startStore: { purchasedProductIDsDidSet in
+                purchasedProductIDsDidSet([])
+            },
+            subscriptionSectionViewBuilder: {
+                AnyView(EmptyView())
+            },
+            startAds: nil,
+            nativeAdViewBuilder: nil
+        )
     }
 
     /// Starts runtime side effects if they have not already run.
@@ -157,13 +158,8 @@ public final class MHAppRuntime {
     }
 
     /// Builds a runtime-owned license view.
-    @ViewBuilder
     public func licensesView() -> some View {
-        if configuration.showsLicenses {
-            MHRuntimeLicenseListView()
-        } else {
-            EmptyView()
-        }
+        licensesViewBuilder()
     }
 
     private func resolvePremiumStatus(purchasedProductIDs: Set<String>) {
@@ -171,5 +167,48 @@ public final class MHAppRuntime {
             purchasedProductIDs.contains(productID)
         }
         premiumStatus = isPremiumActive ? .active : .inactive
+    }
+}
+
+private extension MHAppRuntime {
+    static func normalizeText(_ text: String?) -> String? {
+        guard let text else {
+            return nil
+        }
+
+        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalized.isEmpty == false else {
+            return nil
+        }
+
+        return normalized
+    }
+
+    static func normalizeProductIDs(_ productIDs: [String]) -> [String] {
+        var normalizedProductIDs: [String] = []
+        var uniqueProductIDs = Set<String>()
+
+        for productID in productIDs {
+            guard let normalizedProductID = normalizeText(productID) else {
+                continue
+            }
+            guard uniqueProductIDs.contains(normalizedProductID) == false else {
+                continue
+            }
+
+            uniqueProductIDs.insert(normalizedProductID)
+            normalizedProductIDs.append(normalizedProductID)
+        }
+
+        return normalizedProductIDs
+    }
+
+    static func makeUserDefaults(suiteName: String?) -> UserDefaults {
+        guard let normalizedSuiteName = normalizeText(suiteName),
+              let userDefaults = UserDefaults(suiteName: normalizedSuiteName) else {
+            return .standard
+        }
+
+        return userDefaults
     }
 }

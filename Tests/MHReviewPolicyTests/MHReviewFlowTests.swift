@@ -1,4 +1,5 @@
 import MHAppRuntime
+@testable import MHAppRuntimeCore
 @testable import MHLogging
 @testable import MHReviewPolicy
 import Testing
