@@ -25,7 +25,9 @@ public enum MHMutationWorkflow {
     /// Runs a main-actor mutation using the default workflow error mapping.
     ///
     /// Prefer this overload when the successful operation value should be
-    /// returned as-is and only the adapter input is fixed.
+    /// returned as-is and only the adapter input is fixed. Prefer the
+    /// `projection:` overload when adapter input and returned value need
+    /// different shaping.
     @preconcurrency
     public static func runThrowing<
         OperationValue: Sendable,
@@ -51,6 +53,9 @@ public enum MHMutationWorkflow {
     }
 
     /// Runs a main-actor mutation using the default workflow error mapping.
+    ///
+    /// Prefer this overload when the app needs explicit projection from the
+    /// successful operation value into adapter input and returned result.
     @preconcurrency
     public static func runThrowing<
         OperationValue,
@@ -85,7 +90,9 @@ public enum MHMutationWorkflow {
     /// Runs a main-actor mutation with custom workflow failure mapping.
     ///
     /// Prefer this overload when the successful operation value should be
-    /// returned as-is and only the adapter input is fixed.
+    /// returned as-is and only the adapter input is fixed. Prefer the
+    /// `projection:` overload when adapter input and returned value need
+    /// different shaping.
     @preconcurrency
     public static func runThrowing<
         OperationValue: Sendable,
@@ -114,6 +121,9 @@ public enum MHMutationWorkflow {
     }
 
     /// Runs a main-actor mutation with custom workflow failure mapping.
+    ///
+    /// Prefer this overload when the app needs explicit projection from the
+    /// successful operation value into adapter input and returned result.
     @preconcurrency
     public static func runThrowing<
         OperationValue,

@@ -34,6 +34,10 @@ private struct MHAppRuntimeLifecycleModifier: ViewModifier {
 
 public extension View {
     /// Applies runtime startup and active-phase lifecycle handling to a view.
+    ///
+    /// Prefer `mhAppRuntimeBootstrap(_:)` for new app roots that want package-
+    /// owned environment injection and optional route integration. Use this
+    /// lower-level modifier when lifecycle handling must be composed manually.
     @MainActor
     func mhAppRuntimeLifecycle(
         runtime: MHAppRuntime,

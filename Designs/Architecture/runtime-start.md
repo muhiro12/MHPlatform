@@ -20,6 +20,10 @@ startup side effects.
 - optional route inbox exposure for app-owned services
 - SwiftUI root integration through `View.mhAppRuntimeBootstrap(_:)`
 
+For a brand-new app starting point, pair this design note with
+[`minimal-app-setup.md`](minimal-app-setup.md). For older app-side glue, use
+[`migrating-to-current-shells.md`](migrating-to-current-shells.md).
+
 This moves the repeated "runtime + lifecycle + route root wiring + environment"
 shape out of app roots and into MHPlatform while leaving app-specific services,
 model containers, and route meanings outside the package.
@@ -54,6 +58,8 @@ runtime lifecycle wiring in app code:
 - ordered pending-source composition with the pipeline inbox appended last
 - one-time route execution activation through `MHRouteLifecycle`
 - one-at-a-time pending URL drain
+- optional handoff into `MHObservableRouteInbox<Route>` before app-owned
+  navigation mutation
 - lifecycle task generation through `task(name:)`
 - SwiftUI `onOpenURL` and `NSUserActivityTypeBrowsingWeb` ingestion through
   `View.mhAppRoutePipeline(_:)` or `View.mhAppRuntimeBootstrap(_:)`

@@ -1,6 +1,10 @@
 import Observation
 
 /// Main-actor observable inbox that stores the latest pending route value.
+///
+/// Use this as a package-owned bridge between route execution and an app-owned
+/// navigation model when the app wants replace-latest route handoff without
+/// moving route meaning into MHPlatform.
 @MainActor
 @preconcurrency
 @Observable

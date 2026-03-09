@@ -4,6 +4,71 @@ This cookbook focuses on composable end-to-end integration patterns.
 The package-owned canonical end-to-end reference lives in
 `Tests/MHPlatformIntegrationTests/MHPlatformIntegrationTests.swift`.
 
+## Recipe 0: Minimal New App Setup
+
+Start a brand-new app with one app-owned assembly object that owns:
+
+- the app's navigation model
+- the app's service graph
+- one `MHAppRuntimeBootstrap`
+
+Keep route meaning and navigation state in the app. Put only route mechanics in
+MHPlatform.
+
+```swift
+import MHAppRuntime
+import MHDeepLinking
+import MHLogging
+import MHRouteExecution
+
+@MainActor
+final class AppAssembly {
+    let navigationModel = NavigationModel()
+    let routeInbox = MHObservableRouteInbox<AppRoute>()
+    let bootstrap: MHAppRuntimeBootstrap
+
+    init(logger: MHLogger) {
+        let codec = MHDeepLinkCodec<AppRoute>(configuration: configuration)
+        let routePipeline = MHAppRoutePipeline(
+            routeLifecycle: .init(
+                logger: logger,
+                initialReadiness: false,
+                isDuplicate: ==
+            ),
+            using: codec,
+            routeInbox: routeInbox,
+            pendingSources: [intentStore, notificationInbox]
+        )
+
+        bootstrap = .init(
+            configuration: runtimeConfiguration,
+            lifecyclePlan: .init(
+                activeTasks: [
+                    routePipeline.task(name: "synchronizePendingRoutes")
+                ],
+                skipFirstActivePhase: true
+            ),
+            routePipeline: routePipeline
+        )
+    }
+}
+```
+
+Recommended placement:
+
+- root SwiftUI entry: `.mhAppRuntimeBootstrap(assembly.bootstrap)`
+- app-owned navigation mutations: observe `routeInbox.pendingRoute`, then
+  `consumeLatest()` inside the app's navigation layer
+- direct route apply is still valid when no replace-latest handoff slot is
+  needed
+
+Preview guidance:
+
+- keep the same assembly shape for live and preview factories
+- make preview bootstrap with preview-safe services or an empty lifecycle plan
+- omit external handoff sources only when the preview truly does not exercise
+  route entry points
+
 ## Recipe 1: Runtime Root -> MHAppRuntimeBootstrap
 
 Use this bootstrap when app startup needs runtime, lifecycle, and route root
@@ -73,7 +138,9 @@ final class AppRootModel {
 ```
 
 `bootstrap.routeInbox` is the package-owned handoff surface for app-owned
-services such as notification, widget, or intent adapters.
+services such as notification, widget, or intent adapters. When route execution
+should stop at a replace-latest handoff boundary before mutating navigation,
+construct the pipeline with `routeInbox: MHObservableRouteInbox<Route>`.
 
 Keep lifecycle placement explicit: route synchronization still belongs in the
 `MHAppRuntimeLifecyclePlan` phase you choose for the app.
@@ -246,6 +313,13 @@ func runSaveAndMaybeRequestReview() async {
     }
 }
 ```
+
+Recommended review-flow placement:
+
+- use `reviewFlow.step(name:)` for successful mutation follow-up
+- use `reviewFlow.task(name:)` for lifecycle or activation-style prompts
+- keep app-specific effect/result to review-eligibility mapping outside
+  MHPlatform
 
 ## Recipe 4: Structured Logging + JSONL Analysis
 

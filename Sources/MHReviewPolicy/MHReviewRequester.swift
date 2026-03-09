@@ -14,6 +14,10 @@ public enum MHReviewRequester {
     public typealias Sleep = @Sendable (Duration) async -> Void
 
     /// Requests an in-app review when the policy allows it.
+    ///
+    /// Prefer `MHReviewFlow` when review triggering should be wired into
+    /// runtime tasks or mutation steps. Use this low-level requester only for
+    /// direct one-off calls.
     @MainActor
     @preconcurrency
     public static func requestIfNeeded(
@@ -35,6 +39,9 @@ public enum MHReviewRequester {
     }
 
     /// Requests an in-app review when the policy allows it and reports the terminal outcome.
+    ///
+    /// Prefer `MHReviewFlow` when the caller also needs package-owned trigger
+    /// metadata, logging, or workflow integration.
     @MainActor
     @preconcurrency
     public static func requestIfNeeded(
@@ -58,6 +65,9 @@ public enum MHReviewRequester {
     }
 
     /// Requests an in-app review when the policy allows it and logs terminal outcomes.
+    ///
+    /// Prefer `MHReviewFlow` when the caller wants package-owned runtime or
+    /// mutation wiring in addition to logging.
     @MainActor
     @preconcurrency
     public static func requestIfNeeded(

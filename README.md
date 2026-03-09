@@ -17,6 +17,8 @@ Minimum supported platforms:
 - [North Star](Designs/Architecture/north-star.md)
 - [Integration Contracts](Designs/Architecture/integration-contracts.md)
 - [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
+- [Minimal App Setup](Designs/Architecture/minimal-app-setup.md)
+- [Migrating to Current Shells](Designs/Architecture/migrating-to-current-shells.md)
 - [Architecture](Designs/Architecture/architecture.md)
 - [Runtime-start Design](Designs/Architecture/runtime-start.md)
 
@@ -95,6 +97,14 @@ For a package-owned end-to-end reference, see
   `MHMutationWorkflow`. These reduce app-side boilerplate without moving
   route enums, effect models, or concrete side effects into MHPlatform.
 
+Recommended starting paths:
+
+- app root assembly: `MHAppRuntimeBootstrap`
+- route root wiring: `MHAppRoutePipeline`
+- route handoff into app-owned navigation state: `MHObservableRouteInbox`
+- review trigger wiring: `MHReviewFlow`
+- fixed adapter follow-up from mutations: `MHMutationWorkflow.runThrowing(..., adapterValue:)`
+
 ## MHAppRuntime
 
 `MHAppRuntimeBootstrap` is the recommended runtime-start entry point for new
@@ -172,6 +182,8 @@ ContentView()
 
 Use `bootstrap.routeInbox` when app-owned services need a package-owned pending
 route destination, such as notification or App Intent handoff adapters.
+When the app wants latest-route handoff before mutating navigation state, pair
+`MHAppRoutePipeline` with `MHObservableRouteInbox<Route>`.
 
 ## MHDeepLinking
 
@@ -314,11 +326,9 @@ let result = try await MHMutationWorkflow.runThrowing(
         "saved"
     },
     adapter: adapter,
-    projection: .fixedAdapterValue(
-        .init(
-            shouldReloadWidgets: true,
-            shouldSyncNotifications: true
-        )
+    adapterValue: .init(
+        shouldReloadWidgets: true,
+        shouldSyncNotifications: true
     ),
     configuration: .init(
         retryPolicy: .default
@@ -329,9 +339,10 @@ let result = try await MHMutationWorkflow.runThrowing(
 The lower-level `MHMutationRunner` remains available when the app needs
 observable event streams or direct run-handle ownership. Retry policy,
 cancellation handles, and operation failure formatting now fit in
-`MHMutationWorkflowConfiguration`. Projection strategies keep adapter input
-and result shaping explicit with `.identity`, `.fixedAdapterValue(_:)`,
-`.keyPaths(adapterValue:resultValue:)`, and
+`MHMutationWorkflowConfiguration`. Use `adapterValue:` when the successful
+operation value should be returned unchanged and only the adapter input is
+fixed. Projection strategies keep adapter input and result shaping explicit
+with `.identity`, `.fixedAdapterValue(_:)`, `.keyPaths(adapterValue:resultValue:)`, and
 `.closures(afterSuccess:returning:)`. When an app already owns a combined
 success carrier, `MHMutationProjection` still works with a `.keyPaths`
 strategy. Add `onEvent:` to `MHMutationRunner` or
@@ -396,6 +407,8 @@ when the pending URL must survive process restarts. When multiple sources can
 race to provide the next URL, pass them directly to `submitLatest(from:...)`
 in priority order or build an `MHDeepLinkSourceChain` first when you want to
 reuse that ordering elsewhere.
+Use `MHObservableRouteInbox<Route>` when parsed routes should be handed to an
+app-owned navigation model through a replace-latest observable slot.
 
 The lower-level `MHRouteCoordinator` and identity-route apply path remain
 available for flows that need a custom resolve/apply split or direct pending
@@ -464,6 +477,11 @@ let policy = MHReviewPolicy(
 let reviewFlow = MHReviewFlow(policy: policy)
 let outcome = await reviewFlow.requestIfNeeded()
 ```
+
+Prefer `reviewFlow.step(name:)` for successful mutation follow-up and
+`reviewFlow.task(name:)` for lifecycle or activation-based prompts. Keep the
+mapping from app-specific success effects to "should request review" decisions
+in the app layer.
 
 ## MHLogging
 

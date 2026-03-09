@@ -140,10 +140,17 @@ This document is normative for integration design.
 - Optional resolved outcome type (`Sendable`) when the app uses
   `MHRouteExecutor` directly
 - Initial readiness (`initialReadiness`) and duplicate predicate (`isDuplicate`)
+- Optional latest-route handoff primitive:
+  - `MHObservableRouteInbox<Route>`
 
 ### Outputs
 
 - Higher-level lifecycle helper:
+  - `MHObservableRouteInbox<Route>`
+    - `pendingRoute`
+    - `replacePendingRoute(_:)`
+    - `consumeLatest()`
+    - `clearPendingRoute()`
   - `hasPendingRoute`
   - `isReady`
   - `setReadiness(_:)`
@@ -179,6 +186,8 @@ This document is normative for integration design.
   `MHRouteLifecycle`
 - App navigation routers/services that want logger-backed readiness gating
   without wiring `MHRouteExecutor` manually
+- App-owned navigation models that want replace-latest route handoff without
+  moving route meaning into MHPlatform
 - Pending deep-link source drain from `MHDeepLinkInbox`,
   `MHObservableDeepLinkInbox`, or `MHDeepLinkStore`
 - Ordered multi-source deep-link drain via `MHDeepLinkSourceChain` or variadic
@@ -236,6 +245,8 @@ This document is normative for integration design.
 
 - Throwing workflow shell:
   - `MHMutationWorkflow.runThrowing`
+    - `projection:` entry for explicit adapter/result shaping
+    - `adapterValue:` convenience for fixed adapter input with unchanged result
   - `MHMutationWorkflowConfiguration`
   - `MHMutationWorkflowError`
 - `MHMutationRun<Value>` (from `start`):
@@ -262,6 +273,8 @@ This document is normative for integration design.
 - Save/update/delete orchestration in app workflow services
 - Main-actor workflow helpers that want default failure mapping plus ordered
   post-success steps
+- Fixed follow-up flows whose adapter input is stable even when the mutation
+  result should be returned unchanged
 - Mutation services whose success values already carry app-owned follow-up
   hints or effect metadata
 - Mutation services that want to return app data and adapter input together
@@ -431,6 +444,11 @@ This document is normative for integration design.
 
 - `MHReviewRequestOutcome`
 - Pure gate decision (`shouldRequestReview(randomValue:)`)
+- Workflow shell:
+  - `MHReviewFlow`
+    - `requestIfNeeded()`
+    - `task(name:)`
+    - `step(name:)`
 
 ### Threading / Actor
 
@@ -441,6 +459,8 @@ This document is normative for integration design.
 
 - Post-success UX milestones (typically after `MHMutationOutcome.succeeded`)
 - MainActor workflow coordinators
+- Runtime/lifecycle entry points through `MHReviewFlow.task(name:)`
+- Successful mutation follow-up through `MHReviewFlow.step(name:)`
 
 ## MHLogging
 

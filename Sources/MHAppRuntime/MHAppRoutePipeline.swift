@@ -43,6 +43,9 @@ public final class MHAppRoutePipeline<Route: Sendable> {
     }
 
     /// Creates a route pipeline that stores applied routes in an observable route inbox.
+    ///
+    /// Use this when the app wants package-owned latest-route handoff before
+    /// mutating its own navigation model.
     @preconcurrency
     public convenience init(
         routeLifecycle: MHRouteLifecycle<Route>,
@@ -146,6 +149,9 @@ public extension MHAppRoutePipeline where Route: MHDeepLinkRoute {
     }
 
     /// Creates a route pipeline backed by a route codec and observable route inbox.
+    ///
+    /// Use this when the app wants package-owned latest-route handoff before
+    /// mutating its own navigation model.
     @preconcurrency
     convenience init(
         routeLifecycle: MHRouteLifecycle<Route>,

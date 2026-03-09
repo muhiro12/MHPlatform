@@ -31,6 +31,10 @@ private struct MHAppRoutePipelineModifier<Route: Sendable>: ViewModifier {
 
 public extension View {
     /// Applies package-owned URL ingestion and pending-route synchronization.
+    ///
+    /// Prefer `mhAppRuntimeBootstrap(_:)` for standard app roots that already
+    /// own `MHAppRuntimeBootstrap`. Use this lower-level modifier when route
+    /// ingestion is integrated separately from runtime bootstrap.
     @MainActor
     func mhAppRoutePipeline<Route: Sendable>(
         _ pipeline: MHAppRoutePipeline<Route>
