@@ -244,7 +244,7 @@ private extension MHRouteLifecycleDeepLinkHandoffTests {
             )
         )
         let logger = MHLogger(
-            "Tests/MHRouteLifecycleDeepLinkHandoffTests.swift",
+            #fileID,
             store: store,
             subsystem: "tests.route"
         )

@@ -108,7 +108,7 @@ private extension MHRouteLifecycleMultiSourceHandoffTests {
             )
         )
         let logger = MHLogger(
-            "Tests/MHRouteExecutionTests/MHRouteLifecycleMultiSourceHandoffTests.swift",
+            #fileID,
             store: store,
             subsystem: "tests.route"
         )

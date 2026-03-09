@@ -15,7 +15,7 @@ struct MHLoggerFactoryTests {
         )
         let logger = factory.logger(
             category: "Billing",
-            source: "Tests/MHLoggerFactoryTests.swift"
+            source: #fileID
         )
 
         await logger.logImmediately(.info, "skip-info")
@@ -44,14 +44,14 @@ struct MHLoggerFactoryTests {
             subsystem: "tests.injected"
         )
         let logger = factory.logger(
-            source: "Tests/InjectedLogger.swift"
+            source: "Synthetic/InjectedLogger.swift"
         )
 
         await logger.logImmediately(.notice, "source-category")
 
         let event = await store.events().first
         #expect(event?.subsystem == "tests.injected")
-        #expect(event?.category == "Tests/InjectedLogger.swift")
+        #expect(event?.category == "Synthetic/InjectedLogger.swift")
         #expect(event?.message == "source-category")
     }
 }

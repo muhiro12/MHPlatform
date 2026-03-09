@@ -253,7 +253,7 @@ private extension MHRouteLifecycleCodecTests {
             )
         )
         let logger = MHLogger(
-            "Tests/MHRouteLifecycleCodecTests.swift",
+            #fileID,
             store: logStore,
             subsystem: "tests.route"
         )

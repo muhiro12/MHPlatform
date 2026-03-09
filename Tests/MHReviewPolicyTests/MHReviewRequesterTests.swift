@@ -189,7 +189,7 @@ struct MHReviewRequesterTests {
             )
         )
         let logger = MHLogger(
-            "Tests/MHReviewRequesterTests.swift",
+            #fileID,
             store: store,
             subsystem: "tests.review"
         )

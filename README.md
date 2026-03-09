@@ -22,6 +22,17 @@ Minimum supported platforms:
 - [Architecture](Designs/Architecture/architecture.md)
 - [Runtime-start Design](Designs/Architecture/runtime-start.md)
 
+## Directory Conventions
+
+- Keep the top-level package layout stable: `Sources/`, `Tests/`, `Example/`,
+  `Designs/`, and `ci_scripts/`.
+- Organize `Sources/<Target>/` with shallow responsibility-based folders such
+  as `Configuration`, `Runtime`, `Routing`, `Workflow`, `Store`, and `SwiftUI`.
+- Keep small targets flat when subdirectories do not improve discoverability.
+- Put test-only helpers under `Tests/<Target>/Support/`.
+- Keep the example app shell in `Example/MHPlatformExample/App/` and place
+  module demos under `Example/MHPlatformExample/Demos/<Area>/`.
+
 ## Adoption
 
 MHPlatform supports two integration styles:

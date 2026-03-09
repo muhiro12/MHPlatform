@@ -185,7 +185,7 @@ private extension MHRouteLifecycleTests {
             )
         )
         let logger = MHLogger(
-            "Tests/MHRouteLifecycleTests.swift",
+            #fileID,
             store: store,
             subsystem: "tests.route"
         )

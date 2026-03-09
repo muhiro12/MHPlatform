@@ -16,11 +16,11 @@ struct MHLoggerTests {
         )
         let firstLogger = factory.logger(
             category: "First",
-            source: "Tests/First.swift"
+            source: "Synthetic/First.swift"
         )
         let secondLogger = factory.logger(
             category: "Second",
-            source: "Tests/Second.swift"
+            source: "Synthetic/Second.swift"
         )
 
         await firstLogger.logImmediately(.info, "first")
@@ -45,7 +45,7 @@ struct MHLoggerTests {
             )
         )
         let logger = MHLogger(
-            "Tests/MHLoggerTests.swift",
+            #fileID,
             store: store,
             subsystem: "tests.logger",
             policy: .init(
@@ -76,7 +76,7 @@ struct MHLoggerTests {
             )
         )
         let logger = MHLogger(
-            "Tests/MHLoggerTests.swift",
+            #fileID,
             store: store,
             subsystem: "tests.logger",
             )
@@ -95,6 +95,6 @@ struct MHLoggerTests {
         #expect(event?.source.function == "customFunction()")
         #expect(event?.source.line == 88)
         #expect(event?.metadata["code"] == "W1001")
-        #expect(event?.category == "Tests/MHLoggerTests.swift")
+        #expect(event?.category == #fileID)
     }
 }

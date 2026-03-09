@@ -213,7 +213,7 @@ private extension MHReviewFlowTests {
         store: MHLogStore
     ) -> MHLogger {
         .init(
-            "Tests/MHReviewPolicyTests/MHReviewFlowTests.swift",
+            #fileID,
             store: store,
             subsystem: "tests.review"
         )

@@ -222,7 +222,7 @@ private extension MHAppRuntimeBootstrapTests {
             )
         )
         return .init(
-            "Tests/MHAppRuntimeTests/MHAppRuntimeBootstrapTests.swift",
+            #fileID,
             store: store,
             subsystem: "tests.runtime.bootstrap"
         )
