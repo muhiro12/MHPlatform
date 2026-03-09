@@ -25,6 +25,8 @@ Keep route meaning in the app.
   drain orchestration
 - use `MHObservableRouteInbox<Route>` when the UI wants replace-latest route
   handoff before mutating navigation state
+- use `View.mhRouteHandler(_:apply:)` to register the app-owned route apply
+  closure while keeping replay and temporary buffering package-owned
 - apply routes directly inside the pipeline only when no intermediate route
   inbox is needed
 

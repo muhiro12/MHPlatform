@@ -328,6 +328,7 @@ extension MHPlatformIntegrationTests {
             "mutation.result:synced:7",
             "route.outcome:7"
         ])
+        await waitForExpectedLogFlush(for: harness)
         #expect(await harness.sinkRecorder.events().map(\.message) == [
             "accepted deep-link URL for route handling",
             "route applied"
@@ -346,5 +347,22 @@ extension MHPlatformIntegrationTests {
                 )
             )
         )
+    }
+
+    func waitForExpectedLogFlush(
+        for harness: Harness,
+        expectedEventCount: Int = 2
+    ) async {
+        for _ in 0..<TestConstants.maximumLogFlushAttempts {
+            let sinkEvents = await harness.sinkRecorder.events()
+            let storeEvents = await harness.logStore.events()
+
+            if sinkEvents.count >= expectedEventCount,
+               storeEvents.count >= expectedEventCount {
+                return
+            }
+
+            await Task.yield()
+        }
     }
 }

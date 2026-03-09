@@ -2,6 +2,7 @@ import Foundation
 import MHAppRuntime
 @testable import MHAppRuntimeCore
 import MHPreferences
+import MHRouteExecution
 import SwiftUI
 import Testing
 
@@ -280,6 +281,21 @@ struct MHAppRuntimeTests {
         #expect(String(describing: type(of: runtimeView)).contains("ModifiedContent"))
         #expect(String(describing: type(of: bootstrapView)).contains("ModifiedContent"))
         #expect(runtime.hasStarted == false)
+    }
+
+    @MainActor
+    @Test
+    func route_handler_modifier_builds_without_eager_route_application() {
+        let routeInbox = MHObservableRouteInbox<Int>()
+        var appliedRoutes = [Int]()
+
+        let view = EmptyView().mhRouteHandler(routeInbox) { route in
+            appliedRoutes.append(route)
+        }
+
+        #expect(String(describing: type(of: view)).contains("ModifiedContent"))
+        #expect(appliedRoutes.isEmpty)
+        #expect(routeInbox.pendingRoute == nil)
     }
 }
 

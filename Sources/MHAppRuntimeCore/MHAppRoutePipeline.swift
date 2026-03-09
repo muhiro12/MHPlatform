@@ -1,10 +1,12 @@
 import Foundation
 import MHDeepLinking
 import MHRouteExecution
+import Observation
 
 /// Package-owned route handoff shell for root app integration.
 @MainActor
 @preconcurrency
+@Observable
 public final class MHAppRoutePipeline<Route: Sendable> {
     /// Parses incoming URLs into app-owned routes.
     public typealias RouteParser = @Sendable (URL) -> Route?
@@ -15,12 +17,14 @@ public final class MHAppRoutePipeline<Route: Sendable> {
 
     /// Observable inbox owned by the pipeline for incoming URLs.
     public let inbox: MHObservableDeepLinkInbox
+    /// Latest URL that failed route parsing.
+    public private(set) var lastParseFailureURL: URL?
 
-    private let routeLifecycle: MHRouteLifecycle<Route>
-    private let pendingSources: [any MHDeepLinkURLSource]
-    private let parse: RouteParser
-    private let applyOnMainActor: RouteApplier
-    private let onFailure: FailureHandler
+    @ObservationIgnored private let routeLifecycle: MHRouteLifecycle<Route>
+    @ObservationIgnored private let pendingSources: [any MHDeepLinkURLSource]
+    @ObservationIgnored private let parseRoute: RouteParser
+    @ObservationIgnored private let applyOnMainActor: RouteApplier
+    @ObservationIgnored private let onFailure: FailureHandler
 
     /// Creates a route pipeline with explicit URL parsing.
     @preconcurrency
@@ -37,7 +41,7 @@ public final class MHAppRoutePipeline<Route: Sendable> {
         self.routeLifecycle = routeLifecycle
         self.pendingSources = pendingSources
         self.inbox = inbox
-        self.parse = parse
+        self.parseRoute = parse
         self.applyOnMainActor = applyOnMainActor
         self.onFailure = onFailure
     }
@@ -63,7 +67,7 @@ public final class MHAppRoutePipeline<Route: Sendable> {
             pendingSources: pendingSources,
             inbox: inbox,
             applyOnMainActor: { route in
-                routeInbox.replacePendingRoute(route)
+                await routeInbox.deliver(route)
             },
             onFailure: onFailure
         )
@@ -94,12 +98,28 @@ public final class MHAppRoutePipeline<Route: Sendable> {
     /// Consumes at most one pending URL and submits it for route execution.
     @discardableResult
     public func drainPendingRoutesIfNeeded() async -> MHRouteExecutionOutcome<Route>? {
+        guard let url = await orderedSources.consumeLatestURL() else {
+            return nil
+        }
+        let parseRoute = self.parseRoute
+        let parseFailureBox = ParseFailureBox()
+
         do {
-            return try await routeLifecycle.submitLatest(
-                from: orderedSources,
-                parse: parse,
+            let outcome = try await routeLifecycle.submit(
+                url,
+                parse: { incomingURL in
+                    let route = parseRoute(incomingURL)
+                    if route == nil {
+                        parseFailureBox.url = incomingURL
+                    }
+                    return route
+                },
                 applyOnMainActor: applyOnMainActor
             )
+            if let failedURL = parseFailureBox.url {
+                lastParseFailureURL = failedURL
+            }
+            return outcome
         } catch {
             onFailure(error)
             return nil
@@ -120,6 +140,11 @@ public final class MHAppRoutePipeline<Route: Sendable> {
         .init(name: name) {
             _ = await self.synchronizePendingRoutesIfPossible()
         }
+    }
+
+    /// Clears the latest retained parse failure URL.
+    public func clearLastParseFailure() {
+        lastParseFailureURL = nil
     }
 }
 
@@ -177,9 +202,21 @@ public extension MHAppRoutePipeline where Route: MHDeepLinkRoute {
 }
 
 private extension MHAppRoutePipeline {
+    final class ParseFailureBox: @unchecked Sendable {
+        var url: URL?
+    }
+
     var orderedSources: MHDeepLinkSourceChain {
         var orderedSources = pendingSources
         orderedSources.append(inbox)
         return .init(orderedSources)
+    }
+
+    func parse(_ url: URL) -> Route? {
+        let route = parseRoute(url)
+        if route == nil {
+            lastParseFailureURL = url
+        }
+        return route
     }
 }

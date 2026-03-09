@@ -190,7 +190,9 @@ ContentView()
 Use `bootstrap.routeInbox` when app-owned services need a package-owned pending
 route destination, such as notification or App Intent handoff adapters.
 When the app wants latest-route handoff before mutating navigation state, pair
-`MHAppRoutePipeline` with `MHObservableRouteInbox<Route>`.
+`MHAppRoutePipeline` with `MHObservableRouteInbox<Route>` and
+`View.mhRouteHandler(_:apply:)`. Observe `routePipeline.lastParseFailureURL`
+when invalid deep links should present app-owned error UI.
 
 For previews and tests that only need runtime injection, prefer:
 

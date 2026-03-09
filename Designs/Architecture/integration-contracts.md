@@ -149,6 +149,10 @@ This document is normative for integration design.
   - `MHObservableRouteInbox<Route>`
     - `pendingRoute`
     - `replacePendingRoute(_:)`
+    - `registerHandler(_:)`
+    - `unregisterHandler()`
+    - `deliver(_:)`
+    - `resynchronizePendingRoutesIfPossible()`
     - `consumeLatest()`
     - `clearPendingRoute()`
   - `hasPendingRoute`

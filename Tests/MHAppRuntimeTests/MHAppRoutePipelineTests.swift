@@ -220,6 +220,49 @@ struct MHAppRoutePipelineTests {
         #expect(routeInbox.consumeLatest() == 21)
         #expect(routeInbox.pendingRoute == nil)
     }
+
+    @MainActor
+    @Test
+    func drainPendingRoutesIfNeeded_retains_latest_parse_failure_until_cleared() async throws {
+        let invalidURL = try #require(URL(string: "test://route/not-an-int"))
+        let validURL = try #require(URL(string: "test://route/55"))
+        var appliedRoutes = [Int]()
+        let routeLifecycle = MHRouteLifecycle<Int>(
+            logger: makeLogger(),
+            initialReadiness: true,
+            isDuplicate: ==
+        )
+        let pendingSource = MHDeepLinkURLRecorder(
+            initialURL: invalidURL
+        )
+        let pipeline = MHAppRoutePipeline(
+            routeLifecycle: routeLifecycle,
+            parse: Self.parseRoute(from:),
+            pendingSources: [pendingSource]
+        ) { route in
+            appliedRoutes.append(route)
+        }
+
+        let invalidOutcome = await pipeline.drainPendingRoutesIfNeeded()
+
+        #expect(invalidOutcome == nil)
+        #expect(pipeline.lastParseFailureURL?.absoluteString == invalidURL.absoluteString)
+        #expect(appliedRoutes.isEmpty)
+
+        await pipeline.ingest(validURL)
+        let validOutcome = try #require(await pipeline.drainPendingRoutesIfNeeded())
+
+        expectApplied(
+            validOutcome,
+            expected: 55
+        )
+        #expect(appliedRoutes == [55])
+        #expect(pipeline.lastParseFailureURL?.absoluteString == invalidURL.absoluteString)
+
+        pipeline.clearLastParseFailure()
+
+        #expect(pipeline.lastParseFailureURL == nil)
+    }
 }
 
 private extension MHAppRoutePipelineTests {
