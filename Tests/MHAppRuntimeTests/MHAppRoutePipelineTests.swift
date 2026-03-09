@@ -189,6 +189,36 @@ struct MHAppRoutePipelineTests {
             "apply:34"
         ])
     }
+
+    @MainActor
+    @Test
+    func routeInbox_init_drains_pending_route_into_observable_route_inbox() async throws {
+        let routeInbox = MHObservableRouteInbox<Int>()
+        let pendingSource = MHDeepLinkURLRecorder(
+            initialURL: URL(string: "test://route/21")
+        )
+        let routeLifecycle = MHRouteLifecycle<Int>(
+            logger: makeLogger(),
+            initialReadiness: true,
+            isDuplicate: ==
+        )
+        let pipeline = MHAppRoutePipeline(
+            routeLifecycle: routeLifecycle,
+            parse: Self.parseRoute(from:),
+            routeInbox: routeInbox,
+            pendingSources: [pendingSource],
+        )
+
+        let outcome = try #require(await pipeline.drainPendingRoutesIfNeeded())
+
+        expectApplied(
+            outcome,
+            expected: 21
+        )
+        #expect(routeInbox.pendingRoute == 21)
+        #expect(routeInbox.consumeLatest() == 21)
+        #expect(routeInbox.pendingRoute == nil)
+    }
 }
 
 private extension MHAppRoutePipelineTests {

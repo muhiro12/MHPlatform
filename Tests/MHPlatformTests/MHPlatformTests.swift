@@ -14,6 +14,7 @@ struct MHPlatformTests {
             MHMutationStepListBuilder.self,
             MHMutationRetryPolicy.self,
             MHRouteExecutionOutcome<Int>.self,
+            MHObservableRouteInbox<Int>.self,
             MHStoreMigrationPlan.self,
             MHPreferenceStore.self,
             MHReviewPolicy.self,
@@ -21,6 +22,6 @@ struct MHPlatformTests {
             MHLoggerFactory.self
         ]
 
-        #expect(exportedTypes.count == 14)
+        #expect(exportedTypes.count == 15)
     }
 }

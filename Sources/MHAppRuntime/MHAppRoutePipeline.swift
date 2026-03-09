@@ -42,6 +42,30 @@ public final class MHAppRoutePipeline<Route: Sendable> {
         self.onFailure = onFailure
     }
 
+    /// Creates a route pipeline that stores applied routes in an observable route inbox.
+    @preconcurrency
+    public convenience init(
+        routeLifecycle: MHRouteLifecycle<Route>,
+        parse: @escaping RouteParser,
+        routeInbox: MHObservableRouteInbox<Route>,
+        pendingSources: [any MHDeepLinkURLSource] = [],
+        inbox: MHObservableDeepLinkInbox = .init(),
+        onFailure: @escaping FailureHandler = { error in
+            assertionFailure(error.localizedDescription)
+        }
+    ) {
+        self.init(
+            routeLifecycle: routeLifecycle,
+            parse: parse,
+            pendingSources: pendingSources,
+            inbox: inbox,
+            applyOnMainActor: { route in
+                routeInbox.replacePendingRoute(route)
+            },
+            onFailure: onFailure
+        )
+    }
+
     /// Stores an incoming URL in the pipeline-owned inbox.
     public func ingest(_ url: URL) async {
         await inbox.ingest(url)
@@ -117,6 +141,30 @@ public extension MHAppRoutePipeline where Route: MHDeepLinkRoute {
             pendingSources: pendingSources,
             inbox: inbox,
             applyOnMainActor: applyOnMainActor,
+            onFailure: onFailure
+        )
+    }
+
+    /// Creates a route pipeline backed by a route codec and observable route inbox.
+    @preconcurrency
+    convenience init(
+        routeLifecycle: MHRouteLifecycle<Route>,
+        using codec: MHDeepLinkCodec<Route>,
+        routeInbox: MHObservableRouteInbox<Route>,
+        pendingSources: [any MHDeepLinkURLSource] = [],
+        inbox: MHObservableDeepLinkInbox = .init(),
+        onFailure: @escaping FailureHandler = { error in
+            assertionFailure(error.localizedDescription)
+        }
+    ) {
+        self.init(
+            routeLifecycle: routeLifecycle,
+            parse: { incomingURL in
+                codec.parse(incomingURL)
+            },
+            routeInbox: routeInbox,
+            pendingSources: pendingSources,
+            inbox: inbox,
             onFailure: onFailure
         )
     }
