@@ -12,7 +12,7 @@ struct MHReviewRequestEnvironment: Sendable {
             MHReviewRequester.requestReview(
                 connectedScenes: UIApplication.shared.connectedScenes
             ) { windowScene in
-                SKStoreReviewController.requestReview(in: windowScene)
+                AppStore.requestReview(in: windowScene)
             }
         }
         #else

@@ -88,7 +88,7 @@ struct AppRuntimeDemoView: View {
             MHAppRuntime(
                 configuration: .init(
                     subscriptionProductIDs: ["com.example.mhplatform.premium.monthly"],
-                    nativeAdUnitID: "ca-app-pub-3940256099942544/3986624511",
+                    nativeAdUnitID: MHPlatformExampleAdMobConfiguration.nativeAdUnitID,
                     preferencesSuiteName: "MHPlatformExample.Runtime",
                     showsLicenses: true
                 )

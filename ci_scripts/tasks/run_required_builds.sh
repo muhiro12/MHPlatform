@@ -113,6 +113,33 @@ run_step() {
   return 0
 }
 
+check_log_for_local_warnings() {
+  local step_description=$1
+  local log_path=$2
+  local warning_identifier=$3
+
+  executed_steps+=("$step_description")
+
+  local escaped_repository_root
+  escaped_repository_root=$(printf '%s' "$repository_root" | sed 's/[][(){}.^$+*?|\\/]/\\&/g')
+
+  local warning_report_path="$LOG_DIR/${warning_identifier}.log"
+  local warning_pattern="^${escaped_repository_root}/(Sources/|Tests/|Example/|Package\\.swift:).*warning:"
+
+  if rg -n --color never "$warning_pattern" "$log_path" >"$warning_report_path"; then
+    echo "Local compiler warnings were detected." >&2
+    cat "$warning_report_path" >&2
+    failed_step="$step_description"
+    failed_log="$warning_report_path"
+    overall_result="failure"
+    run_note="A required step failed. Review failure details and logs."
+    return 1
+  fi
+
+  rm -f "$warning_report_path"
+  return 0
+}
+
 if $should_run_pre_commit; then
   run_step \
     "pre_commit" \
@@ -198,6 +225,11 @@ if $needs_package_build; then
     "build_app" \
     "Build MHPlatform package and example app" \
     bash "$repository_root/ci_scripts/tasks/build_app.sh"
+
+  check_log_for_local_warnings \
+    "Check local compiler warnings in build log" \
+    "$LAST_LOG_PATH" \
+    "build_app_local_warnings"
 fi
 
 if $needs_package_tests; then
@@ -205,4 +237,9 @@ if $needs_package_tests; then
     "test_shared_library" \
     "Run Swift package tests" \
     bash "$repository_root/ci_scripts/tasks/test_shared_library.sh"
+
+  check_log_for_local_warnings \
+    "Check local compiler warnings in test log" \
+    "$LAST_LOG_PATH" \
+    "test_shared_library_local_warnings"
 fi

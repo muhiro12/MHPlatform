@@ -28,14 +28,16 @@ private extension PersistenceMaintenanceDemoView {
 
     final class EventRecorder: @unchecked Sendable {
         private let lock = NSLock()
-        private var values = [String]()
+        nonisolated(unsafe) private var values = [String]()
 
+        nonisolated
         func append(_ value: String) {
             lock.lock()
             values.append(value)
             lock.unlock()
         }
 
+        nonisolated
         func snapshot() -> [String] {
             lock.lock()
             defer {
@@ -98,6 +100,20 @@ private extension PersistenceMaintenanceDemoView {
                         .font(.footnote)
                 }
             }
+        }
+    }
+
+    nonisolated
+    static func eventDescription(_ event: MHDestructiveResetEvent) -> String {
+        switch event {
+        case .stepStarted(let name):
+            return "stepStarted(\(name))"
+        case .stepSucceeded(let name):
+            return "stepSucceeded(\(name))"
+        case let .stepFailed(name, message):
+            return "stepFailed(\(name)): \(message)"
+        case .completed:
+            return "completed"
         }
     }
 
@@ -195,7 +211,7 @@ private extension PersistenceMaintenanceDemoView {
     }
 
     func runResetDemo(shouldFail: Bool) async -> String {
-        let recorder = EventRecorder()
+        let recorder = Self.EventRecorder()
 
         let outcome = await MHDestructiveResetService.run(
             steps: [
@@ -212,7 +228,9 @@ private extension PersistenceMaintenanceDemoView {
                 }
             ]
         ) { event in
-            recorder.append(eventDescription(for: event))
+            recorder.append(
+                Self.eventDescription(event)
+            )
         }
 
         resetEvents = recorder.snapshot()
@@ -222,19 +240,6 @@ private extension PersistenceMaintenanceDemoView {
             return "succeeded completed=\(completedSteps)"
         case let .failed(error, failedStep, completedSteps):
             return "failed step=\(failedStep) completed=\(completedSteps) error=\(error)"
-        }
-    }
-
-    func eventDescription(for event: MHDestructiveResetEvent) -> String {
-        switch event {
-        case .stepStarted(let name):
-            return "stepStarted(\(name))"
-        case .stepSucceeded(let name):
-            return "stepSucceeded(\(name))"
-        case let .stepFailed(name, message):
-            return "stepFailed(\(name)): \(message)"
-        case .completed:
-            return "completed"
         }
     }
 }

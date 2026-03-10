@@ -4,14 +4,16 @@ import MHPlatform
 extension MutationFlowDemoView {
     final class EventLogRecorder: @unchecked Sendable {
         private let lock = NSLock()
-        private var values = [String]()
+        nonisolated(unsafe) private var values = [String]()
 
+        nonisolated
         func record(_ value: String) {
             lock.lock()
             values.append(value)
             lock.unlock()
         }
 
+        nonisolated
         func all() -> [String] {
             lock.lock()
             defer {
@@ -22,7 +24,10 @@ extension MutationFlowDemoView {
         }
     }
 
-    static func eventTitle(_ event: MHMutationEvent<SaveDraftResult>) -> String {
+    nonisolated
+    static func eventTitle(
+        _ event: MHMutationEvent<SaveDraftResult>
+    ) -> String {
         switch event {
         case let .started(mutation, attempt):
             return "started(\(mutation), attempt=\(attempt))"
@@ -46,6 +51,7 @@ extension MutationFlowDemoView {
         }
     }
 
+    nonisolated
     static func progressTitle(_ progress: MHMutationProgress) -> String {
         switch progress {
         case let .retryScheduled(nextAttempt, delay):
@@ -57,7 +63,10 @@ extension MutationFlowDemoView {
         }
     }
 
-    static func summarize(_ outcome: MHMutationOutcome<SaveDraftResult>) -> String {
+    nonisolated
+    static func summarize(
+        _ outcome: MHMutationOutcome<SaveDraftResult>
+    ) -> String {
         switch outcome {
         case let .succeeded(value, attempts, completedSteps):
             return [
