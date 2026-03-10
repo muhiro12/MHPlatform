@@ -6,7 +6,7 @@ public enum MHNativeAdSize: String, Sendable, CaseIterable {
     /// Medium native ad card.
     case medium
 
-    var wrapperSizeID: String {
+    package var wrapperSizeID: String {
         switch self {
         case .small:
             "Small"
