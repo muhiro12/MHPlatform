@@ -2,9 +2,9 @@
 import Foundation
 import SwiftUI
 
-#if canImport(UIKit)
+#if os(iOS)
 import UIKit
-#elseif canImport(AppKit)
+#elseif os(macOS)
 import AppKit
 #endif
 
@@ -112,7 +112,7 @@ public struct MHLogConsoleView: View {
                 ) { _, event in
                     Text(event.summaryLine)
                         .font(.caption.monospaced())
-                        .textSelection(.enabled)
+                        .logConsoleTextSelectionIfSupported()
                 }
             }
         }
@@ -122,7 +122,7 @@ public struct MHLogConsoleView: View {
         Section("Status") {
             Text(statusMessage)
                 .font(.caption.monospaced())
-                .textSelection(.enabled)
+                .logConsoleTextSelectionIfSupported()
         }
     }
 
@@ -168,14 +168,26 @@ public struct MHLogConsoleView: View {
     }
 
     private func copyToClipboard(_ value: String) -> Bool {
-        #if canImport(UIKit)
+        #if os(iOS)
         UIPasteboard.general.string = value
         return true
-        #elseif canImport(AppKit)
+        #elseif os(macOS)
         NSPasteboard.general.clearContents()
         return NSPasteboard.general.setString(value, forType: .string)
         #else
+        _ = value
         return false
+        #endif
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func logConsoleTextSelectionIfSupported() -> some View {
+        #if os(watchOS)
+        self
+        #else
+        self.textSelection(.enabled)
         #endif
     }
 }

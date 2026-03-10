@@ -57,7 +57,9 @@ if [[ ! -d "$example_project_path" ]]; then
 fi
 
 timestamp=$(date +%s)
-result_bundle_path="$results_directory/BuildResults_MHPlatformExample_${timestamp}.xcresult"
+macos_result_bundle_path="$results_directory/BuildResults_MHPlatformExample_macOS_${timestamp}.xcresult"
+ios_result_bundle_path="$results_directory/BuildResults_MHPlatformExample_iOS_${timestamp}.xcresult"
+watchos_result_bundle_path="$results_directory/BuildResults_MHPlatform_watchOS_${timestamp}.xcresult"
 
 echo "Building MHPlatformExample (macOS)."
 HOME="$local_home_directory" \
@@ -72,7 +74,7 @@ xcodebuild \
   -scheme "MHPlatformExample" \
   -destination 'generic/platform=macOS' \
   -derivedDataPath "$derived_data_path" \
-  -resultBundlePath "$result_bundle_path" \
+  -resultBundlePath "$macos_result_bundle_path" \
   -clonedSourcePackagesDirPath "$cloned_source_packages_directory" \
   -packageCachePath "$package_cache_directory" \
   CODE_SIGNING_ALLOWED=NO \
@@ -80,4 +82,48 @@ xcodebuild \
   "CLANG_MODULE_CACHE_PATH=$clang_module_cache_directory" \
   build
 
-echo "Finished MHPlatformExample build. Result bundle: $result_bundle_path"
+echo "Finished MHPlatformExample macOS build. Result bundle: $macos_result_bundle_path"
+
+echo "Building MHPlatformExample (iOS Simulator)."
+HOME="$local_home_directory" \
+TMPDIR="$temporary_directory" \
+XDG_CACHE_HOME="$cache_directory" \
+CLANG_MODULE_CACHE_PATH="$clang_module_cache_directory" \
+SWIFTPM_CACHE_PATH="$swiftpm_cache_directory" \
+SWIFTPM_CONFIG_PATH="$swiftpm_config_directory" \
+PLL_SOURCE_PACKAGES_PATH="$cloned_source_packages_directory" \
+xcodebuild \
+  -project "$example_project_path" \
+  -scheme "MHPlatformExample" \
+  -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath "$derived_data_path" \
+  -resultBundlePath "$ios_result_bundle_path" \
+  -clonedSourcePackagesDirPath "$cloned_source_packages_directory" \
+  -packageCachePath "$package_cache_directory" \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  "CLANG_MODULE_CACHE_PATH=$clang_module_cache_directory" \
+  build
+
+echo "Finished MHPlatformExample iOS Simulator build. Result bundle: $ios_result_bundle_path"
+
+echo "Building MHPlatform package umbrella scheme (watchOS Simulator)."
+HOME="$local_home_directory" \
+TMPDIR="$temporary_directory" \
+XDG_CACHE_HOME="$cache_directory" \
+CLANG_MODULE_CACHE_PATH="$clang_module_cache_directory" \
+SWIFTPM_CACHE_PATH="$swiftpm_cache_directory" \
+SWIFTPM_CONFIG_PATH="$swiftpm_config_directory" \
+PLL_SOURCE_PACKAGES_PATH="$cloned_source_packages_directory" \
+xcodebuild \
+  -project "$example_project_path" \
+  -scheme "MHPlatform" \
+  -destination 'generic/platform=watchOS Simulator' \
+  -derivedDataPath "$derived_data_path" \
+  -resultBundlePath "$watchos_result_bundle_path" \
+  -clonedSourcePackagesDirPath "$cloned_source_packages_directory" \
+  -packageCachePath "$package_cache_directory" \
+  "CLANG_MODULE_CACHE_PATH=$clang_module_cache_directory" \
+  build
+
+echo "Finished MHPlatform watchOS Simulator package build. Result bundle: $watchos_result_bundle_path"

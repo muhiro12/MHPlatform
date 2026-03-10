@@ -16,12 +16,28 @@ let package = Package(
             targets: ["MHPlatform"]
         ),
         .library(
+            name: "MHPlatformCore",
+            targets: ["MHPlatformCore"]
+        ),
+        .library(
             name: "MHAppRuntime",
             targets: ["MHAppRuntime"]
         ),
         .library(
             name: "MHAppRuntimeCore",
             targets: ["MHAppRuntimeCore"]
+        ),
+        .library(
+            name: "MHAppRuntimeDefaults",
+            targets: ["MHAppRuntimeDefaults"]
+        ),
+        .library(
+            name: "MHAppRuntimeAds",
+            targets: ["MHAppRuntimeAds"]
+        ),
+        .library(
+            name: "MHAppRuntimeLicenses",
+            targets: ["MHAppRuntimeLicenses"]
         ),
         .library(
             name: "MHDeepLinking",
@@ -82,17 +98,22 @@ let package = Package(
         .target(
             name: "MHPlatform",
             dependencies: [
-                "MHAppRuntimeCore",
                 "MHAppRuntime",
+                "MHMutationFlow",
+                "MHPlatformCore",
+                "MHReviewPolicy"
+            ]
+        ),
+        .target(
+            name: "MHPlatformCore",
+            dependencies: [
                 "MHDeepLinking",
+                "MHLogging",
                 "MHNotificationPlans",
                 "MHNotificationPayloads",
-                "MHMutationFlow",
                 "MHRouteExecution",
                 "MHPersistenceMaintenance",
-                "MHPreferences",
-                "MHReviewPolicy",
-                "MHLogging"
+                "MHPreferences"
             ]
         ),
         .target(
@@ -107,18 +128,39 @@ let package = Package(
         .target(
             name: "MHAppRuntime",
             dependencies: [
+                "MHAppRuntimeAds",
+                "MHAppRuntimeCore",
+                "MHAppRuntimeDefaults",
+                "MHAppRuntimeLicenses"
+            ]
+        ),
+        .target(
+            name: "MHAppRuntimeDefaults",
+            dependencies: [
                 "MHAppRuntimeCore",
                 "MHPreferences",
                 .product(
                     name: "StoreKitWrapper",
                     package: "StoreKitWrapper",
                     condition: .when(platforms: [.iOS, .macOS])
-                ),
+                )
+            ]
+        ),
+        .target(
+            name: "MHAppRuntimeAds",
+            dependencies: [
+                "MHAppRuntimeCore",
                 .product(
                     name: "GoogleMobileAdsWrapper",
                     package: "GoogleMobileAdsWrapper",
                     condition: .when(platforms: [.iOS])
-                ),
+                )
+            ]
+        ),
+        .target(
+            name: "MHAppRuntimeLicenses",
+            dependencies: [
+                "MHAppRuntimeCore",
                 .product(
                     name: "LicenseList",
                     package: "LicenseList",
@@ -176,10 +218,17 @@ let package = Package(
             dependencies: ["MHPlatform"]
         ),
         .testTarget(
+            name: "MHPlatformCoreTests",
+            dependencies: ["MHPlatformCore"]
+        ),
+        .testTarget(
             name: "MHAppRuntimeTests",
             dependencies: [
+                "MHAppRuntimeAds",
                 "MHAppRuntime",
                 "MHAppRuntimeCore",
+                "MHAppRuntimeDefaults",
+                "MHAppRuntimeLicenses",
                 "MHLogging",
                 "MHPlatformTesting",
                 "MHPreferences",

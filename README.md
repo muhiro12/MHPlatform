@@ -2,15 +2,16 @@
 
 MHPlatform is an internal app platform foundation delivered as a Swift package
 workspace for shared infrastructure extracted from real usage in Incomes and
-Cookle. It ships both an umbrella `MHPlatform` product for app-side
-convenience and granular module products for narrower adoption. The current v1
-baseline focuses on runtime startup, deep-link handling, route execution,
-deterministic notification planning, post-mutation side-effect orchestration,
-logging, preferences, and persistence maintenance primitives.
+Cookle. It ships a full app umbrella `MHPlatform`, a shared-package umbrella
+`MHPlatformCore`, and granular module products for narrower adoption. The
+current v1 baseline focuses on runtime startup, deep-link handling, route
+execution, deterministic notification planning, post-mutation side-effect
+orchestration, logging, preferences, and persistence maintenance primitives.
 
 Minimum supported platforms:
 - iOS 18.0+
 - macOS 15.0+
+- watchOS 11.0+
 
 ## Documentation Map
 
@@ -40,15 +41,20 @@ Minimum supported platforms:
 
 ## Adoption
 
-MHPlatform supports two integration styles:
+MHPlatform supports four main integration styles:
 
-- Use the umbrella `MHPlatform` product for app adoption convenience.
-- Use individual module products when the app wants a narrower dependency set.
+- Use `MHPlatform` for app targets that want the full umbrella, including the
+  `MHAppRuntime` default adapter path.
+- Use `MHPlatformCore` for shared packages, including watch-capable packages,
+  that want a narrower umbrella without `MHAppRuntime` or third-party runtime
+  adapters.
+- Use individual module products when the consumer wants a narrower dependency
+  set than either umbrella.
 - Use `MHAppRuntimeCore` directly when the app only needs runtime/bootstrap
   mechanics and should avoid the heavier default StoreKit, ads, or license
   dependencies.
 
-Umbrella adoption:
+Full app umbrella adoption:
 
 ```swift
 .product(name: "MHPlatform", package: "MHPlatform")
@@ -64,8 +70,32 @@ let policy = MHReviewPolicy(
 )
 ```
 
-The umbrella module is intentionally thin and re-exports the common public
-modules with `@_exported import`.
+`MHPlatform` remains an aggregation target with no independent runtime logic.
+It re-exports `MHPlatformCore`, `MHAppRuntime`, `MHMutationFlow`, and
+`MHReviewPolicy`. Because `MHAppRuntime` keeps the default StoreKit, ads, and
+license integrations, adopting `MHPlatform` also resolves those implementation
+dependencies for app targets.
+
+Shared package umbrella adoption:
+
+```swift
+.product(name: "MHPlatformCore", package: "MHPlatform")
+```
+
+```swift
+import MHPlatformCore
+
+let store = MHPreferenceStore()
+let logger = MHLoggerFactory.osLogDefault.logger(
+    category: "shared",
+    source: #fileID
+)
+```
+
+`MHPlatformCore` is the recommended umbrella for shared packages. It re-exports
+`MHDeepLinking`, `MHLogging`, `MHNotificationPlans`, `MHNotificationPayloads`,
+`MHRouteExecution`, `MHPersistenceMaintenance`, and `MHPreferences` without
+pulling in `MHAppRuntime` or third-party runtime adapters.
 
 Granular adoption:
 
@@ -78,6 +108,13 @@ Granular adoption:
 import MHDeepLinking
 import MHRouteExecution
 ```
+
+Direct third-party dependency rule:
+
+- `MHPlatform` does not re-export third-party symbols from `StoreKitWrapper`,
+  `GoogleMobileAdsWrapper`, or `LicenseList`.
+- If consumer code uses those APIs directly, add the third-party package as a
+  direct dependency and `import` that module explicitly.
 
 Testing support:
 
@@ -118,8 +155,11 @@ For a package-owned end-to-end reference, see
 
 Recommended starting paths:
 
+- shared package umbrella: `MHPlatformCore`
 - app root assembly: `MHAppRuntimeBootstrap`
 - runtime-only product: `MHAppRuntimeCore`
+- opt-in runtime defaults: `MHAppRuntimeDefaults`, `MHAppRuntimeAds`,
+  `MHAppRuntimeLicenses`
 - preview/test runtime injection: `View.mhAppRuntimeEnvironment(_:)`
 - route root wiring: `MHAppRoutePipeline`
 - route handoff into app-owned navigation state: `MHObservableRouteInbox`
@@ -138,7 +178,9 @@ or non-SwiftUI control.
 Use `MHAppRuntime` when the app wants the default StoreKit, ads, and runtime-
 owned license integrations. Use `MHAppRuntimeCore` when the app only needs
 runtime/bootstrap/lifecycle/route mechanics without those external
-dependencies.
+dependencies. When the app wants only some package-owned defaults, compose the
+core initializer with `MHAppRuntimeDefaultsBundle`, `MHAppRuntimeAdsBundle`,
+and `MHAppRuntimeLicensesBundle` from the split bundle products.
 
 Integration contract:
 [`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)

@@ -3,15 +3,12 @@
 ## Public Products
 
 - `MHPlatform`
-
-`MHPlatform` is a convenience umbrella product that re-exports the public
-surfaces of the concrete modules for app adoption.
-Each public module below is also shipped as its own library product.
-
-## Public Modules
-
+- `MHPlatformCore`
 - `MHAppRuntime`
 - `MHAppRuntimeCore`
+- `MHAppRuntimeDefaults`
+- `MHAppRuntimeAds`
+- `MHAppRuntimeLicenses`
 - `MHDeepLinking`
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
@@ -23,9 +20,28 @@ Each public module below is also shipped as its own library product.
 - `MHLogging`
 - `MHPlatformTesting`
 
-Consumers may either `import MHPlatform` for the common umbrella surface or
-import concrete module names directly for granular adoption.
-MHPlatform is maintained as an internal app platform foundation for reusable non-domain app infrastructure.
+`MHPlatform` is the full app umbrella. It re-exports `MHPlatformCore`,
+`MHAppRuntime`, `MHMutationFlow`, and `MHReviewPolicy`.
+`MHPlatformCore` is the shared-package umbrella. It re-exports the shared-safe
+modules used by watch-capable and library-first package adopters.
+
+## Public Modules
+
+- `MHDeepLinking`
+- `MHLogging`
+- `MHNotificationPlans`
+- `MHNotificationPayloads`
+- `MHRouteExecution`
+- `MHPersistenceMaintenance`
+- `MHPreferences`
+- `MHPlatformTesting`
+
+Consumers may either `import MHPlatform` for app targets, `import MHPlatformCore`
+for shared packages, or import concrete module names directly for granular
+adoption. Third-party runtime symbols remain direct dependencies even when the
+full umbrella is adopted.
+MHPlatform is maintained as an internal app platform foundation for reusable
+non-domain app infrastructure.
 
 ## Platform Baseline
 
@@ -54,6 +70,16 @@ MHPlatform is maintained as an internal app platform foundation for reusable non
 
 ## Module Boundaries
 
+### `MHPlatformCore`
+
+- Re-exports the shared-package-safe infrastructure modules:
+  `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
+  `MHNotificationPayloads`, `MHRouteExecution`,
+  `MHPersistenceMaintenance`, and `MHPreferences`
+- Exists so shared packages can adopt one umbrella without picking up
+  `MHAppRuntime` or third-party runtime adapters
+- Does not own `MHAppRuntime`, mutation workflow, or review workflow surfaces
+
 ### `MHAppRuntimeCore`
 
 - Owns runtime-start orchestration and idempotent startup entry points:
@@ -70,12 +96,38 @@ Integration contract:
 [`MHAppRuntime`](integration-contracts.md#mhappruntime)
 
 - Re-exports `MHAppRuntimeCore` for convenience adoption
-- Owns default adapter assembly for StoreKit, ads, and license integrations
+- Owns the full default adapter assembly path by composing the split defaults
+  bundles below
 - Owns app-facing default runtime surfaces backed by those adapters:
   paywall section, native ad view, license view
 - Serves as the main shared startup/runtime surface already adopted by Incomes
   and Cookle
 - Does not own domain policy, app-specific route state, or persistence model rules
+
+### `MHAppRuntimeDefaults`
+
+- Owns the package-owned preference store and StoreKit convenience bundle:
+  `MHAppRuntimeDefaultsBundle`
+- Exposes `preferenceStore`, `startStore`, and
+  `subscriptionSectionViewBuilder` for explicit composition into
+  `MHAppRuntimeCore.MHAppRuntime`
+- Uses `StoreKitWrapper` only where that dependency is available
+
+### `MHAppRuntimeAds`
+
+- Owns the package-owned ads convenience bundle:
+  `MHAppRuntimeAdsBundle`
+- Exposes `startAds` and `nativeAdViewBuilder` for explicit composition into
+  `MHAppRuntimeCore.MHAppRuntime`
+- Uses `GoogleMobileAdsWrapper` only where that dependency is available
+
+### `MHAppRuntimeLicenses`
+
+- Owns the package-owned licenses convenience bundle:
+  `MHAppRuntimeLicensesBundle`
+- Exposes `licensesViewBuilder` for explicit composition into
+  `MHAppRuntimeCore.MHAppRuntime`
+- Uses `LicenseList` only where that dependency is available
 
 ### `MHDeepLinking`
 
@@ -201,7 +253,8 @@ Integration contract:
 - Owns a lightweight logger setup helper:
   `MHLoggerFactory`
 - Owns reusable log console UI:
-  `MHLogConsoleView`
+  `MHLogConsoleView`, with watchOS-safe availability guards for unsupported
+  selection and clipboard features
 - Does not own app-specific PII masking policy, alerting policy, or external telemetry backend contracts
 
 ### `MHPlatformTesting`
@@ -218,13 +271,21 @@ Integration contract:
 ## Dependency Rules
 
 - Module dependencies are intentionally flat for v1.
-- `MHPlatform` depends on every public module and must stay a thin aggregation
-  layer without independent runtime logic.
+- `MHPlatform` depends on `MHPlatformCore`, `MHAppRuntime`, `MHMutationFlow`,
+  and `MHReviewPolicy`, and must stay a thin aggregation layer without
+  independent runtime logic.
+- `MHPlatformCore` depends on `MHDeepLinking`, `MHLogging`,
+  `MHNotificationPlans`, `MHNotificationPayloads`, `MHRouteExecution`,
+  `MHPersistenceMaintenance`, and `MHPreferences`.
 - `MHAppRuntimeCore` depends on `MHDeepLinking`, `MHLogging`,
   `MHPreferences`, and `MHRouteExecution`.
-- `MHAppRuntime` depends on `MHAppRuntimeCore`, `MHPreferences`,
-  `StoreKitWrapper` (iOS, macOS), `GoogleMobileAdsWrapper` (iOS), and
-  `LicenseList` (iOS).
+- `MHAppRuntime` depends on `MHAppRuntimeCore`, `MHAppRuntimeDefaults`,
+  `MHAppRuntimeAds`, and `MHAppRuntimeLicenses`.
+- `MHAppRuntimeDefaults` depends on `MHAppRuntimeCore`, `MHPreferences`, and
+  `StoreKitWrapper` (iOS, macOS).
+- `MHAppRuntimeAds` depends on `MHAppRuntimeCore` and
+  `GoogleMobileAdsWrapper` (iOS).
+- `MHAppRuntimeLicenses` depends on `MHAppRuntimeCore` and `LicenseList` (iOS).
 - `MHDeepLinking` has no dependency on the other modules.
 - `MHNotificationPlans` has no dependency on the other modules.
 - `MHNotificationPayloads` depends on `MHDeepLinking` for shared pending-route
@@ -240,8 +301,10 @@ Integration contract:
 - `MHLogging` has no dependency on the other modules.
 - `MHPlatformTesting` depends on `MHDeepLinking`, `MHLogging`, and
   `MHNotificationPayloads` to provide reusable doubles and recorders.
-- ExampleApp may import all public modules or the umbrella product, but package
-  targets must stay independent.
+- ExampleApp may import the full `MHPlatform` umbrella, but shared package
+  targets should prefer `MHPlatformCore` or granular modules.
+- Adopting `MHPlatform` does not make third-party wrapper symbols public; those
+  remain direct consumer dependencies and imports.
 
 ## Why No Generic Core Layer
 

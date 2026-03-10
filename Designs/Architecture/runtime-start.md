@@ -32,6 +32,27 @@ This moves the repeated "runtime + lifecycle + route root wiring + environment"
 shape out of app roots and into MHPlatform while leaving app-specific services,
 model containers, and route meanings outside the package.
 
+## Opt-in default adapters
+
+`MHAppRuntime` remains the convenience product for apps that want all package-
+owned defaults through one import. Internally, it now composes three additive
+bundle products:
+
+- `MHAppRuntimeDefaults`:
+  `MHAppRuntimeDefaultsBundle(configuration:)` for preference-store and
+  StoreKit-backed paywall defaults
+- `MHAppRuntimeAds`:
+  `MHAppRuntimeAdsBundle(configuration:)` for ads startup and native-ad view
+  defaults
+- `MHAppRuntimeLicenses`:
+  `MHAppRuntimeLicensesBundle(configuration:)` for license-screen defaults
+
+Apps that want only some package-owned defaults should import
+`MHAppRuntimeCore` plus the specific bundle products they need, then pass those
+bundle outputs into the explicit `MHAppRuntime` initializer. Shared packages
+should stop at `MHPlatformCore` or granular modules instead of depending on the
+full app umbrella.
+
 ## Lifecycle shell
 
 `MHAppRuntimeLifecycle` owns three pieces of repeated app wiring:
@@ -90,12 +111,14 @@ Apps still own route enums, parsing meaning, and final route application.
 `MHAppRuntime` uses:
 
 - `StoreKitWrapper`:
-  kept because it provides transaction monitoring and paywall UI composition.
+  kept through `MHAppRuntimeDefaults` because it provides transaction
+  monitoring and paywall UI composition.
 - `GoogleMobileAdsWrapper`:
-  kept because it provides native-ad loading and SwiftUI/UIKit bridge surfaces.
+  kept through `MHAppRuntimeAds` because it provides native-ad loading and
+  SwiftUI/UIKit bridge surfaces.
 - `LicenseList` (direct):
-  adopted directly because the previous wrapper layer was only a thin forwarding
-  view with no meaningful boundary value.
+  adopted directly through `MHAppRuntimeLicenses` because the previous wrapper
+  layer was only a thin forwarding view with no meaningful boundary value.
 - `SwiftUtilities`:
   intentionally not used for runtime v1 to keep the dependency surface minimal.
 

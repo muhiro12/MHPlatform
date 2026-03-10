@@ -1,11 +1,4 @@
 @_exported import MHAppRuntime
-@_exported import MHAppRuntimeCore
-@_exported import MHDeepLinking
-@_exported import MHLogging
 @_exported import MHMutationFlow
-@_exported import MHNotificationPayloads
-@_exported import MHNotificationPlans
-@_exported import MHPersistenceMaintenance
-@_exported import MHPreferences
+@_exported import MHPlatformCore
 @_exported import MHReviewPolicy
-@_exported import MHRouteExecution
