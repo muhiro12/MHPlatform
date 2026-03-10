@@ -6,10 +6,12 @@
 
 `MHPlatform` is a convenience umbrella product that re-exports the public
 surfaces of the concrete modules for app adoption.
+Each public module below is also shipped as its own library product.
 
 ## Public Modules
 
 - `MHAppRuntime`
+- `MHAppRuntimeCore`
 - `MHDeepLinking`
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
@@ -29,6 +31,7 @@ MHPlatform is maintained as an internal app platform foundation for reusable non
 
 - iOS 18.0+
 - macOS 15.0+
+- watchOS 11.0+
 
 ## Adoption Snapshot
 
@@ -51,16 +54,24 @@ MHPlatform is maintained as an internal app platform foundation for reusable non
 
 ## Module Boundaries
 
+### `MHAppRuntimeCore`
+
+- Owns runtime-start orchestration and idempotent startup entry points:
+  `MHAppRuntime.start()`, `MHAppRuntime.startIfNeeded()`
+- Owns app-facing platform configuration and shared status surfaces:
+  `MHAppConfiguration`, `MHPremiumStatus`, `MHAdsAvailability`
+- Owns SwiftUI runtime/bootstrap/lifecycle and route-pipeline primitives:
+  `MHAppRuntimeBootstrap`, `MHAppRuntimeLifecycle`, `MHAppRoutePipeline`
+- Does not own StoreKit, ads, or license adapters
+
 ### `MHAppRuntime`
 
 Integration contract:
 [`MHAppRuntime`](integration-contracts.md#mhappruntime)
 
-- Owns runtime-start orchestration and idempotent startup entry point:
-  `MHAppRuntime.startIfNeeded()`
-- Owns app-facing platform configuration and shared status surfaces:
-  `MHAppConfiguration`, `MHPremiumStatus`, `MHAdsAvailability`
-- Owns app-facing SwiftUI runtime surfaces:
+- Re-exports `MHAppRuntimeCore` for convenience adoption
+- Owns default adapter assembly for StoreKit, ads, and license integrations
+- Owns app-facing default runtime surfaces backed by those adapters:
   paywall section, native ad view, license view
 - Serves as the main shared startup/runtime surface already adopted by Incomes
   and Cookle
@@ -170,8 +181,9 @@ Integration contract:
 
 - Owns review-request policy primitives:
   `MHReviewPolicy`, `MHReviewRequestOutcome`
-- Owns high-level requester flow:
-  `MHReviewRequester`
+- Owns package-owned requester and orchestration surfaces:
+  `MHReviewRequester`, `MHReviewFlow`
+- Owns runtime-task and mutation-step integration helpers for review triggers
 - Uses platform-aware fallback behavior for non-iOS builds
 - Does not own app-specific lifecycle triggers or presentation timing policy beyond configured delay/lottery
 
@@ -208,8 +220,11 @@ Integration contract:
 - Module dependencies are intentionally flat for v1.
 - `MHPlatform` depends on every public module and must stay a thin aggregation
   layer without independent runtime logic.
-- `MHAppRuntime` depends on `MHPreferences`, `StoreKitWrapper`,
-  `GoogleMobileAdsWrapper` (iOS), and `LicenseList` (iOS).
+- `MHAppRuntimeCore` depends on `MHDeepLinking`, `MHLogging`,
+  `MHPreferences`, and `MHRouteExecution`.
+- `MHAppRuntime` depends on `MHAppRuntimeCore`, `MHPreferences`,
+  `StoreKitWrapper` (iOS, macOS), `GoogleMobileAdsWrapper` (iOS), and
+  `LicenseList` (iOS).
 - `MHDeepLinking` has no dependency on the other modules.
 - `MHNotificationPlans` has no dependency on the other modules.
 - `MHNotificationPayloads` depends on `MHDeepLinking` for shared pending-route
@@ -219,8 +234,9 @@ Integration contract:
   helpers and on `MHLogging` for `MHRouteLifecycle` outcome logging.
 - `MHPersistenceMaintenance` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
-- `MHReviewPolicy` depends on `MHLogging` for requester outcome logging and
-  has no other MHPlatform module dependencies.
+- `MHReviewPolicy` depends on `MHAppRuntimeCore`, `MHLogging`, and
+  `MHMutationFlow` for runtime-task, outcome logging, and mutation-step
+  integration.
 - `MHLogging` has no dependency on the other modules.
 - `MHPlatformTesting` depends on `MHDeepLinking`, `MHLogging`, and
   `MHNotificationPayloads` to provide reusable doubles and recorders.
