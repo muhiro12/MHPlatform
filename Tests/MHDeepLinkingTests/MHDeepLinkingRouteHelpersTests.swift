@@ -29,7 +29,7 @@ struct MHDeepLinkingRouteHelpersTests {
                 guard let identifier = deepLinkDescriptor.queryItems.first(where: { queryItem in
                     queryItem.name == "id"
                 })?.value,
-                    identifier.isEmpty == false else {
+                identifier.isEmpty == false else {
                     return nil
                 }
                 self = .item(identifier)

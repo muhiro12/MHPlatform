@@ -169,7 +169,7 @@ struct MHNotificationRouteDeliveryTests {
         let outcome = MHNotificationOrchestrator.routeDeliveryOutcome(
             userInfo: [:],
             actionIdentifier: "browse",
-        ) { _, response in
+            ) { _, response in
             guard response.actionIdentifier == "browse" else {
                 return nil
             }

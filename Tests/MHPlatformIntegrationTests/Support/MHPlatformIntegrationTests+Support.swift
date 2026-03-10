@@ -160,7 +160,7 @@ extension MHPlatformIntegrationTests {
                         await synchronizePendingRoutes(
                             routePipeline: routePipeline,
                             traceRecorder: traceRecorder,
-                        )
+                            )
                     }
                 ]
             ),
@@ -204,11 +204,11 @@ extension MHPlatformIntegrationTests {
                 notificationDestination
             ]
         ) { route in
-                try await applyRoute(
-                    route,
-                    traceRecorder: traceRecorder,
-                    mutationAttemptCounter: mutationAttemptCounter
-                )
+            try await applyRoute(
+                route,
+                traceRecorder: traceRecorder,
+                mutationAttemptCounter: mutationAttemptCounter
+            )
         }
     }
 

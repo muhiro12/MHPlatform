@@ -89,7 +89,7 @@ struct MHMutationFlowTests {
                 )
             ),
             sleep: { duration in
-            await durationRecorder.append(duration)
+                await durationRecorder.append(duration)
             }
         )
         // swiftlint:enable trailing_closure

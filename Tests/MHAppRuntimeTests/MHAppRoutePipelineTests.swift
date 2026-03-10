@@ -111,7 +111,7 @@ struct MHAppRoutePipelineTests {
                 secondSource
             ]
         ) { resolvedRoute in
-                await routeRecorder.record("apply:\(resolvedRoute)")
+            await routeRecorder.record("apply:\(resolvedRoute)")
         }
 
         let inboxURL = try #require(URL(string: "test://route/99"))
@@ -165,7 +165,7 @@ struct MHAppRoutePipelineTests {
                 secondSource
             ]
         ) { resolvedRoute in
-                await routeRecorder.record("apply:\(resolvedRoute)")
+            await routeRecorder.record("apply:\(resolvedRoute)")
         }
 
         let firstOutcome = try #require(await pipeline.drainPendingRoutesIfNeeded())
@@ -208,7 +208,7 @@ struct MHAppRoutePipelineTests {
             parse: Self.parseRoute(from:),
             routeInbox: routeInbox,
             pendingSources: [pendingSource],
-        )
+            )
 
         let outcome = try #require(await pipeline.drainPendingRoutesIfNeeded())
 

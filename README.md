@@ -14,6 +14,7 @@ Minimum supported platforms:
 
 ## Documentation Map
 
+- [Architecture Guide](Designs/Architecture/ARCHITECTURE_GUIDE.md)
 - [North Star](Designs/Architecture/north-star.md)
 - [Integration Contracts](Designs/Architecture/integration-contracts.md)
 - [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
@@ -21,6 +22,10 @@ Minimum supported platforms:
 - [Migrating to Current Shells](Designs/Architecture/migrating-to-current-shells.md)
 - [Architecture](Designs/Architecture/architecture.md)
 - [Runtime-start Design](Designs/Architecture/runtime-start.md)
+- [Design Decisions](Designs/Decisions/README.md)
+- [Platform Status](Designs/Overviews/platform-status.md)
+- [Build Notes](Designs/Overviews/build-notes.md)
+- [Backlog](Designs/Overviews/backlog.md)
 
 ## Directory Conventions
 
@@ -572,3 +577,56 @@ It includes cross-module demos for:
 - MutationWorkflow-driven ReviewPolicy trigger
 - Structured logging + JSONL analysis workflow
 - MutationFlow adapter composition with ordered follow-up steps
+
+## Requirements
+
+- Xcode 16 or later with the iOS 18, macOS 15, and watchOS 11 SDKs installed
+- `swiftlint` for repository verify and strict lint runs
+- `pre-commit` for the full `verify.sh` entrypoint
+
+## Setup
+
+1. Clone the repository and open the project directory.
+2. Open `Package.swift` in Xcode if you want package browsing and test support.
+3. Open `Example/MHPlatformExample.xcodeproj` if you want to run the demo app shell.
+4. Use the helper scripts in `ci_scripts/tasks/` for repeatable local verification.
+
+## Build and Test
+
+Use the helper scripts in `ci_scripts/tasks/` as needed. For full local verification:
+
+```sh
+bash ci_scripts/tasks/verify.sh
+```
+
+If you only need required checks based on local package changes:
+
+```sh
+bash ci_scripts/tasks/run_required_builds.sh
+```
+
+If you only need the package and example app build:
+
+```sh
+bash ci_scripts/tasks/build_app.sh
+```
+
+If you only need Swift package tests:
+
+```sh
+bash ci_scripts/tasks/test_shared_library.sh
+```
+
+If you only need pre-commit hooks:
+
+```sh
+bash ci_scripts/tasks/pre_commit.sh
+```
+
+## CI Artifact Layout
+
+CI helper scripts write generated artifacts under `.build/ci/`.
+Run-scoped outputs are stored in `.build/ci/runs/<RUN_ID>/` (`summary.md`,
+`commands.txt`, `meta.json`, `logs/`, `results/`, `work/`), while shared
+caches and build state live in `.build/ci/shared/` (`cache/`, `DerivedData/`,
+`tmp/`, `home/`).

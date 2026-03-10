@@ -26,7 +26,7 @@ start_time_display=$(date +"%Y-%m-%d %H:%M:%S %z")
 start_time_iso=$(date +"%Y-%m-%dT%H:%M:%S%z")
 
 overall_result="success"
-run_note="Executed required build and test steps for MHPlatform."
+run_note="Evaluating local changes to determine required CI steps for MHPlatform."
 failed_step=""
 failed_log=""
 executed_steps=()
@@ -48,7 +48,7 @@ finalize_run_artifacts() {
 
   if [[ $exit_code -ne 0 ]]; then
     overall_result="failure"
-    if [[ "$run_note" == "Executed required build and test steps for MHPlatform." ]]; then
+    if [[ "$run_note" == "Evaluating local changes to determine required CI steps for MHPlatform." || "$run_note" == "Executed required CI steps for MHPlatform based on local changes." ]]; then
       run_note="A required step failed. Review failure details and logs."
     fi
   fi
@@ -89,6 +89,11 @@ trap 'finalize_run_artifacts "$?"' EXIT
 
 log_command "$0" "$@"
 
+should_run_pre_commit=false
+if [[ "${CI_RUN_ENABLE_PRE_COMMIT:-0}" == "1" || "${CI_RUN_ENABLE_PRE_COMMIT:-}" == "true" ]]; then
+  should_run_pre_commit=true
+fi
+
 run_step() {
   local step_identifier=$1
   local step_description=$2
@@ -108,35 +113,96 @@ run_step() {
   return 0
 }
 
-run_step \
-  "check_models_directory_consistency" \
-  "Check models directory consistency" \
-  bash "$repository_root/ci_scripts/tasks/check_models_directory_consistency.sh"
-
-if ! command -v swiftlint >/dev/null 2>&1; then
-  log_command swiftlint lint --strict --no-cache
-  failed_step="Run SwiftLint strict no-cache"
-  failed_log="$LOG_DIR/swiftlint_strict.log"
-  {
-    echo "swiftlint is not installed. Install it and retry."
-    echo "Install with: brew install swiftlint"
-  } | tee "$failed_log" >&2
-  overall_result="failure"
-  run_note="A required step failed. Review failure details and logs."
-  exit 1
+if $should_run_pre_commit; then
+  run_step \
+    "pre_commit" \
+    "Run pre-commit hooks" \
+    bash "$repository_root/ci_scripts/tasks/pre_commit.sh"
 fi
 
-run_step \
-  "swiftlint_strict" \
-  "Run SwiftLint strict no-cache" \
-  swiftlint lint --strict --no-cache
+changed_files=$(
+  {
+    git diff --name-only --cached
+    git diff --name-only
+    git ls-files --others --exclude-standard
+  } | sed '/^$/d' | sort -u
+)
 
-run_step \
-  "build_app" \
-  "Build MHPlatform package and example app" \
-  bash "$repository_root/ci_scripts/tasks/build_app.sh"
+if [[ -z "$changed_files" ]]; then
+  echo "No local changes detected."
+  if $should_run_pre_commit; then
+    run_note="pre-commit completed. No local changes detected. Build/test steps were skipped."
+  else
+    run_note="No local changes detected. Build/test steps were skipped."
+  fi
+  exit 0
+fi
 
-run_step \
-  "test_shared_library" \
-  "Run Swift package tests" \
-  bash "$repository_root/ci_scripts/tasks/test_shared_library.sh"
+needs_swiftlint=false
+needs_package_build=false
+needs_package_tests=false
+
+if grep -Eq '^(Sources/|Tests/|Example/|Package\.swift$|Package\.resolved$|\.swiftlint\.yml$)' <<<"$changed_files"; then
+  needs_swiftlint=true
+fi
+
+if grep -Eq '^(Sources/|Example/|Package\.swift$|Package\.resolved$)' <<<"$changed_files"; then
+  needs_package_build=true
+fi
+
+if grep -Eq '^(Sources/|Tests/|Package\.swift$|Package\.resolved$)' <<<"$changed_files"; then
+  needs_package_tests=true
+fi
+
+if ! $needs_swiftlint && ! $needs_package_build && ! $needs_package_tests; then
+  echo "No package verification inputs changed."
+  if $should_run_pre_commit; then
+    run_note="pre-commit completed. No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
+  else
+    run_note="No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
+  fi
+  exit 0
+fi
+
+run_note="Executed required CI steps for MHPlatform based on local changes."
+
+if $needs_package_build || $needs_package_tests; then
+  run_step \
+    "check_models_directory_consistency" \
+    "Check models directory consistency" \
+    bash "$repository_root/ci_scripts/tasks/check_models_directory_consistency.sh"
+fi
+
+if $needs_swiftlint; then
+  if ! command -v swiftlint >/dev/null 2>&1; then
+    log_command swiftlint lint --strict --no-cache
+    failed_step="Run SwiftLint strict no-cache"
+    failed_log="$LOG_DIR/swiftlint_strict.log"
+    {
+      echo "swiftlint is not installed. Install it and retry."
+      echo "Install with: brew install swiftlint"
+    } | tee "$failed_log" >&2
+    overall_result="failure"
+    run_note="A required step failed. Review failure details and logs."
+    exit 1
+  fi
+
+  run_step \
+    "swiftlint_strict" \
+    "Run SwiftLint strict no-cache" \
+    swiftlint lint --strict --no-cache
+fi
+
+if $needs_package_build; then
+  run_step \
+    "build_app" \
+    "Build MHPlatform package and example app" \
+    bash "$repository_root/ci_scripts/tasks/build_app.sh"
+fi
+
+if $needs_package_tests; then
+  run_step \
+    "test_shared_library" \
+    "Run Swift package tests" \
+    bash "$repository_root/ci_scripts/tasks/test_shared_library.sh"
+fi
