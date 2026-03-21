@@ -180,7 +180,9 @@ owned license integrations. Use `MHAppRuntimeCore` when the app only needs
 runtime/bootstrap/lifecycle/route mechanics without those external
 dependencies. When the app wants only some package-owned defaults, compose the
 core initializer with `MHAppRuntimeDefaultsBundle`, `MHAppRuntimeAdsBundle`,
-and `MHAppRuntimeLicensesBundle` from the split bundle products.
+and `MHAppRuntimeLicensesBundle` from the split bundle products. Those bundles
+expose `subscriptionSectionFactory`, `nativeAdFactory`, and
+`licensesFactory` for explicit composition into `MHAppRuntime`.
 
 Integration contract:
 [`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)

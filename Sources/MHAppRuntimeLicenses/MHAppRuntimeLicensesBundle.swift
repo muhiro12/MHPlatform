@@ -3,16 +3,16 @@ import SwiftUI
 
 /// Bundle of package-owned license view runtime defaults.
 public struct MHAppRuntimeLicensesBundle {
-    /// Builder for the runtime-owned license view.
-    public let licensesViewBuilder: MHAppRuntime.LicensesViewBuilder
+    /// Factory for the runtime-owned license view.
+    public let licensesFactory: MHRuntimeViewFactory
 
     /// Creates package-owned license view runtime defaults.
     public init(configuration: MHAppConfiguration) {
-        licensesViewBuilder = {
+        licensesFactory = .init {
             if configuration.showsLicenses {
-                AnyView(MHRuntimeLicenseListView())
+                MHRuntimeLicenseListView()
             } else {
-                AnyView(EmptyView())
+                EmptyView()
             }
         }
     }

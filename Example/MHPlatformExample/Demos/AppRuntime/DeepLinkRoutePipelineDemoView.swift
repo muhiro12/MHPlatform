@@ -2,42 +2,39 @@ import MHPlatform
 import SwiftUI
 
 struct DeepLinkRoutePipelineDemoView: View {
-    @State private var routeInbox: MHObservableDeepLinkInbox
-    @State private var notificationInbox: MHObservableDeepLinkInbox
-    @StateObject private var model: DeepLinkRoutePipelineDemoModel
+    @State private var model = DeepLinkRoutePipelineDemoModel()
 
     var body: some View {
+        @Bindable var model = model
+
         NavigationStack {
             List {
-                readinessSection
-                ingestSection
-                executionSection
-                logSection
+                readinessSection(model: model)
+                ingestSection(model: model)
+                executionSection(model: model)
+                logSection(model: model)
             }
             .navigationTitle("DeepLink + RouteLifecycle")
         }
     }
 
-    private var readinessSection: some View {
-        Section("Readiness") {
+    private func readinessSection(
+        model: DeepLinkRoutePipelineDemoModel
+    ) -> some View {
+        @Bindable var model = model
+
+        return Section("Readiness") {
             Toggle(
                 "Ready to execute",
-                isOn: .init(
-                    get: {
-                        model.isReady
-                    },
-                    set: { isReady in
-                        model.setReadiness(isReady)
-                    }
-                )
+                isOn: $model.isReady
             )
             LabeledContent("Pending inbox URL") {
-                Text(routeInbox.pendingURL?.absoluteString ?? "None")
+                Text(model.routeInbox.pendingURL?.absoluteString ?? "None")
                     .font(.caption.monospaced())
                     .textSelection(.enabled)
             }
             LabeledContent("Pending notification URL") {
-                Text(notificationInbox.pendingURL?.absoluteString ?? "None")
+                Text(model.notificationInbox.pendingURL?.absoluteString ?? "None")
                     .font(.caption.monospaced())
                     .textSelection(.enabled)
             }
@@ -48,7 +45,9 @@ struct DeepLinkRoutePipelineDemoView: View {
         }
     }
 
-    private var ingestSection: some View {
+    private func ingestSection(
+        model: DeepLinkRoutePipelineDemoModel
+    ) -> some View {
         Section("DeepLink Sources") {
             ForEach(DeepLinkRoutePipelineDemoModel.AppRoute.allCases) { route in
                 Button("Ingest \(route.title)") {
@@ -61,7 +60,9 @@ struct DeepLinkRoutePipelineDemoView: View {
         }
     }
 
-    private var executionSection: some View {
+    private func executionSection(
+        model: DeepLinkRoutePipelineDemoModel
+    ) -> some View {
         Section("Inboxes -> MHRouteLifecycle") {
             Button("Submit Latest Pending URL") {
                 model.drainInbox()
@@ -72,7 +73,9 @@ struct DeepLinkRoutePipelineDemoView: View {
         }
     }
 
-    private var logSection: some View {
+    private func logSection(
+        model: DeepLinkRoutePipelineDemoModel
+    ) -> some View {
         Section("Log") {
             if model.logs.isEmpty {
                 Text("No events yet.")
@@ -85,18 +88,5 @@ struct DeepLinkRoutePipelineDemoView: View {
                 }
             }
         }
-    }
-
-    init() {
-        let routeInbox = MHObservableDeepLinkInbox()
-        let notificationInbox = MHObservableDeepLinkInbox()
-        _routeInbox = .init(initialValue: routeInbox)
-        _notificationInbox = .init(initialValue: notificationInbox)
-        _model = .init(
-            wrappedValue: DeepLinkRoutePipelineDemoModel(
-                routeInbox: routeInbox,
-                notificationInbox: notificationInbox
-            )
-        )
     }
 }

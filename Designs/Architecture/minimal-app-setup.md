@@ -92,6 +92,8 @@ Keep preview assembly shape close to production:
 - use preview-safe services or an empty `MHAppRuntimeLifecyclePlan`
 - omit route handoff sources only when the preview does not exercise them
 - do not invent preview-only route semantics inside MHPlatform
+- when composing `MHAppRuntime` manually, use `MHRuntimeViewFactory` and
+  `MHRuntimeNativeAdViewFactory` instead of raw `AnyView` builders
 - keep model container ownership and other app-specific test fixtures in the
   app factory
 - use `View.mhAppRuntimeEnvironment(_:)` when the preview only needs runtime

@@ -1,26 +1,17 @@
 import SwiftUI
 
 struct RouteExecutionDemoView: View {
-    @StateObject private var model = RouteExecutionDemoModel()
-
-    private var readinessBinding: Binding<Bool> {
-        .init(
-            get: {
-                model.isReady
-            },
-            set: { isReady in
-                model.setReadiness(isReady)
-            }
-        )
-    }
+    @State private var model = RouteExecutionDemoModel()
 
     var body: some View {
+        @Bindable var model = model
+
         NavigationStack {
             List {
-                readinessSection
-                sendRouteSection
-                pendingRouteSection
-                eventLogSection
+                readinessSection(model: model)
+                sendRouteSection(model: model)
+                pendingRouteSection(model: model)
+                eventLogSection(model: model)
             }
             .navigationTitle("MHRouteExecution")
         }
@@ -29,16 +20,22 @@ struct RouteExecutionDemoView: View {
         }
     }
 
-    private var readinessSection: some View {
-        Section("Readiness") {
+    private func readinessSection(
+        model: RouteExecutionDemoModel
+    ) -> some View {
+        @Bindable var model = model
+
+        return Section("Readiness") {
             Toggle(
                 "Ready to execute routes",
-                isOn: readinessBinding
+                isOn: $model.isReady
             )
         }
     }
 
-    private var sendRouteSection: some View {
+    private func sendRouteSection(
+        model: RouteExecutionDemoModel
+    ) -> some View {
         Section("Send Route") {
             ForEach(RouteExecutionDemoRoute.allCases) { route in
                 Button(route.buttonTitle) {
@@ -48,7 +45,9 @@ struct RouteExecutionDemoView: View {
         }
     }
 
-    private var pendingRouteSection: some View {
+    private func pendingRouteSection(
+        model: RouteExecutionDemoModel
+    ) -> some View {
         Section("Pending Route") {
             LabeledContent("Has pending route") {
                 Text(model.hasPendingRoute ? "Yes" : "No")
@@ -66,7 +65,9 @@ struct RouteExecutionDemoView: View {
         }
     }
 
-    private var eventLogSection: some View {
+    private func eventLogSection(
+        model: RouteExecutionDemoModel
+    ) -> some View {
         Section("Execution Log") {
             if model.logs.isEmpty {
                 Text("No events yet.")

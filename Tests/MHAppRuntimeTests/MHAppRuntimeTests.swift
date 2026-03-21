@@ -22,14 +22,14 @@ struct MHAppRuntimeTests {
             startStore: { _ in
                 storeStartCount += 1
             },
-            subscriptionSectionViewBuilder: {
-                AnyView(EmptyView())
+            subscriptionSectionFactory: .init {
+                EmptyView()
             },
             startAds: {
                 adsStartCount += 1
             },
-            nativeAdViewBuilder: { _ in
-                AnyView(EmptyView())
+            nativeAdFactory: .init { _ in
+                EmptyView()
             }
         )
 
@@ -54,14 +54,14 @@ struct MHAppRuntimeTests {
             ),
             preferenceStore: .init(),
             startStore: { purchasedProductIDsDidSet = $0 },
-            subscriptionSectionViewBuilder: {
-                AnyView(EmptyView())
+            subscriptionSectionFactory: .init {
+                EmptyView()
             },
             startAds: {
                 // no-op
             },
-            nativeAdViewBuilder: { _ in
-                AnyView(EmptyView())
+            nativeAdFactory: .init { _ in
+                EmptyView()
             }
         )
 
@@ -90,11 +90,11 @@ struct MHAppRuntimeTests {
             startStore: { _ in
                 // no-op
             },
-            subscriptionSectionViewBuilder: {
-                AnyView(EmptyView())
+            subscriptionSectionFactory: .init {
+                EmptyView()
             },
             startAds: nil,
-            nativeAdViewBuilder: nil
+            nativeAdFactory: nil
         )
 
         runtime.startIfNeeded()
@@ -313,11 +313,11 @@ private extension MHAppRuntimeTests {
             ),
             preferenceStore: .init(),
             startStore: startStore,
-            subscriptionSectionViewBuilder: {
-                AnyView(EmptyView())
+            subscriptionSectionFactory: .init {
+                EmptyView()
             },
             startAds: nil,
-            nativeAdViewBuilder: nil
+            nativeAdFactory: nil
         )
     }
 }

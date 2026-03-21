@@ -301,11 +301,11 @@ private extension MHAppRoutePipelineTests {
             ),
             preferenceStore: .init(),
             startStore: startStore,
-            subscriptionSectionViewBuilder: {
-                AnyView(EmptyView())
+            subscriptionSectionFactory: .init {
+                EmptyView()
             },
             startAds: nil,
-            nativeAdViewBuilder: nil
+            nativeAdFactory: nil
         )
     }
 

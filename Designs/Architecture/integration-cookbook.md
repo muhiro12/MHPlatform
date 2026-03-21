@@ -103,6 +103,8 @@ Preview/test guidance:
 
 - use `.mhAppRuntimeEnvironment(_:)` when the view only needs runtime state
   injection
+- when composing `MHAppRuntime` manually, prefer `MHRuntimeViewFactory` and
+  `MHRuntimeNativeAdViewFactory` over raw `AnyView` closures
 - keep preview-safe stores, model containers, and service doubles in the app
   factory
 - do not adopt route/review/mutation shells unless the screen actually uses

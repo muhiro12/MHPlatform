@@ -12,14 +12,8 @@ public final class MHAppRuntime {
     public typealias StartStore = (
         @escaping @MainActor (Set<String>) -> Void
     ) -> Void
-    /// Builder for the runtime-owned subscription section.
-    public typealias SubscriptionSectionViewBuilder = () -> AnyView
     /// Startup bridge for ads initialization.
     public typealias StartAds = () -> Void
-    /// Builder for runtime-owned native ad views.
-    public typealias NativeAdViewBuilder = (MHNativeAdSize) -> AnyView
-    /// Builder for the runtime-owned license view.
-    public typealias LicensesViewBuilder = () -> AnyView
 
     /// Immutable app runtime configuration.
     public let configuration: MHAppConfiguration
@@ -51,25 +45,25 @@ public final class MHAppRuntime {
     private let nativeAdUnitID: String?
 
     private let startStore: StartStore
-    private let subscriptionSectionViewBuilder: SubscriptionSectionViewBuilder
+    private let subscriptionSectionFactory: MHRuntimeViewFactory
     private let startAds: StartAds?
-    private let nativeAdViewBuilder: NativeAdViewBuilder?
-    private let licensesViewBuilder: LicensesViewBuilder
+    private let nativeAdFactory: MHRuntimeNativeAdViewFactory?
+    private let licensesFactory: MHRuntimeViewFactory
 
     private var isAdsFeatureConfigured: Bool {
-        nativeAdUnitID != nil && nativeAdViewBuilder != nil
+        nativeAdUnitID != nil && nativeAdFactory != nil
     }
 
-    /// Creates a runtime with explicit bridges and runtime-owned view builders.
+    /// Creates a runtime with explicit bridges and runtime-owned view factories.
     public init(
         configuration: MHAppConfiguration,
         preferenceStore: MHPreferenceStore,
         startStore: @escaping StartStore,
-        subscriptionSectionViewBuilder: @escaping SubscriptionSectionViewBuilder,
+        subscriptionSectionFactory: MHRuntimeViewFactory,
         startAds: StartAds?,
-        nativeAdViewBuilder: NativeAdViewBuilder?,
-        licensesViewBuilder: @escaping LicensesViewBuilder = {
-            AnyView(EmptyView())
+        nativeAdFactory: MHRuntimeNativeAdViewFactory?,
+        licensesFactory: MHRuntimeViewFactory = .init {
+            EmptyView()
         }
     ) {
         self.configuration = configuration
@@ -84,10 +78,10 @@ public final class MHAppRuntime {
             configuration.nativeAdUnitID
         )
         self.startStore = startStore
-        self.subscriptionSectionViewBuilder = subscriptionSectionViewBuilder
+        self.subscriptionSectionFactory = subscriptionSectionFactory
         self.startAds = startAds
-        self.nativeAdViewBuilder = nativeAdViewBuilder
-        self.licensesViewBuilder = licensesViewBuilder
+        self.nativeAdFactory = nativeAdFactory
+        self.licensesFactory = licensesFactory
     }
 
     /// Creates a runtime-only environment without StoreKit, ads, or licenses.
@@ -104,11 +98,11 @@ public final class MHAppRuntime {
             startStore: { purchasedProductIDsDidSet in
                 purchasedProductIDsDidSet([])
             },
-            subscriptionSectionViewBuilder: {
-                AnyView(EmptyView())
+            subscriptionSectionFactory: .init {
+                EmptyView()
             },
             startAds: nil,
-            nativeAdViewBuilder: nil
+            nativeAdFactory: nil
         )
     }
 
@@ -143,15 +137,15 @@ public final class MHAppRuntime {
 
     /// Builds the runtime-owned paywall section.
     public func subscriptionSectionView() -> some View {
-        subscriptionSectionViewBuilder()
+        subscriptionSectionFactory.makeView()
     }
 
     /// Builds a runtime-owned native ad view.
     @ViewBuilder
     public func nativeAdView(size: MHNativeAdSize) -> some View {
         if adsAvailability == .available,
-           let nativeAdViewBuilder {
-            nativeAdViewBuilder(size)
+           let nativeAdFactory {
+            nativeAdFactory.makeView(size: size)
         } else {
             EmptyView()
         }
@@ -159,7 +153,7 @@ public final class MHAppRuntime {
 
     /// Builds a runtime-owned license view.
     public func licensesView() -> some View {
-        licensesViewBuilder()
+        licensesFactory.makeView()
     }
 
     private func resolvePremiumStatus(purchasedProductIDs: Set<String>) {

@@ -84,7 +84,7 @@ struct AppRuntimeDemoView: View {
 
 #Preview {
     AppRuntimeDemoView()
-        .environment(
+        .mhAppRuntimeEnvironment(
             MHAppRuntime(
                 configuration: .init(
                     subscriptionProductIDs: ["com.example.mhplatform.premium.monthly"],

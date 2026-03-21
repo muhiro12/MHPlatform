@@ -1,9 +1,10 @@
-import Combine
 import Foundation
 import MHPlatform
+import Observation
 
 @MainActor
-final class DeepLinkRoutePipelineDemoModel: ObservableObject {
+@Observable
+final class DeepLinkRoutePipelineDemoModel {
     nonisolated enum AppRoute: String, CaseIterable, Identifiable, Sendable, Equatable, MHDeepLinkRoute {
         case home
         case search
@@ -65,11 +66,17 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
         )
     }
 
-    @Published private(set) var isReady = false
-    @Published private(set) var hasPendingRoute = false
-    @Published private(set) var logs = [String]()
+    var routeInbox: MHObservableDeepLinkInbox
+    var notificationInbox: MHObservableDeepLinkInbox
+    var isReady = false {
+        didSet {
+            synchronizeReadinessChange(from: oldValue)
+        }
+    }
+    var hasPendingRoute = false
+    var logs = [String]()
 
-    private let codec = MHDeepLinkCodec<AppRoute>(
+    @ObservationIgnored private let codec = MHDeepLinkCodec<AppRoute>(
         configuration: .init(
             customScheme: "mhplatform",
             preferredUniversalLinkHost: "example.com",
@@ -80,10 +87,9 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
             preferredTransport: .customScheme
         )
     )
-    private let routeInbox: MHObservableDeepLinkInbox
-    private let notificationInbox: MHObservableDeepLinkInbox
-    private let routeLifecycle: MHRouteLifecycle<AppRoute>
-    private var sequence = 0
+    @ObservationIgnored private let routeLifecycle: MHRouteLifecycle<AppRoute>
+    @ObservationIgnored private var isSynchronizingReadiness = false
+    @ObservationIgnored private var sequence = 0
 
     init(
         routeInbox: MHObservableDeepLinkInbox = .init(),
@@ -101,12 +107,10 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
         )
     }
 
-    func setReadiness(_ isReady: Bool) {
-        Task {
-            await routeLifecycle.setReadiness(isReady)
-            await refreshLifecycleState()
-            append("readiness=\(isReady)")
-        }
+    func setReadiness(
+        _ isReady: Bool
+    ) {
+        setReadyState(isReady)
     }
 
     func ingestDeepLink(_ route: AppRoute) {
@@ -193,7 +197,9 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
         }
     }
 
-    private func apply(_ route: AppRoute) async throws {
+    private func apply(
+        _ route: AppRoute
+    ) async throws {
         try await Task.sleep(
             for: .milliseconds(Constants.applyDelayMilliseconds)
         )
@@ -202,7 +208,7 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
     }
 
     private func refreshLifecycleState() async {
-        isReady = await routeLifecycle.isReady
+        setReadyState(await routeLifecycle.isReady)
         hasPendingRoute = await routeLifecycle.hasPendingRoute
     }
 
@@ -244,5 +250,29 @@ final class DeepLinkRoutePipelineDemoModel: ObservableObject {
     private func append(_ message: String) {
         sequence += 1
         logs.insert("\(sequence). \(message)", at: 0)
+    }
+
+    private func synchronizeReadinessChange(
+        from previousValue: Bool
+    ) {
+        guard isSynchronizingReadiness == false,
+              isReady != previousValue else {
+            return
+        }
+
+        let requestedReadiness = isReady
+        Task {
+            await routeLifecycle.setReadiness(requestedReadiness)
+            await refreshLifecycleState()
+            append("readiness=\(requestedReadiness)")
+        }
+    }
+
+    private func setReadyState(
+        _ isReady: Bool
+    ) {
+        isSynchronizingReadiness = true
+        self.isReady = isReady
+        isSynchronizingReadiness = false
     }
 }

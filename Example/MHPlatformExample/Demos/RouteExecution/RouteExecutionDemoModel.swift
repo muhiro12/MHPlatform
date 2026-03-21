@@ -1,22 +1,28 @@
-import Combine
 import Foundation
 import MHPlatform
+import Observation
 
 @MainActor
-final class RouteExecutionDemoModel: ObservableObject {
+@Observable
+final class RouteExecutionDemoModel {
     private enum Constants {
         static let applyDelayMilliseconds = 90
     }
 
-    @Published private(set) var isReady = true
-    @Published private(set) var hasPendingRoute = false
-    @Published private(set) var logs = [String]()
+    var isReady = true {
+        didSet {
+            synchronizeReadinessChange(from: oldValue)
+        }
+    }
+    var hasPendingRoute = false
+    var logs = [String]()
 
-    private let coordinator: MHRouteCoordinator<
+    @ObservationIgnored private let coordinator: MHRouteCoordinator<
         RouteExecutionDemoRoute,
         RouteExecutionDemoRoute
     >
-    private var logSequence = 0
+    @ObservationIgnored private var isSynchronizingReadiness = false
+    @ObservationIgnored private var logSequence = 0
 
     init() {
         coordinator = .init(
@@ -27,16 +33,7 @@ final class RouteExecutionDemoModel: ObservableObject {
     }
 
     func setReadiness(_ isReady: Bool) {
-        self.isReady = isReady
-
-        appendLog(
-            "readiness: \(isReady ? "ready" : "not-ready")"
-        )
-
-        Task {
-            await coordinator.setReadiness(isReady)
-            await refreshPendingRouteStatus()
-        }
+        setReadyState(isReady)
     }
 
     func submit(_ route: RouteExecutionDemoRoute) {
@@ -154,5 +151,33 @@ final class RouteExecutionDemoModel: ObservableObject {
             return errorDescription
         }
         return String(describing: error)
+    }
+
+    private func synchronizeReadinessChange(
+        from previousValue: Bool
+    ) {
+        guard isSynchronizingReadiness == false,
+              isReady != previousValue else {
+            return
+        }
+
+        let requestedReadiness = isReady
+        appendLog(
+            "readiness: \(requestedReadiness ? "ready" : "not-ready")"
+        )
+
+        Task {
+            await coordinator.setReadiness(requestedReadiness)
+            await refreshPendingRouteStatus()
+            setReadyState(requestedReadiness)
+        }
+    }
+
+    private func setReadyState(
+        _ isReady: Bool
+    ) {
+        isSynchronizingReadiness = true
+        self.isReady = isReady
+        isSynchronizingReadiness = false
     }
 }

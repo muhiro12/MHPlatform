@@ -109,7 +109,7 @@ Integration contract:
 - Owns the package-owned preference store and StoreKit convenience bundle:
   `MHAppRuntimeDefaultsBundle`
 - Exposes `preferenceStore`, `startStore`, and
-  `subscriptionSectionViewBuilder` for explicit composition into
+  `subscriptionSectionFactory` for explicit composition into
   `MHAppRuntimeCore.MHAppRuntime`
 - Uses `StoreKitWrapper` only where that dependency is available
 
@@ -117,7 +117,7 @@ Integration contract:
 
 - Owns the package-owned ads convenience bundle:
   `MHAppRuntimeAdsBundle`
-- Exposes `startAds` and `nativeAdViewBuilder` for explicit composition into
+- Exposes `startAds` and `nativeAdFactory` for explicit composition into
   `MHAppRuntimeCore.MHAppRuntime`
 - Uses `GoogleMobileAdsWrapper` only where that dependency is available
 
@@ -125,7 +125,7 @@ Integration contract:
 
 - Owns the package-owned licenses convenience bundle:
   `MHAppRuntimeLicensesBundle`
-- Exposes `licensesViewBuilder` for explicit composition into
+- Exposes `licensesFactory` for explicit composition into
   `MHAppRuntimeCore.MHAppRuntime`
 - Uses `LicenseList` only where that dependency is available
 

@@ -10,8 +10,8 @@ import GoogleMobileAdsWrapper
 public struct MHAppRuntimeAdsBundle {
     /// Ads startup bridge when ads are configured on the current platform.
     public let startAds: MHAppRuntime.StartAds?
-    /// Builder for runtime-owned native ad views when ads are configured.
-    public let nativeAdViewBuilder: MHAppRuntime.NativeAdViewBuilder?
+    /// Factory for runtime-owned native ad views when ads are configured.
+    public let nativeAdFactory: MHRuntimeNativeAdViewFactory?
 
     /// Creates package-owned ads runtime defaults.
     public init(configuration: MHAppConfiguration) {
@@ -20,7 +20,7 @@ public struct MHAppRuntimeAdsBundle {
             configuration.nativeAdUnitID
         ) else {
             startAds = nil
-            nativeAdViewBuilder = nil
+            nativeAdFactory = nil
             return
         }
 
@@ -31,12 +31,12 @@ public struct MHAppRuntimeAdsBundle {
         startAds = {
             controller.start()
         }
-        nativeAdViewBuilder = { size in
-            AnyView(controller.buildNativeAd(size.wrapperSizeID))
+        nativeAdFactory = .init { size in
+            controller.buildNativeAd(size.wrapperSizeID)
         }
         #else
         startAds = nil
-        nativeAdViewBuilder = nil
+        nativeAdFactory = nil
         #endif
     }
 }

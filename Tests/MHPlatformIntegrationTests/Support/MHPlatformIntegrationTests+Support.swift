@@ -131,11 +131,11 @@ extension MHPlatformIntegrationTests {
             startStore: { _ in
                 traceRecorder.record("runtime.startStore")
             },
-            subscriptionSectionViewBuilder: {
-                AnyView(EmptyView())
+            subscriptionSectionFactory: .init {
+                EmptyView()
             },
             startAds: nil,
-            nativeAdViewBuilder: nil
+            nativeAdFactory: nil
         )
     }
 

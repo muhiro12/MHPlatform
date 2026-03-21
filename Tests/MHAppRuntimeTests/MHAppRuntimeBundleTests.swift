@@ -44,7 +44,7 @@ struct MHAppRuntimeBundleTests {
         )
 
         #expect(bundle.startAds == nil)
-        #expect(bundle.nativeAdViewBuilder == nil)
+        #expect(bundle.nativeAdFactory == nil)
     }
 
     @MainActor
@@ -68,10 +68,10 @@ struct MHAppRuntimeBundleTests {
             configuration: configuration,
             preferenceStore: defaultsBundle.preferenceStore,
             startStore: defaultsBundle.startStore,
-            subscriptionSectionViewBuilder: defaultsBundle.subscriptionSectionViewBuilder,
+            subscriptionSectionFactory: defaultsBundle.subscriptionSectionFactory,
             startAds: adsBundle.startAds,
-            nativeAdViewBuilder: adsBundle.nativeAdViewBuilder,
-            licensesViewBuilder: licensesBundle.licensesViewBuilder
+            nativeAdFactory: adsBundle.nativeAdFactory,
+            licensesFactory: licensesBundle.licensesFactory
         )
 
         #expect(runtime.configuration == configuration)

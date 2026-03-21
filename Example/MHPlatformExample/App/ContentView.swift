@@ -3,117 +3,60 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
-            tabs
+            coreTabs
+            notificationTabs
+            diagnosticsTabs
         }
         // swiftlint:disable:next no_magic_numbers
         .frame(minWidth: 900, minHeight: 640)
     }
 
-    @ViewBuilder private var tabs: some View {
-        appRuntimeTab
-        deepLinkRoutePipelineTab
-        notificationPipelineTab
-        mutationReviewPipelineTab
-        deepLinkingTab
-        preferencesTab
-        notificationPayloadsTab
-        notificationPlansTab
-        mutationFlowTab
-        routeExecutionTab
-        loggingTab
-        reviewPolicyTab
-        persistenceMaintenanceTab
+    @TabContentBuilder<Never> private var coreTabs: some TabContent<Never> {
+        Tab("Runtime", systemImage: "bolt.horizontal.circle") {
+            AppRuntimeDemoView()
+        }
+        Tab("DeepLink Route", systemImage: "arrow.triangle.merge") {
+            DeepLinkRoutePipelineDemoView()
+        }
+        Tab("Mutation Review", systemImage: "star.leadinghalf.filled") {
+            MutationReviewPipelineDemoView()
+        }
+        Tab("Deep Links", systemImage: "link") {
+            DeepLinkingDemoView()
+        }
+        Tab("Preferences", systemImage: "slider.horizontal.3") {
+            PreferencesDemoView()
+        }
     }
 
-    private var appRuntimeTab: some View {
-        AppRuntimeDemoView()
-            .tabItem {
-                Label("Runtime", systemImage: "bolt.horizontal.circle")
-            }
+    @TabContentBuilder<Never> private var notificationTabs: some TabContent<Never> {
+        Tab("Plans Payloads", systemImage: "bell.and.waves.left.and.right") {
+            NotificationPipelineDemoView()
+        }
+        Tab("Payloads", systemImage: "bell.badge") {
+            NotificationPayloadsDemoView()
+        }
+        Tab("Plans", systemImage: "calendar.badge.clock") {
+            NotificationPlansDemoView()
+        }
+        Tab("Mutation Flow", systemImage: "arrow.triangle.2.circlepath") {
+            MutationFlowDemoView()
+        }
     }
 
-    private var deepLinkRoutePipelineTab: some View {
-        DeepLinkRoutePipelineDemoView()
-            .tabItem {
-                Label("DeepLink Route", systemImage: "arrow.triangle.merge")
-            }
-    }
-
-    private var notificationPipelineTab: some View {
-        NotificationPipelineDemoView()
-            .tabItem {
-                Label("Plans Payloads", systemImage: "bell.and.waves.left.and.right")
-            }
-    }
-
-    private var mutationReviewPipelineTab: some View {
-        MutationReviewPipelineDemoView()
-            .tabItem {
-                Label("Mutation Review", systemImage: "star.leadinghalf.filled")
-            }
-    }
-
-    private var deepLinkingTab: some View {
-        DeepLinkingDemoView()
-            .tabItem {
-                Label("Deep Links", systemImage: "link")
-            }
-    }
-
-    private var notificationPlansTab: some View {
-        NotificationPlansDemoView()
-            .tabItem {
-                Label("Plans", systemImage: "calendar.badge.clock")
-            }
-    }
-
-    private var mutationFlowTab: some View {
-        MutationFlowDemoView()
-            .tabItem {
-                Label("Mutation Flow", systemImage: "arrow.triangle.2.circlepath")
-            }
-    }
-
-    private var routeExecutionTab: some View {
-        RouteExecutionDemoView()
-            .tabItem {
-                Label("Route Execution", systemImage: "map")
-            }
-    }
-
-    private var loggingTab: some View {
-        LoggingDemoView()
-            .tabItem {
-                Label("Logging", systemImage: "list.bullet.clipboard")
-            }
-    }
-
-    private var preferencesTab: some View {
-        PreferencesDemoView()
-            .tabItem {
-                Label("Preferences", systemImage: "slider.horizontal.3")
-            }
-    }
-
-    private var reviewPolicyTab: some View {
-        ReviewPolicyDemoView()
-            .tabItem {
-                Label("Review", systemImage: "star.bubble")
-            }
-    }
-
-    private var notificationPayloadsTab: some View {
-        NotificationPayloadsDemoView()
-            .tabItem {
-                Label("Payloads", systemImage: "bell.badge")
-            }
-    }
-
-    private var persistenceMaintenanceTab: some View {
-        PersistenceMaintenanceDemoView()
-            .tabItem {
-                Label("Persistence", systemImage: "externaldrive")
-            }
+    @TabContentBuilder<Never> private var diagnosticsTabs: some TabContent<Never> {
+        Tab("Route Execution", systemImage: "map") {
+            RouteExecutionDemoView()
+        }
+        Tab("Logging", systemImage: "list.bullet.clipboard") {
+            LoggingDemoView()
+        }
+        Tab("Review", systemImage: "star.bubble") {
+            ReviewPolicyDemoView()
+        }
+        Tab("Persistence", systemImage: "externaldrive") {
+            PersistenceMaintenanceDemoView()
+        }
     }
 }
 
