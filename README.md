@@ -3,10 +3,12 @@
 MHPlatform is an internal app platform foundation delivered as a Swift package
 workspace for shared infrastructure extracted from real usage in Incomes and
 Cookle. It ships a full app umbrella `MHPlatform`, a shared-package umbrella
-`MHPlatformCore`, and granular module products for narrower adoption. The
-current v1 baseline focuses on runtime startup, deep-link handling, route
-execution, deterministic notification planning, post-mutation side-effect
-orchestration, logging, preferences, and persistence maintenance primitives.
+`MHPlatformCore`, and narrower advanced composition products for explicit
+adopters. The first-class consumer entry points are `MHPlatform`,
+`MHAppRuntime`, `MHAppRuntimeCore`, and `MHPlatformCore`. The current v1
+baseline focuses on runtime startup, deep-link handling, route execution,
+deterministic notification planning, post-mutation side-effect orchestration,
+logging, preferences, and persistence maintenance primitives.
 
 Minimum supported platforms:
 - iOS 18.0+
@@ -15,16 +17,19 @@ Minimum supported platforms:
 
 ## Documentation Map
 
-- [Architecture Guide](Designs/Architecture/ARCHITECTURE_GUIDE.md)
+Primary adoption docs:
 - [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md)
 - [Adoption Policy](Designs/Architecture/adoption-policy.md)
-- [North Star](Designs/Architecture/north-star.md)
 - [Integration Contracts](Designs/Architecture/integration-contracts.md)
-- [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
 - [Minimal App Setup](Designs/Architecture/minimal-app-setup.md)
+
+Reference and design docs:
+- [Architecture Guide](Designs/Architecture/ARCHITECTURE_GUIDE.md)
+- [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
 - [Migrating to Current Shells](Designs/Architecture/migrating-to-current-shells.md)
 - [Architecture](Designs/Architecture/architecture.md)
 - [Runtime-start Design](Designs/Architecture/runtime-start.md)
+- [North Star](Designs/Architecture/north-star.md)
 - [Design Decisions](Designs/Decisions/README.md)
 - [Platform Status](Designs/Overviews/platform-status.md)
 - [Verification History](Designs/Overviews/verification-history.md)
@@ -76,11 +81,6 @@ Fixture-backed adoption references:
 - `Fixtures/Consumers/OptionalShellConsumer/` builds the opt-in
   `MHMutationFlow` + `MHReviewPolicy` shell path.
 
-Full app umbrella adoption:
-
-```swift
-.product(name: "MHPlatform", package: "MHPlatform")
-```
 Minimum adoption evidence for documented consumer paths:
 
 - shared-library path: fixture smoke tests cover `MHPlatformCore` codec and
@@ -91,6 +91,32 @@ Minimum adoption evidence for documented consumer paths:
   `MHReviewFlow`
 - full umbrella path: `MHPlatformIntegrationTests` exercises notification
   delivery, route replay, and mutation orchestration together
+
+Supported first-class entry points:
+
+- `MHPlatform`: full app umbrella for composition roots that want the package's
+  default runtime and shell surface.
+- `MHAppRuntime`: app root surface for the default runtime path without the
+  full umbrella.
+- `MHAppRuntimeCore`: runtime/bootstrap-only surface when the app does not want
+  package-owned StoreKit, ads, or license integrations.
+- `MHPlatformCore`: shared-package umbrella for core-safe functionality.
+- `MHPlatformTesting`: test-only support surface.
+
+Advanced composition surfaces:
+
+- split runtime bundles: `MHAppRuntimeDefaults`, `MHAppRuntimeAds`,
+  `MHAppRuntimeLicenses`
+- concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
+  `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
+  `MHPreferences`
+- opt-in workflow shells: `MHMutationFlow`, `MHReviewPolicy`
+
+Full app umbrella adoption:
+
+```swift
+.product(name: "MHPlatform", package: "MHPlatform")
+```
 
 ```swift
 import MHPlatform
@@ -300,6 +326,10 @@ When the app wants latest-route handoff before mutating navigation state, pair
 `MHAppRoutePipeline` with `MHObservableRouteInbox<Route>` and
 `View.mhRouteHandler(_:apply:)`. Observe `routePipeline.lastParseFailureURL`
 when invalid deep links should present app-owned error UI.
+`MHAppRoutePipeline` logs activation and route-apply failures through its
+`failureLogger` (or the default `MHAppRoutePipeline` logger). Provide
+`onFailure:` when the app also needs analytics, telemetry fan-out, or custom
+error presentation hooks.
 Runtime-bootstrap-only adoption is a first-class path. Apps that do not use
 route, review, or mutation shells can stop at `MHAppRuntimeBootstrap` and
 `View.mhAppRuntimeEnvironment(_:)` without pulling additional workflow APIs
@@ -336,10 +366,6 @@ let codec = MHDeepLinkCodec<MyRoute>(
     configuration: .init(
         customScheme: "myapp",
         preferredUniversalLinkHost: "example.com",
-`MHAppRoutePipeline` logs activation and route-apply failures through its
-`failureLogger` (or the default `MHAppRoutePipeline` logger). Provide
-`onFailure:` when the app also needs analytics, telemetry fan-out, or custom
-error presentation hooks.
         allowedUniversalLinkHosts: ["example.com"],
         universalLinkPathPrefix: "MyApp",
         preferredTransport: .customScheme

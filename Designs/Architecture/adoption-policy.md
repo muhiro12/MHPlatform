@@ -33,6 +33,22 @@ turns every downstream build into an implicit integration test.
 - Route, mutation, and review shells remain opt-in additions. They do not
   change the base product recommendation for a target.
 
+Supported first-class consumer entry points:
+
+- `MHPlatform`
+- `MHAppRuntime`
+- `MHAppRuntimeCore`
+- `MHPlatformCore`
+
+Advanced composition surfaces that should not be the default onboarding path:
+
+- split runtime bundles: `MHAppRuntimeDefaults`, `MHAppRuntimeAds`,
+  `MHAppRuntimeLicenses`
+- concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
+  `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
+  `MHPreferences`
+- opt-in workflow shells: `MHMutationFlow`, `MHReviewPolicy`
+
 See [Consumer Boundaries](./consumer-boundaries.md) for the normative product
 matrix.
 

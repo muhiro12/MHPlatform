@@ -17,6 +17,31 @@ For version pinning and rollout rules, pair it with
 | Granular core-safe consumer | Target that only needs one focused concern | Concrete module product | `MHPlatformTesting` in tests | Umbrellas when a single module is enough |
 | Optional shell adopter | App target already on one of the app-facing paths above | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Keep app-owned route meaning, mutation semantics, and review policy inputs outside MHPlatform | Treating route, review, or mutation shells as mandatory platform baseline |
 
+## Supported Entry Point Tiers
+
+First-class consumer entry points:
+
+- `MHPlatform`
+- `MHAppRuntime`
+- `MHAppRuntimeCore`
+- `MHPlatformCore`
+
+Testing support:
+
+- `MHPlatformTesting`
+
+Advanced composition surfaces:
+
+- split runtime bundles: `MHAppRuntimeDefaults`, `MHAppRuntimeAds`,
+  `MHAppRuntimeLicenses`
+- concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
+  `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
+  `MHPreferences`
+- opt-in workflow shells: `MHMutationFlow`, `MHReviewPolicy`
+
+Start from a first-class entry point unless the target is intentionally doing
+advanced composition around one focused concern.
+
 ## Normative Rules
 
 - `MHPlatform` is the full umbrella for app composition targets that
@@ -27,6 +52,10 @@ For version pinning and rollout rules, pair it with
 - `MHAppRuntimeCore` is the lightweight 1.0 path for runtime/bootstrap-only
   apps. It is already the supported answer for avoiding StoreKit, ads, and
   license dependencies.
+- `MHAppRuntime` is the supported first-class app-root surface when the target
+  wants the default runtime path without the full umbrella.
+- Split runtime bundles and concrete modules are advanced composition tools,
+  not the default onboarding path for new adopters.
 - Route, review, and mutation shells are optional. Apps adopt them only when
   that concern exists in the target.
 - Shared packages must not depend on `MHPlatform`, `MHAppRuntime`, or

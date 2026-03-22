@@ -11,7 +11,7 @@ let package = Package(
         .watchOS(.v11)
     ],
     products: [
-        // App-facing convenience umbrellas and runtime entry points.
+        // First-class consumer entry points.
         .library(
             name: "MHPlatform",
             targets: ["MHPlatform"]
@@ -25,6 +25,12 @@ let package = Package(
             targets: ["MHAppRuntimeCore"]
         ),
         .library(
+            name: "MHPlatformCore",
+            targets: ["MHPlatformCore"]
+        ),
+
+        // Advanced runtime composition bundles.
+        .library(
             name: "MHAppRuntimeDefaults",
             targets: ["MHAppRuntimeDefaults"]
         ),
@@ -37,11 +43,7 @@ let package = Package(
             targets: ["MHAppRuntimeLicenses"]
         ),
 
-        // Shared-package-safe umbrella and granular core-safe modules.
-        .library(
-            name: "MHPlatformCore",
-            targets: ["MHPlatformCore"]
-        ),
+        // Advanced concrete modules and optional shells.
         .library(
             name: "MHDeepLinking",
             targets: ["MHDeepLinking"]
@@ -70,8 +72,6 @@ let package = Package(
             name: "MHLogging",
             targets: ["MHLogging"]
         ),
-
-        // Optional workflow shells for app targets.
         .library(
             name: "MHMutationFlow",
             targets: ["MHMutationFlow"]
