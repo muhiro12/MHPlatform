@@ -17,6 +17,7 @@ Minimum supported platforms:
 
 - [Architecture Guide](Designs/Architecture/ARCHITECTURE_GUIDE.md)
 - [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md)
+- [Adoption Policy](Designs/Architecture/adoption-policy.md)
 - [North Star](Designs/Architecture/north-star.md)
 - [Integration Contracts](Designs/Architecture/integration-contracts.md)
 - [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
@@ -54,7 +55,8 @@ Normative consumer matrix:
 
 Use [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md) as the
 source of truth for 1.0 package adoption. The rest of this section explains the
-recommended paths in more detail.
+recommended paths in more detail. For version pinning and controlled rollout
+rules, see [Adoption Policy](Designs/Architecture/adoption-policy.md).
 
 Full app umbrella adoption:
 
