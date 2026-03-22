@@ -124,7 +124,7 @@ check_log_for_local_warnings() {
   escaped_repository_root=$(printf '%s' "$repository_root" | sed 's/[][(){}.^$+*?|\\/]/\\&/g')
 
   local warning_report_path="$LOG_DIR/${warning_identifier}.log"
-  local warning_pattern="^${escaped_repository_root}/(Sources/|Tests/|Example/|Package\\.swift:).*warning:"
+  local warning_pattern="^${escaped_repository_root}/(Sources/|Tests/|Example/|Fixtures/Consumers/|Package\\.swift:).*warning:"
 
   if rg -n --color never "$warning_pattern" "$log_path" >"$warning_report_path"; then
     echo "Local compiler warnings were detected." >&2
@@ -168,8 +168,9 @@ fi
 needs_swiftlint=false
 needs_package_build=false
 needs_package_tests=false
+needs_consumer_fixtures=false
 
-if grep -Eq '^(Sources/|Tests/|Example/|Package\.swift$|Package\.resolved$|\.swiftlint\.yml$)' <<<"$changed_files"; then
+if grep -Eq '^(Sources/|Tests/|Example/|Fixtures/Consumers/|Package\.swift$|Package\.resolved$|\.swiftlint\.yml$)' <<<"$changed_files"; then
   needs_swiftlint=true
 fi
 
@@ -181,7 +182,11 @@ if grep -Eq '^(Sources/|Tests/|Package\.swift$|Package\.resolved$)' <<<"$changed
   needs_package_tests=true
 fi
 
-if ! $needs_swiftlint && ! $needs_package_build && ! $needs_package_tests; then
+if grep -Eq '^(Sources/|Package\.swift$|Package\.resolved$|README\.md$|Designs/|Fixtures/Consumers/|ci_scripts/)' <<<"$changed_files"; then
+  needs_consumer_fixtures=true
+fi
+
+if ! $needs_swiftlint && ! $needs_package_build && ! $needs_package_tests && ! $needs_consumer_fixtures; then
   echo "No package verification inputs changed."
   if $should_run_pre_commit; then
     run_note="pre-commit completed. No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
@@ -230,6 +235,18 @@ if $needs_package_build; then
     "Check local compiler warnings in build log" \
     "$LAST_LOG_PATH" \
     "build_app_local_warnings"
+fi
+
+if $needs_consumer_fixtures; then
+  run_step \
+    "test_consumer_fixtures" \
+    "Build consumer fixtures" \
+    bash "$repository_root/ci_scripts/tasks/test_consumer_fixtures.sh"
+
+  check_log_for_local_warnings \
+    "Check local compiler warnings in consumer fixture log" \
+    "$LAST_LOG_PATH" \
+    "consumer_fixture_local_warnings"
 fi
 
 if $needs_package_tests; then
