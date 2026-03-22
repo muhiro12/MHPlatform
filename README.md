@@ -27,7 +27,7 @@ Minimum supported platforms:
 - [Runtime-start Design](Designs/Architecture/runtime-start.md)
 - [Design Decisions](Designs/Decisions/README.md)
 - [Platform Status](Designs/Overviews/platform-status.md)
-- [Build Notes](Designs/Overviews/build-notes.md)
+- [Verification History](Designs/Overviews/verification-history.md)
 - [Backlog](Designs/Overviews/backlog.md)
 
 ## Directory Conventions
