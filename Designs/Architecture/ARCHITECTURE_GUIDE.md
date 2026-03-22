@@ -70,6 +70,21 @@ Apps still own the mutation result schema and follow-up policy.
 - Prefer additive package-owned shells when the same integration shape appears
   in at least two apps.
 
+## Boundary Evidence
+
+- `Example/MHPlatformExample/` is the full-umbrella reference for
+  `MHPlatform`.
+- `Fixtures/Consumers/SharedLibraryConsumer/` proves the shared-library-safe
+  `MHPlatformCore` path.
+- `Fixtures/Consumers/RuntimeOnlyConsumer/` proves the lightweight
+  `MHAppRuntimeCore` path.
+- `Fixtures/Consumers/DefaultRuntimeConsumer/` proves the default-runtime
+  `MHAppRuntime` path.
+- `Fixtures/Consumers/OptionalShellConsumer/` proves route/review/mutation
+  shells stay opt-in instead of defining the platform baseline.
+- `ci_scripts/tasks/test_consumer_fixtures.sh` compiles those fixture packages
+  in CI so the documented consumer matrix stays build-backed.
+
 ## Current Design Pressure
 
 1. Runtime adoption should converge on `MHAppRuntimeBootstrap` rather than

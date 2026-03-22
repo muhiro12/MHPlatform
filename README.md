@@ -32,12 +32,14 @@ Minimum supported platforms:
 
 ## Directory Conventions
 
-- Keep the top-level package layout stable: `Sources/`, `Tests/`, `Example/`,
-  `Designs/`, and `ci_scripts/`.
+- Keep the top-level package layout stable: `Sources/`, `Tests/`, `Fixtures/`,
+  `Example/`, `Designs/`, and `ci_scripts/`.
 - Organize `Sources/<Target>/` with shallow responsibility-based folders such
   as `Configuration`, `Runtime`, `Routing`, `Workflow`, `Store`, and `SwiftUI`.
 - Keep small targets flat when subdirectories do not improve discoverability.
 - Put test-only helpers under `Tests/<Target>/Support/`.
+- Use `Fixtures/Consumers/` for compile-backed adoption references by consumer
+  type.
 - Keep the example app shell in `Example/MHPlatformExample/App/` and place
   module demos under `Example/MHPlatformExample/Demos/<Area>/`.
 
@@ -57,6 +59,19 @@ Use [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md) as the
 source of truth for 1.0 package adoption. The rest of this section explains the
 recommended paths in more detail. For version pinning and controlled rollout
 rules, see [Adoption Policy](Designs/Architecture/adoption-policy.md).
+Compile-backed reference adopters live under `Fixtures/Consumers/`, while
+`Example/MHPlatformExample/` remains the full-umbrella demo app.
+
+Fixture-backed adoption references:
+
+- `Fixtures/Consumers/SharedLibraryConsumer/` builds the shared-library-safe
+  `MHPlatformCore` path.
+- `Fixtures/Consumers/RuntimeOnlyConsumer/` builds the
+  `MHAppRuntimeCore` runtime/bootstrap-only path.
+- `Fixtures/Consumers/DefaultRuntimeConsumer/` builds the default-runtime
+  `MHAppRuntime` path.
+- `Fixtures/Consumers/OptionalShellConsumer/` builds the opt-in
+  `MHMutationFlow` + `MHReviewPolicy` shell path.
 
 Full app umbrella adoption:
 
@@ -628,6 +643,9 @@ logger.info("App started")
 ## Example App
 
 `MHPlatformExample` demonstrates all modules with app-local sample data in `Example/`.
+It remains the package-owned reference for the full `MHPlatform` umbrella.
+Consumer-specific minimal adopters live in `Fixtures/Consumers/` instead of
+duplicating those narrower paths inside the demo app.
 
 It includes cross-module demos for:
 

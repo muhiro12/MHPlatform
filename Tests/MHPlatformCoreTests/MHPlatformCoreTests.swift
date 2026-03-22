@@ -3,8 +3,8 @@ import Testing
 
 struct MHPlatformCoreTests {
     @Test
-    func umbrella_import_exposes_shared_package_modules() {
-        let exportedTypes: [Any.Type] = [
+    func shared_package_umbrella_matches_core_safe_surface() {
+        let exportedCoreSafeTypes: [Any.Type] = [
             MHDeepLinkConfiguration.self,
             MHReminderPolicy.self,
             MHNotificationPayload.self,
@@ -16,6 +16,6 @@ struct MHPlatformCoreTests {
             MHLoggerFactory.self
         ]
 
-        #expect(exportedTypes.count == 9)
+        #expect(exportedCoreSafeTypes.count == 9)
     }
 }

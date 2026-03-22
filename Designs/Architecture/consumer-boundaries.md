@@ -59,6 +59,11 @@ For version pinning and rollout rules, pair it with
 ## Evidence Paths
 
 - Full umbrella example app: `Example/MHPlatformExample/`
+- Shared-library consumer fixture: `Fixtures/Consumers/SharedLibraryConsumer/`
+- Runtime-only consumer fixture: `Fixtures/Consumers/RuntimeOnlyConsumer/`
+- Default-runtime consumer fixture: `Fixtures/Consumers/DefaultRuntimeConsumer/`
+- Optional-shell consumer fixture: `Fixtures/Consumers/OptionalShellConsumer/`
 - Shared-package-safe umbrella tests: `Tests/MHPlatformCoreTests/`
 - Full umbrella tests: `Tests/MHPlatformTests/`
 - Runtime split composition tests: `Tests/MHAppRuntimeTests/`
+- CI consumer fixture build task: `ci_scripts/tasks/test_consumer_fixtures.sh`
