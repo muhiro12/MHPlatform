@@ -37,7 +37,7 @@ fixtures=(
   "OptionalShellConsumer"
 )
 
-echo "Building MHPlatform consumer fixtures."
+echo "Testing MHPlatform consumer fixtures."
 
 for fixture_name in "${fixtures[@]}"; do
   fixture_directory="$fixtures_root/$fixture_name"
@@ -47,7 +47,7 @@ for fixture_name in "${fixtures[@]}"; do
     exit 1
   fi
 
-  echo "Building consumer fixture: $fixture_name"
+  echo "Testing consumer fixture: $fixture_name"
   HOME="$local_home_directory" \
   TMPDIR="$temporary_directory" \
   XDG_CACHE_HOME="$cache_directory" \
@@ -55,7 +55,7 @@ for fixture_name in "${fixtures[@]}"; do
   SWIFTPM_CACHE_PATH="$swiftpm_cache_directory" \
   SWIFTPM_CONFIG_PATH="$swiftpm_config_directory" \
   PLL_SOURCE_PACKAGES_PATH="$repository_root/.build" \
-  swift build \
+  swift test \
     --disable-sandbox \
     --disable-automatic-resolution \
     --package-path "$fixture_directory" \

@@ -25,6 +25,10 @@ let kPackage = Package(
                     package: "MHPlatform"
                 )
             ]
+        ),
+        .testTarget(
+            name: "DefaultRuntimeConsumerTests",
+            dependencies: ["DefaultRuntimeConsumer"]
         )
     ]
 )

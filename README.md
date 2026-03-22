@@ -81,6 +81,16 @@ Full app umbrella adoption:
 ```swift
 .product(name: "MHPlatform", package: "MHPlatform")
 ```
+Minimum adoption evidence for documented consumer paths:
+
+- shared-library path: fixture smoke tests cover `MHPlatformCore` codec and
+  reminder-policy wiring
+- runtime-only path: fixture smoke tests start an `MHAppRuntimeCore` lifecycle
+- default-runtime path: fixture smoke tests start an `MHAppRuntime` lifecycle
+- optional-shell path: fixture smoke tests run `MHMutationWorkflow` with
+  `MHReviewFlow`
+- full umbrella path: `MHPlatformIntegrationTests` exercises notification
+  delivery, route replay, and mutation orchestration together
 
 ```swift
 import MHPlatform

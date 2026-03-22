@@ -25,6 +25,10 @@ let kPackage = Package(
                     package: "MHPlatform"
                 )
             ]
+        ),
+        .testTarget(
+            name: "SharedLibraryConsumerTests",
+            dependencies: ["SharedLibraryConsumer"]
         )
     ]
 )
