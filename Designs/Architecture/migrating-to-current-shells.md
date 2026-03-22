@@ -10,7 +10,7 @@ around runtime, route, review, mutation, or product selection.
 | shared library target depends on `MHPlatform` but only imports core-safe APIs | `MHPlatformCore` | keep route meaning, preference meaning, and notification semantics in the adopter |
 | runtime/bootstrap-only app depends on `MHPlatform` or `MHAppRuntime` only for bootstrap, lifecycle, environment, and optional route plumbing | `MHAppRuntimeCore` | add split runtime bundles later only if package-owned StoreKit, ads, or license integrations become necessary |
 | target adds route, mutation, or review concerns by switching umbrellas | keep the existing base product and add only the required shell | route, mutation, and review shells are optional |
-| app repository pins MHPlatform with `branch: "main"` | exact tag, exact version, or coordinated exact revision | see `adoption-policy.md` for the supported 1.0 posture |
+| app repository pins MHPlatform with `branch: "main"` | exact tag or coordinated exact revision | see `adoption-policy.md` for the supported 1.0 posture |
 
 ## Old Glue -> Current Surface
 
@@ -35,7 +35,7 @@ around runtime, route, review, mutation, or product selection.
   `MHAppRuntime` to `MHAppRuntimeCore` when they do not need package-owned
   StoreKit, ads, or license integrations
 - released app repositories should stop using `branch: "main"` and move to
-  exact tag or exact version adoption
+  exact tag adoption
 - coordinated pre-release validation may use an exact revision, but that is
   still a controlled pin rather than rolling branch adoption
 - pin edits in downstream app repositories are outside the scope of this run

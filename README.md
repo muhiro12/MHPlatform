@@ -59,6 +59,9 @@ Use [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md) as the
 source of truth for 1.0 package adoption. The rest of this section explains the
 recommended paths in more detail. For version pinning and controlled rollout
 rules, see [Adoption Policy](Designs/Architecture/adoption-policy.md).
+MHPlatform release automation publishes short tags such as `1.0` and `1.1`, so
+consumers should pin to exact tags rather than SwiftPM semantic-version
+requirements.
 Compile-backed reference adopters live under `Fixtures/Consumers/`, while
 `Example/MHPlatformExample/` remains the full-umbrella demo app.
 

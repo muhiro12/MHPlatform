@@ -9,11 +9,14 @@ that app repositories should follow before cutting a stable release tag.
 Released consumers should use one of these pinning strategies:
 
 - exact tag
-- exact semantic version
 
 Coordinated pre-release validation may use:
 
 - exact revision
+
+MHPlatform release automation publishes short tags such as `1.0` and `1.1`.
+Those tags are intended for exact tag pinning, not SwiftPM semantic-version
+requirements.
 
 `branch: "main"` is not a supported 1.0 adoption strategy.
 Using the moving main branch bypasses the package-owned consumer contract and
@@ -79,8 +82,7 @@ They are not part of the minimum runtime/bootstrap baseline.
 
 1. Pick the base product from the consumer matrix before adding imports.
 2. Remove `branch: "main"` adoption before a stable 1.0 rollout.
-3. Pin the package to an exact tag, exact version, or coordinated exact
-   revision.
+3. Pin the package to an exact tag or coordinated exact revision.
 4. Move shared libraries off `MHPlatform` when they only need core-safe APIs.
 5. Keep app-specific route meaning, preference meaning, mutation semantics, and
    notification semantics outside MHPlatform.
