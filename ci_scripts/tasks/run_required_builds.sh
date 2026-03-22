@@ -48,9 +48,7 @@ finalize_run_artifacts() {
 
   if [[ $exit_code -ne 0 ]]; then
     overall_result="failure"
-    if [[ "$run_note" == "Evaluating local changes to determine required CI steps for MHPlatform." || "$run_note" == "Executed required CI steps for MHPlatform based on local changes." ]]; then
-      run_note="A required step failed. Review failure details and logs."
-    fi
+    run_note="A required step failed. Review failure details and logs."
   fi
 
   if [[ ${#executed_steps[@]} -eq 0 ]]; then
@@ -92,6 +90,11 @@ log_command "$0" "$@"
 should_run_pre_commit=false
 if [[ "${CI_RUN_ENABLE_PRE_COMMIT:-0}" == "1" || "${CI_RUN_ENABLE_PRE_COMMIT:-}" == "true" ]]; then
   should_run_pre_commit=true
+fi
+
+should_force_all=false
+if [[ "${CI_RUN_FORCE_ALL:-0}" == "1" || "${CI_RUN_FORCE_ALL:-}" == "true" ]]; then
+  should_force_all=true
 fi
 
 run_step() {
@@ -147,56 +150,65 @@ if $should_run_pre_commit; then
     bash "$repository_root/ci_scripts/tasks/pre_commit.sh"
 fi
 
-changed_files=$(
-  {
-    git diff --name-only --cached
-    git diff --name-only
-    git ls-files --others --exclude-standard
-  } | sed '/^$/d' | sort -u
-)
-
-if [[ -z "$changed_files" ]]; then
-  echo "No local changes detected."
-  if $should_run_pre_commit; then
-    run_note="pre-commit completed. No local changes detected. Build/test steps were skipped."
-  else
-    run_note="No local changes detected. Build/test steps were skipped."
-  fi
-  exit 0
-fi
-
 needs_swiftlint=false
 needs_package_build=false
 needs_package_tests=false
 needs_consumer_fixtures=false
 
-if grep -Eq '^(Sources/|Tests/|Example/|Fixtures/Consumers/|Package\.swift$|Package\.resolved$|\.swiftlint\.yml$)' <<<"$changed_files"; then
+if $should_force_all; then
+  echo "Running full verification set."
   needs_swiftlint=true
-fi
-
-if grep -Eq '^(Sources/|Example/|Package\.swift$|Package\.resolved$)' <<<"$changed_files"; then
   needs_package_build=true
-fi
-
-if grep -Eq '^(Sources/|Tests/|Package\.swift$|Package\.resolved$)' <<<"$changed_files"; then
   needs_package_tests=true
-fi
-
-if grep -Eq '^(Sources/|Package\.swift$|Package\.resolved$|README\.md$|Designs/|Fixtures/Consumers/|ci_scripts/)' <<<"$changed_files"; then
   needs_consumer_fixtures=true
-fi
+  run_note="Executed full CI verification for MHPlatform."
+else
+  changed_files=$(
+    {
+      git diff --name-only --cached
+      git diff --name-only
+      git ls-files --others --exclude-standard
+    } | sed '/^$/d' | sort -u
+  )
 
-if ! $needs_swiftlint && ! $needs_package_build && ! $needs_package_tests && ! $needs_consumer_fixtures; then
-  echo "No package verification inputs changed."
-  if $should_run_pre_commit; then
-    run_note="pre-commit completed. No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
-  else
-    run_note="No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
+  if [[ -z "$changed_files" ]]; then
+    echo "No local changes detected."
+    if $should_run_pre_commit; then
+      run_note="pre-commit completed. No local changes detected. Build/test steps were skipped."
+    else
+      run_note="No local changes detected. Build/test steps were skipped."
+    fi
+    exit 0
   fi
-  exit 0
-fi
 
-run_note="Executed required CI steps for MHPlatform based on local changes."
+  if grep -Eq '^(Sources/|Tests/|Example/|Fixtures/Consumers/|Package\.swift$|Package\.resolved$|\.swiftlint\.yml$)' <<<"$changed_files"; then
+    needs_swiftlint=true
+  fi
+
+  if grep -Eq '^(Sources/|Example/|Package\.swift$|Package\.resolved$)' <<<"$changed_files"; then
+    needs_package_build=true
+  fi
+
+  if grep -Eq '^(Sources/|Tests/|Package\.swift$|Package\.resolved$)' <<<"$changed_files"; then
+    needs_package_tests=true
+  fi
+
+  if grep -Eq '^(Sources/|Package\.swift$|Package\.resolved$|README\.md$|Designs/|Fixtures/Consumers/|ci_scripts/)' <<<"$changed_files"; then
+    needs_consumer_fixtures=true
+  fi
+
+  if ! $needs_swiftlint && ! $needs_package_build && ! $needs_package_tests && ! $needs_consumer_fixtures; then
+    echo "No package verification inputs changed."
+    if $should_run_pre_commit; then
+      run_note="pre-commit completed. No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
+    else
+      run_note="No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
+    fi
+    exit 0
+  fi
+
+  run_note="Executed required CI steps for MHPlatform based on local changes."
+fi
 
 if $needs_package_build || $needs_package_tests; then
   run_step \

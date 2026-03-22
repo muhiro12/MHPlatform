@@ -680,7 +680,9 @@ Use the helper scripts in `ci_scripts/tasks/` as needed. For full local verifica
 bash ci_scripts/tasks/verify.sh
 ```
 
-If you only need required checks based on local package changes:
+`verify.sh` always runs the full repository verification set, even on a clean
+checkout. Use `run_required_builds.sh` when you only want required checks based
+on local package changes:
 
 ```sh
 bash ci_scripts/tasks/run_required_builds.sh
