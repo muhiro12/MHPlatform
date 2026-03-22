@@ -16,6 +16,7 @@ Minimum supported platforms:
 ## Documentation Map
 
 - [Architecture Guide](Designs/Architecture/ARCHITECTURE_GUIDE.md)
+- [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md)
 - [North Star](Designs/Architecture/north-star.md)
 - [Integration Contracts](Designs/Architecture/integration-contracts.md)
 - [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
@@ -41,18 +42,19 @@ Minimum supported platforms:
 
 ## Adoption
 
-MHPlatform supports four main integration styles:
+Normative consumer matrix:
 
-- Use `MHPlatform` for app targets that want the full umbrella, including the
-  `MHAppRuntime` default adapter path.
-- Use `MHPlatformCore` for shared packages, including watch-capable packages,
-  that want a narrower umbrella without `MHAppRuntime` or third-party runtime
-  adapters.
-- Use individual module products when the consumer wants a narrower dependency
-  set than either umbrella.
-- Use `MHAppRuntimeCore` directly when the app only needs runtime/bootstrap
-  mechanics and should avoid the heavier default StoreKit, ads, or license
-  dependencies.
+| Consumer type | Primary product | Add only when needed | Avoid by default |
+| --- | --- | --- | --- |
+| Full-platform app target (`FooApp`, `FooWatch`) | `MHPlatform` | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Split runtime bundles unless custom composition is intentional |
+| App target using default runtime only | `MHAppRuntime` | `MHMutationFlow`, `MHReviewPolicy`, concrete core modules | `MHPlatform` when the app does not want the full umbrella |
+| Runtime/bootstrap-only app | `MHAppRuntimeCore` | `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses` | `MHAppRuntime` until package-owned defaults are needed |
+| Shared logic package / shared library | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance` | `MHPlatform`, `MHAppRuntime`, `MHReviewPolicy` |
+| Optional shell adopter | Keep current product and add the specific shell | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Treating route, review, or mutation shells as mandatory |
+
+Use [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md) as the
+source of truth for 1.0 package adoption. The rest of this section explains the
+recommended paths in more detail.
 
 Full app umbrella adoption:
 
@@ -74,7 +76,9 @@ let policy = MHReviewPolicy(
 It re-exports `MHPlatformCore`, `MHAppRuntime`, `MHMutationFlow`, and
 `MHReviewPolicy`. Because `MHAppRuntime` keeps the default StoreKit, ads, and
 license integrations, adopting `MHPlatform` also resolves those implementation
-dependencies for app targets.
+dependencies for app targets. This is the recommended convenience surface for
+app composition targets that intentionally want the full package-owned platform
+path.
 
 Shared package umbrella adoption:
 
@@ -95,7 +99,8 @@ let logger = MHLoggerFactory.osLogDefault.logger(
 `MHPlatformCore` is the recommended umbrella for shared packages. It re-exports
 `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`, `MHNotificationPayloads`,
 `MHRouteExecution`, `MHPersistenceMaintenance`, and `MHPreferences` without
-pulling in `MHAppRuntime` or third-party runtime adapters.
+pulling in `MHAppRuntime` or third-party runtime adapters. Shared packages
+should stop here or move to granular concrete modules.
 
 Granular adoption:
 
@@ -128,6 +133,15 @@ helpers such as `MHNotificationCenterDouble`, `MHDeepLinkURLRecorder`,
 through the umbrella `MHPlatform` module.
 For a package-owned end-to-end reference, see
 `Tests/MHPlatformIntegrationTests/MHPlatformIntegrationTests.swift`.
+
+Optional shell rule:
+
+- Route, review, and mutation shells are optional.
+- Apps that only need runtime/bootstrap can stop at `MHAppRuntimeCore`.
+- Shared packages must not adopt `MHPlatform`, `MHAppRuntime`, or
+  `MHReviewPolicy`.
+- Add `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, and
+  `MHReviewFlow` only in targets that actually own those concerns.
 
 ## Current Adoption Snapshot
 

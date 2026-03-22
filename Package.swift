@@ -11,13 +11,10 @@ let package = Package(
         .watchOS(.v11)
     ],
     products: [
+        // App-facing convenience umbrellas and runtime entry points.
         .library(
             name: "MHPlatform",
             targets: ["MHPlatform"]
-        ),
-        .library(
-            name: "MHPlatformCore",
-            targets: ["MHPlatformCore"]
         ),
         .library(
             name: "MHAppRuntime",
@@ -39,6 +36,12 @@ let package = Package(
             name: "MHAppRuntimeLicenses",
             targets: ["MHAppRuntimeLicenses"]
         ),
+
+        // Shared-package-safe umbrella and granular core-safe modules.
+        .library(
+            name: "MHPlatformCore",
+            targets: ["MHPlatformCore"]
+        ),
         .library(
             name: "MHDeepLinking",
             targets: ["MHDeepLinking"]
@@ -50,10 +53,6 @@ let package = Package(
         .library(
             name: "MHNotificationPayloads",
             targets: ["MHNotificationPayloads"]
-        ),
-        .library(
-            name: "MHMutationFlow",
-            targets: ["MHMutationFlow"]
         ),
         .library(
             name: "MHRouteExecution",
@@ -68,13 +67,21 @@ let package = Package(
             targets: ["MHPreferences"]
         ),
         .library(
-            name: "MHReviewPolicy",
-            targets: ["MHReviewPolicy"]
-        ),
-        .library(
             name: "MHLogging",
             targets: ["MHLogging"]
         ),
+
+        // Optional workflow shells for app targets.
+        .library(
+            name: "MHMutationFlow",
+            targets: ["MHMutationFlow"]
+        ),
+        .library(
+            name: "MHReviewPolicy",
+            targets: ["MHReviewPolicy"]
+        ),
+
+        // Test support.
         .library(
             name: "MHPlatformTesting",
             targets: ["MHPlatformTesting"]
@@ -95,6 +102,7 @@ let package = Package(
         )
     ],
     targets: [
+        // App-facing convenience umbrellas and runtime entry points.
         .target(
             name: "MHPlatform",
             dependencies: [
@@ -194,6 +202,8 @@ let package = Package(
         .target(
             name: "MHPreferences"
         ),
+
+        // Optional workflow shells for app targets.
         .target(
             name: "MHReviewPolicy",
             dependencies: [
@@ -205,6 +215,8 @@ let package = Package(
         .target(
             name: "MHLogging"
         ),
+
+        // Test support.
         .target(
             name: "MHPlatformTesting",
             dependencies: [
@@ -213,6 +225,8 @@ let package = Package(
                 "MHNotificationPayloads"
             ]
         ),
+
+        // Product export tests.
         .testTarget(
             name: "MHPlatformTests",
             dependencies: ["MHPlatform"]
@@ -221,6 +235,8 @@ let package = Package(
             name: "MHPlatformCoreTests",
             dependencies: ["MHPlatformCore"]
         ),
+
+        // Runtime and module behavior tests.
         .testTarget(
             name: "MHAppRuntimeTests",
             dependencies: [

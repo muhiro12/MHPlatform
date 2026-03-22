@@ -8,6 +8,7 @@ this repository.
 Related documents:
 
 - [architecture.md](./architecture.md)
+- [consumer-boundaries.md](./consumer-boundaries.md)
 - [integration-contracts.md](./integration-contracts.md)
 
 ## Responsibility Boundaries
