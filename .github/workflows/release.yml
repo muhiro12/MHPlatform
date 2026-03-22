@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -18,35 +15,28 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Check release eligibility
-        id: eligibility
         shell: bash
         run: |
           set -euo pipefail
 
           if [[ "${GITHUB_REF_NAME}" != "main" ]]; then
-            echo "should_release=false" >>"$GITHUB_OUTPUT"
-            echo "Manual releases only publish from main."
-            exit 0
+            echo "Releases are only published from main." >&2
+            exit 1
           fi
 
-          echo "should_release=true" >>"$GITHUB_OUTPUT"
-
       - name: Check out repository
-        if: steps.eligibility.outputs.should_release == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
 
       - name: Refresh tags
-        if: steps.eligibility.outputs.should_release == 'true'
         shell: bash
         run: |
           set -euo pipefail
           git fetch --force --tags origin
 
       - name: Install SwiftLint
-        if: steps.eligibility.outputs.should_release == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -59,12 +49,10 @@ jobs:
           brew install swiftlint
 
       - name: Verify repository
-        if: steps.eligibility.outputs.should_release == 'true'
         shell: bash
         run: bash ci_scripts/tasks/verify.sh
 
       - name: Calculate next release tag
-        if: steps.eligibility.outputs.should_release == 'true'
         id: release_tag
         shell: bash
         run: |
@@ -99,9 +87,7 @@ jobs:
           echo "Publishing release tag ${next_release_tag} for ${GITHUB_SHA}."
 
       - name: Create GitHub release
-        if: |
-          steps.eligibility.outputs.should_release == 'true' &&
-          steps.release_tag.outputs.already_released == 'false'
+        if: steps.release_tag.outputs.already_released == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
