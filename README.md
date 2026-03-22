@@ -326,6 +326,10 @@ let codec = MHDeepLinkCodec<MyRoute>(
     configuration: .init(
         customScheme: "myapp",
         preferredUniversalLinkHost: "example.com",
+`MHAppRoutePipeline` logs activation and route-apply failures through its
+`failureLogger` (or the default `MHAppRoutePipeline` logger). Provide
+`onFailure:` when the app also needs analytics, telemetry fan-out, or custom
+error presentation hooks.
         allowedUniversalLinkHosts: ["example.com"],
         universalLinkPathPrefix: "MyApp",
         preferredTransport: .customScheme

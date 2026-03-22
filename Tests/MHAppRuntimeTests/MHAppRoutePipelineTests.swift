@@ -275,8 +275,8 @@ private extension MHAppRoutePipelineTests {
         Int(url.lastPathComponent)
     }
 
-    func makeLogger() -> MHLogger {
-        let store = MHLogStore(
+    func makeLogStore() -> MHLogStore {
+        .init(
             policy: .init(
                 minimumLevel: .debug,
                 persistsToDisk: false,
@@ -284,9 +284,13 @@ private extension MHAppRoutePipelineTests {
                 maximumDiskBytes: TestConstants.maximumDiskBytes
             )
         )
+    }
+
+    func makeLogger(store: MHLogStore? = nil) -> MHLogger {
+        let resolvedStore = store ?? makeLogStore()
         return .init(
             #fileID,
-            store: store,
+            store: resolvedStore,
             subsystem: "tests.runtime"
         )
     }

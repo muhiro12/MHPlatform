@@ -76,6 +76,10 @@ final class AppAssembly {
 }
 ```
 
+`MHAppRoutePipeline` logs activation and route-apply failures by default.
+Attach `onFailure:` only when the app needs additional telemetry, alerting, or
+custom recovery behavior.
+
 ## Mutation And Review
 
 - use `MHMutationWorkflow.runThrowing(..., adapterValue:)` when the operation

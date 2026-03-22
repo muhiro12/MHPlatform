@@ -68,6 +68,9 @@ Preview guidance:
 - make preview bootstrap with preview-safe services or an empty lifecycle plan
 - omit external handoff sources only when the preview truly does not exercise
   route entry points
+- rely on the default `MHAppRoutePipeline` failure logger for production-visible
+  route errors, and add `onFailure:` when app-owned telemetry or recovery work
+  must also run
 - keep model container ownership in the app's preview factory rather than
   moving it into MHPlatform
 

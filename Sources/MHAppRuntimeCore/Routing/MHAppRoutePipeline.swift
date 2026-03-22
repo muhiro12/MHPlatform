@@ -1,5 +1,6 @@
 import Foundation
 import MHDeepLinking
+import MHLogging
 import MHRouteExecution
 import Observation
 
@@ -24,7 +25,8 @@ public final class MHAppRoutePipeline<Route: Sendable> {
     @ObservationIgnored private let pendingSources: [any MHDeepLinkURLSource]
     @ObservationIgnored private let parseRoute: RouteParser
     @ObservationIgnored private let applyOnMainActor: RouteApplier
-    @ObservationIgnored private let onFailure: FailureHandler
+    @ObservationIgnored private let failureLogger: MHLogger
+    @ObservationIgnored private let onFailure: FailureHandler?
 
     /// Creates a route pipeline with explicit URL parsing.
     @preconcurrency
@@ -34,15 +36,15 @@ public final class MHAppRoutePipeline<Route: Sendable> {
         pendingSources: [any MHDeepLinkURLSource] = [],
         inbox: MHObservableDeepLinkInbox = .init(),
         applyOnMainActor: @escaping RouteApplier,
-        onFailure: @escaping FailureHandler = { error in
-            assertionFailure(error.localizedDescription)
-        }
+        failureLogger: MHLogger? = nil,
+        onFailure: FailureHandler? = nil
     ) {
         self.routeLifecycle = routeLifecycle
         self.pendingSources = pendingSources
         self.inbox = inbox
         self.parseRoute = parse
         self.applyOnMainActor = applyOnMainActor
+        self.failureLogger = failureLogger ?? Self.defaultFailureLogger
         self.onFailure = onFailure
     }
 
@@ -57,9 +59,8 @@ public final class MHAppRoutePipeline<Route: Sendable> {
         routeInbox: MHObservableRouteInbox<Route>,
         pendingSources: [any MHDeepLinkURLSource] = [],
         inbox: MHObservableDeepLinkInbox = .init(),
-        onFailure: @escaping FailureHandler = { error in
-            assertionFailure(error.localizedDescription)
-        }
+        failureLogger: MHLogger? = nil,
+        onFailure: FailureHandler? = nil
     ) {
         self.init(
             routeLifecycle: routeLifecycle,
@@ -69,6 +70,7 @@ public final class MHAppRoutePipeline<Route: Sendable> {
             applyOnMainActor: { route in
                 await routeInbox.deliver(route)
             },
+            failureLogger: failureLogger,
             onFailure: onFailure
         )
     }
@@ -90,7 +92,10 @@ public final class MHAppRoutePipeline<Route: Sendable> {
                 applyOnMainActor: applyOnMainActor
             )
         } catch {
-            onFailure(error)
+            handleFailure(
+                error,
+                operation: "activateIfNeeded"
+            )
             return nil
         }
     }
@@ -121,7 +126,10 @@ public final class MHAppRoutePipeline<Route: Sendable> {
             }
             return outcome
         } catch {
-            onFailure(error)
+            handleFailure(
+                error,
+                operation: "drainPendingRoutesIfNeeded"
+            )
             return nil
         }
     }
@@ -157,9 +165,8 @@ public extension MHAppRoutePipeline where Route: MHDeepLinkRoute {
         pendingSources: [any MHDeepLinkURLSource] = [],
         inbox: MHObservableDeepLinkInbox = .init(),
         applyOnMainActor: @escaping RouteApplier,
-        onFailure: @escaping FailureHandler = { error in
-            assertionFailure(error.localizedDescription)
-        }
+        failureLogger: MHLogger? = nil,
+        onFailure: FailureHandler? = nil
     ) {
         self.init(
             routeLifecycle: routeLifecycle,
@@ -169,6 +176,7 @@ public extension MHAppRoutePipeline where Route: MHDeepLinkRoute {
             pendingSources: pendingSources,
             inbox: inbox,
             applyOnMainActor: applyOnMainActor,
+            failureLogger: failureLogger,
             onFailure: onFailure
         )
     }
@@ -184,9 +192,8 @@ public extension MHAppRoutePipeline where Route: MHDeepLinkRoute {
         routeInbox: MHObservableRouteInbox<Route>,
         pendingSources: [any MHDeepLinkURLSource] = [],
         inbox: MHObservableDeepLinkInbox = .init(),
-        onFailure: @escaping FailureHandler = { error in
-            assertionFailure(error.localizedDescription)
-        }
+        failureLogger: MHLogger? = nil,
+        onFailure: FailureHandler? = nil
     ) {
         self.init(
             routeLifecycle: routeLifecycle,
@@ -196,6 +203,7 @@ public extension MHAppRoutePipeline where Route: MHDeepLinkRoute {
             routeInbox: routeInbox,
             pendingSources: pendingSources,
             inbox: inbox,
+            failureLogger: failureLogger,
             onFailure: onFailure
         )
     }
@@ -206,17 +214,34 @@ private extension MHAppRoutePipeline {
         var url: URL?
     }
 
+    static var defaultFailureLoggerFactory: MHLoggerFactory {
+        .osLogDefault
+    }
+
+    static var defaultFailureLogger: MHLogger {
+        defaultFailureLoggerFactory.logger(
+            category: "MHAppRoutePipeline",
+            source: #fileID
+        )
+    }
+
     var orderedSources: MHDeepLinkSourceChain {
         var orderedSources = pendingSources
         orderedSources.append(inbox)
         return .init(orderedSources)
     }
 
-    func parse(_ url: URL) -> Route? {
-        let route = parseRoute(url)
-        if route == nil {
-            lastParseFailureURL = url
-        }
-        return route
+    func handleFailure(
+        _ error: any Error,
+        operation: String
+    ) {
+        failureLogger.error(
+            "route pipeline failure",
+            metadata: [
+                "error": String(describing: error),
+                "operation": operation
+            ]
+        )
+        onFailure?(error)
     }
 }
