@@ -3,12 +3,13 @@
 MHPlatform is an internal app platform foundation delivered as a Swift package
 workspace for shared infrastructure extracted from real usage in Incomes and
 Cookle. It ships a full app umbrella `MHPlatform`, a shared-package umbrella
-`MHPlatformCore`, and narrower advanced composition products for explicit
-adopters. The first-class consumer entry points are `MHPlatform`,
-`MHAppRuntime`, `MHAppRuntimeCore`, and `MHPlatformCore`. The current v1
-baseline focuses on runtime startup, deep-link handling, route execution,
-deterministic notification planning, post-mutation side-effect orchestration,
-logging, preferences, and persistence maintenance primitives.
+`MHPlatformCore`, and an advanced app-runtime foundation `MHAppRuntime` for
+explicit composition. The default consumer pillars are `MHPlatform` and
+`MHPlatformCore`, while `MHAppRuntime` remains public for narrower app-root
+adoption. The current v1 baseline focuses on runtime startup, deep-link
+handling, route execution, deterministic notification planning,
+post-mutation side-effect orchestration, logging, preferences, and
+persistence maintenance primitives.
 
 Minimum supported platforms:
 - iOS 18.0+
@@ -55,8 +56,7 @@ Normative consumer matrix:
 | Consumer type | Primary product | Add only when needed | Avoid by default |
 | --- | --- | --- | --- |
 | Full-platform app target (`FooApp`, `FooWatch`) | `MHPlatform` | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Split runtime bundles unless custom composition is intentional |
-| App target using default runtime only | `MHAppRuntime` | `MHMutationFlow`, `MHReviewPolicy`, concrete core modules | `MHPlatform` when the app does not want the full umbrella |
-| Runtime/bootstrap-only app | `MHAppRuntimeCore` | `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses` | `MHAppRuntime` until package-owned defaults are needed |
+| Advanced runtime/bootstrap app target | `MHAppRuntime` | `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`, `MHMutationFlow`, `MHReviewPolicy`, concrete core modules | Pulling `MHPlatform` only to reach bootstrap helpers when the narrower runtime surface is intentional |
 | Shared logic package / shared library | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance` | `MHPlatform`, `MHAppRuntime`, `MHReviewPolicy` |
 | Optional shell adopter | Keep current product and add the specific shell | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Treating route, review, or mutation shells as mandatory |
 
@@ -75,9 +75,9 @@ Fixture-backed adoption references:
 - `Fixtures/Consumers/SharedLibraryConsumer/` builds the shared-library-safe
   `MHPlatformCore` path.
 - `Fixtures/Consumers/RuntimeOnlyConsumer/` builds the
-  `MHAppRuntimeCore` runtime/bootstrap-only path.
-- `Fixtures/Consumers/DefaultRuntimeConsumer/` builds the default-runtime
-  `MHAppRuntime` path.
+  advanced `MHAppRuntime` runtime/bootstrap-only path.
+- `Fixtures/Consumers/DefaultRuntimeConsumer/` builds the advanced
+  `MHAppRuntime` plus split-runtime-bundle composition path.
 - `Fixtures/Consumers/OptionalShellConsumer/` builds the opt-in
   `MHMutationFlow` + `MHReviewPolicy` shell path.
 
@@ -85,22 +85,28 @@ Minimum adoption evidence for documented consumer paths:
 
 - shared-library path: fixture smoke tests cover `MHPlatformCore` codec and
   reminder-policy wiring
-- runtime-only path: fixture smoke tests start an `MHAppRuntimeCore` lifecycle
-- default-runtime path: fixture smoke tests start an `MHAppRuntime` lifecycle
+- runtime-only path: fixture smoke tests start an `MHAppRuntime` lifecycle
+  without split runtime bundles
+- explicit default-runtime composition: fixture smoke tests start an
+  `MHAppRuntime` lifecycle with split runtime bundles
 - optional-shell path: fixture smoke tests run `MHMutationWorkflow` with
   `MHReviewFlow`
 - full umbrella path: `MHPlatformIntegrationTests` exercises notification
   delivery, route replay, and mutation orchestration together
 
-Supported first-class entry points:
+Supported default pillars:
 
 - `MHPlatform`: full app umbrella for composition roots that want the package's
-  default runtime and shell surface.
-- `MHAppRuntime`: app root surface for the default runtime path without the
-  full umbrella.
-- `MHAppRuntimeCore`: runtime/bootstrap-only surface when the app does not want
-  package-owned StoreKit, ads, or license integrations.
+  default runtime and shell surface from one import.
 - `MHPlatformCore`: shared-package umbrella for core-safe functionality.
+
+Advanced app surface:
+
+- `MHAppRuntime`: runtime/bootstrap foundation for app roots that want a
+  narrower surface or explicit split-runtime-bundle composition.
+
+Testing support:
+
 - `MHPlatformTesting`: test-only support surface.
 
 Advanced composition surfaces:
@@ -130,11 +136,12 @@ let policy = MHReviewPolicy(
 
 `MHPlatform` remains an aggregation target with no independent runtime logic.
 It re-exports `MHPlatformCore`, `MHAppRuntime`, `MHMutationFlow`, and
-`MHReviewPolicy`. Because `MHAppRuntime` keeps the default StoreKit, ads, and
-license integrations, adopting `MHPlatform` also resolves those implementation
-dependencies for app targets. This is the recommended convenience surface for
-app composition targets that intentionally want the full package-owned platform
-path.
+`MHReviewPolicy`. It also keeps the one-step
+`MHAppRuntime(configuration:)` and
+`MHAppRuntimeBootstrap(configuration:...)` convenience initializers that wire
+the split runtime bundles behind the full app path. This is the recommended
+convenience surface for app composition targets that intentionally want the
+full package-owned platform path.
 
 Shared package umbrella adoption:
 
@@ -193,7 +200,7 @@ For a package-owned end-to-end reference, see
 Optional shell rule:
 
 - Route, review, and mutation shells are optional.
-- Apps that only need runtime/bootstrap can stop at `MHAppRuntimeCore`.
+- Apps that only need runtime/bootstrap can stop at `MHAppRuntime`.
 - Shared packages must not adopt `MHPlatform`, `MHAppRuntime`, or
   `MHReviewPolicy`.
 - Add `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, and
@@ -226,9 +233,10 @@ Optional shell rule:
 Recommended starting paths:
 
 - shared package umbrella: `MHPlatformCore`
-- app root assembly: `MHAppRuntimeBootstrap`
-- runtime-only product: `MHAppRuntimeCore`
-- opt-in runtime defaults: `MHAppRuntimeDefaults`, `MHAppRuntimeAds`,
+- full app default path: `MHPlatform`
+- advanced runtime foundation: `MHAppRuntime`
+- app root assembly shell: `MHAppRuntimeBootstrap`
+- explicit runtime defaults: `MHAppRuntimeDefaults`, `MHAppRuntimeAds`,
   `MHAppRuntimeLicenses`
 - preview/test runtime injection: `View.mhAppRuntimeEnvironment(_:)`
 - route root wiring: `MHAppRoutePipeline`
@@ -245,14 +253,16 @@ single package-owned shell. Lower-level `MHAppRuntime`, `MHAppRuntimeLifecycle`,
 and `MHAppRoutePipeline` remain available when an app needs custom integration
 or non-SwiftUI control.
 
-Use `MHAppRuntime` when the app wants the default StoreKit, ads, and runtime-
-owned license integrations. Use `MHAppRuntimeCore` when the app only needs
-runtime/bootstrap/lifecycle/route mechanics without those external
-dependencies. When the app wants only some package-owned defaults, compose the
-core initializer with `MHAppRuntimeDefaultsBundle`, `MHAppRuntimeAdsBundle`,
-and `MHAppRuntimeLicensesBundle` from the split bundle products. Those bundles
-expose `subscriptionSectionFactory`, `nativeAdFactory`, and
-`licensesFactory` for explicit composition into `MHAppRuntime`.
+`MHPlatform` is the default app-facing convenience surface. It keeps the
+one-step `MHAppRuntime(configuration:)` and
+`MHAppRuntimeBootstrap(configuration:...)` initializers for apps that want the
+package-owned StoreKit, ads, and license integrations through one import.
+`MHAppRuntime` is the advanced runtime/bootstrap foundation. Use it when the
+app wants runtime/lifecycle/route mechanics without the full umbrella, or when
+it wants to compose `MHAppRuntimeDefaultsBundle`, `MHAppRuntimeAdsBundle`, and
+`MHAppRuntimeLicensesBundle` explicitly. Those bundles expose
+`subscriptionSectionFactory`, `nativeAdFactory`, and `licensesFactory` for
+manual composition into `MHAppRuntime`.
 
 Integration contract:
 [`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)
@@ -290,12 +300,8 @@ let routePipeline = MHAppRoutePipeline(
     try await applyRoute(route)
 }
 let bootstrap = MHAppRuntimeBootstrap(
-    configuration: .init(
-        subscriptionProductIDs: ["com.example.app.premium.monthly"],
-        subscriptionGroupID: "12345678",
-        nativeAdUnitID: "ca-app-pub-xxxxxxxx/yyyyyyyy",
-        preferencesSuiteName: "group.com.example.app",
-        showsLicenses: true
+    runtimeOnlyConfiguration: .init(
+        preferencesSuiteName: "group.com.example.app"
     ),
     lifecyclePlan: .init(
         commonTasks: [

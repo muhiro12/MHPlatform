@@ -23,6 +23,18 @@ let kPackage = Package(
                 .product(
                     name: "MHAppRuntime",
                     package: "MHPlatform"
+                ),
+                .product(
+                    name: "MHAppRuntimeAds",
+                    package: "MHPlatform"
+                ),
+                .product(
+                    name: "MHAppRuntimeDefaults",
+                    package: "MHPlatform"
+                ),
+                .product(
+                    name: "MHAppRuntimeLicenses",
+                    package: "MHPlatform"
                 )
             ]
         ),

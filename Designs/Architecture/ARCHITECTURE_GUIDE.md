@@ -76,10 +76,10 @@ Apps still own the mutation result schema and follow-up policy.
   `MHPlatform`.
 - `Fixtures/Consumers/SharedLibraryConsumer/` proves the shared-library-safe
   `MHPlatformCore` path.
-- `Fixtures/Consumers/RuntimeOnlyConsumer/` proves the lightweight
-  `MHAppRuntimeCore` path.
-- `Fixtures/Consumers/DefaultRuntimeConsumer/` proves the default-runtime
-  `MHAppRuntime` path.
+- `Fixtures/Consumers/RuntimeOnlyConsumer/` proves the advanced
+  `MHAppRuntime` runtime-only path.
+- `Fixtures/Consumers/DefaultRuntimeConsumer/` proves explicit split-runtime
+  composition around `MHAppRuntime`.
 - `Fixtures/Consumers/OptionalShellConsumer/` proves route/review/mutation
   shells stay opt-in instead of defining the platform baseline.
 - `ci_scripts/tasks/test_consumer_fixtures.sh` compiles those fixture packages

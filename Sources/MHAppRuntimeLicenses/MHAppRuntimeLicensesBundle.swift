@@ -1,4 +1,4 @@
-import MHAppRuntimeCore
+import MHAppRuntime
 import SwiftUI
 
 /// Bundle of package-owned license view runtime defaults.

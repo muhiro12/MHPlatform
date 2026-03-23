@@ -5,8 +5,8 @@ struct MHPlatformTests {
     @Test
     func full_platform_umbrella_matches_app_composition_surface() {
         let runtimeSurface: [Any.Type] = [
-            MHAppRuntimeCore.MHAppRuntime.self,
-            MHAppRuntimeCore.MHAppRuntimeBootstrap.self
+            MHAppRuntime.self,
+            MHAppRuntimeBootstrap.self
         ]
         let coreSurface: [Any.Type] = [
             MHDeepLinkConfiguration.self,
@@ -31,5 +31,20 @@ struct MHPlatformTests {
             optionalShellSurface
 
         #expect(exportedTypes.count == 15)
+    }
+
+    @MainActor
+    @Test
+    func full_platform_umbrella_keeps_default_runtime_convenience_apis() {
+        let configuration = MHAppConfiguration(
+            subscriptionProductIDs: ["premium.monthly"],
+            showsLicenses: false
+        )
+
+        let runtime = MHAppRuntime(configuration: configuration)
+        let bootstrap = MHAppRuntimeBootstrap(configuration: configuration)
+
+        #expect(runtime.configuration == configuration)
+        #expect(bootstrap.runtime.configuration == configuration)
     }
 }

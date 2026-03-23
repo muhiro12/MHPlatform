@@ -1,5 +1,4 @@
-import MHAppRuntime
-@testable import MHAppRuntimeCore
+@testable import MHAppRuntime
 @testable import MHLogging
 @testable import MHReviewPolicy
 import Testing
@@ -136,7 +135,7 @@ struct MHReviewFlowTests {
             }
         )
         let runtime = MHAppRuntime(
-            configuration: .init(
+            runtimeOnly: .init(
                 showsLicenses: false
             )
         )

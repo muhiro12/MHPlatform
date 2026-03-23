@@ -11,7 +11,7 @@ let package = Package(
         .watchOS(.v11)
     ],
     products: [
-        // First-class consumer entry points.
+        // Public app and shared-library entry points.
         .library(
             name: "MHPlatform",
             targets: ["MHPlatform"]
@@ -19,10 +19,6 @@ let package = Package(
         .library(
             name: "MHAppRuntime",
             targets: ["MHAppRuntime"]
-        ),
-        .library(
-            name: "MHAppRuntimeCore",
-            targets: ["MHAppRuntimeCore"]
         ),
         .library(
             name: "MHPlatformCore",
@@ -102,11 +98,14 @@ let package = Package(
         )
     ],
     targets: [
-        // App-facing convenience umbrellas and runtime entry points.
+        // App-facing convenience umbrella and advanced runtime entry point.
         .target(
             name: "MHPlatform",
             dependencies: [
                 "MHAppRuntime",
+                "MHAppRuntimeAds",
+                "MHAppRuntimeDefaults",
+                "MHAppRuntimeLicenses",
                 "MHMutationFlow",
                 "MHPlatformCore",
                 "MHReviewPolicy"
@@ -125,7 +124,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "MHAppRuntimeCore",
+            name: "MHAppRuntime",
             dependencies: [
                 "MHDeepLinking",
                 "MHLogging",
@@ -134,18 +133,9 @@ let package = Package(
             ]
         ),
         .target(
-            name: "MHAppRuntime",
-            dependencies: [
-                "MHAppRuntimeAds",
-                "MHAppRuntimeCore",
-                "MHAppRuntimeDefaults",
-                "MHAppRuntimeLicenses"
-            ]
-        ),
-        .target(
             name: "MHAppRuntimeDefaults",
             dependencies: [
-                "MHAppRuntimeCore",
+                "MHAppRuntime",
                 "MHPreferences",
                 .product(
                     name: "StoreKitWrapper",
@@ -157,7 +147,7 @@ let package = Package(
         .target(
             name: "MHAppRuntimeAds",
             dependencies: [
-                "MHAppRuntimeCore",
+                "MHAppRuntime",
                 .product(
                     name: "GoogleMobileAdsWrapper",
                     package: "GoogleMobileAdsWrapper",
@@ -168,7 +158,7 @@ let package = Package(
         .target(
             name: "MHAppRuntimeLicenses",
             dependencies: [
-                "MHAppRuntimeCore",
+                "MHAppRuntime",
                 .product(
                     name: "LicenseList",
                     package: "LicenseList",
@@ -207,7 +197,7 @@ let package = Package(
         .target(
             name: "MHReviewPolicy",
             dependencies: [
-                "MHAppRuntimeCore",
+                "MHAppRuntime",
                 "MHLogging",
                 "MHMutationFlow"
             ]
@@ -242,7 +232,6 @@ let package = Package(
             dependencies: [
                 "MHAppRuntimeAds",
                 "MHAppRuntime",
-                "MHAppRuntimeCore",
                 "MHAppRuntimeDefaults",
                 "MHAppRuntimeLicenses",
                 "MHLogging",
@@ -292,7 +281,6 @@ let package = Package(
             name: "MHReviewPolicyTests",
             dependencies: [
                 "MHAppRuntime",
-                "MHAppRuntimeCore",
                 "MHMutationFlow",
                 "MHReviewPolicy",
                 "MHLogging"
@@ -309,7 +297,6 @@ let package = Package(
             name: "MHPlatformIntegrationTests",
             dependencies: [
                 "MHAppRuntime",
-                "MHAppRuntimeCore",
                 "MHDeepLinking",
                 "MHLogging",
                 "MHMutationFlow",

@@ -1,6 +1,5 @@
 import Foundation
-import MHAppRuntime
-@testable import MHAppRuntimeCore
+@testable import MHAppRuntime
 import MHLogging
 import MHPlatformTesting
 import MHRouteExecution
@@ -10,14 +9,7 @@ import Testing
 struct MHAppRuntimeBootstrapTests {
     @MainActor
     @Test
-    func configuration_init_keeps_runtime_and_plan() {
-        let configuration = MHAppConfiguration(
-            subscriptionProductIDs: ["premium.monthly"],
-            subscriptionGroupID: "group.example",
-            nativeAdUnitID: "ad-unit",
-            preferencesSuiteName: "MHPlatform.Bootstrap.Tests",
-            showsLicenses: false
-        )
+    func runtime_init_keeps_runtime_and_plan() {
         let lifecyclePlan = MHAppRuntimeLifecyclePlan(
             startupTasks: [
                 .init(name: "startup") {
@@ -31,13 +23,14 @@ struct MHAppRuntimeBootstrapTests {
             ],
             skipFirstActivePhase: true
         )
+        let runtime = makeRuntime()
 
         let bootstrap = MHAppRuntimeBootstrap(
-            configuration: configuration,
+            runtime: runtime,
             lifecyclePlan: lifecyclePlan
         )
 
-        #expect(bootstrap.runtime.configuration == configuration)
+        #expect(bootstrap.runtime === runtime)
         #expect(bootstrap.lifecyclePlan == lifecyclePlan)
         #expect(bootstrap.routeInbox == nil)
     }

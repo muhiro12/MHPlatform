@@ -1,5 +1,5 @@
 import Foundation
-@testable import MHAppRuntimeCore
+@testable import MHAppRuntime
 import MHDeepLinking
 import MHLogging
 import MHMutationFlow

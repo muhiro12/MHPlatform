@@ -1,4 +1,4 @@
-import MHAppRuntimeCore
+import MHAppRuntime
 
 public extension MHAppRuntimeBootstrap {
     /// Creates a bootstrap with the default runtime adapters.

@@ -8,7 +8,7 @@ around runtime, route, review, mutation, or product selection.
 | Old shape | Current surface | Notes |
 |---|---|---|
 | shared library target depends on `MHPlatform` but only imports core-safe APIs | `MHPlatformCore` | keep route meaning, preference meaning, and notification semantics in the adopter |
-| runtime/bootstrap-only app depends on `MHPlatform` or `MHAppRuntime` only for bootstrap, lifecycle, environment, and optional route plumbing | `MHAppRuntimeCore` | add split runtime bundles later only if package-owned StoreKit, ads, or license integrations become necessary |
+| runtime/bootstrap-focused app depends on `MHPlatform` only to reach bootstrap, lifecycle, environment, and optional route plumbing | `MHAppRuntime` | add split runtime bundles later only if package-owned StoreKit, ads, or license integrations become necessary |
 | target adds route, mutation, or review concerns by switching umbrellas | keep the existing base product and add only the required shell | route, mutation, and review shells are optional |
 | app repository pins MHPlatform with `branch: "main"` | exact tag or coordinated exact revision | see `adoption-policy.md` for the supported 1.0 posture |
 
@@ -31,9 +31,10 @@ around runtime, route, review, mutation, or product selection.
   target owns that concern
 - shared libraries should migrate from `MHPlatform` to `MHPlatformCore` when
   they only need core-safe APIs
-- runtime/bootstrap-only apps should migrate from `MHPlatform` or
-  `MHAppRuntime` to `MHAppRuntimeCore` when they do not need package-owned
-  StoreKit, ads, or license integrations
+- runtime/bootstrap-focused apps should migrate from `MHPlatform` to
+  `MHAppRuntime` when they do not need the full umbrella
+- apps that still want package-owned StoreKit, ads, or license integrations on
+  the narrower runtime path should add the split runtime bundles explicitly
 - released app repositories should stop using `branch: "main"` and move to
   exact tag adoption
 - coordinated pre-release validation may use an exact revision, but that is

@@ -16,7 +16,7 @@ Keep route meaning and navigation state in the app. Put only route mechanics in
 MHPlatform.
 
 ```swift
-import MHAppRuntime
+import MHPlatform
 import MHDeepLinking
 import MHLogging
 import MHRouteExecution
@@ -77,10 +77,10 @@ Preview guidance:
 ## Recipe 0A: Runtime-only App Setup
 
 Apps that only need runtime/bootstrap mechanics can stop at
-`MHAppRuntimeCore`.
+`MHAppRuntime`.
 
 ```swift
-import MHAppRuntimeCore
+import MHAppRuntime
 
 @MainActor
 final class RuntimeOnlyAssembly {
@@ -119,7 +119,7 @@ Use this bootstrap when app startup needs runtime, lifecycle, and route root
 integration to be assembled in one package-owned shell.
 
 ```swift
-import MHAppRuntime
+import MHPlatform
 import MHDeepLinking
 import MHLogging
 import MHRouteExecution

@@ -2,9 +2,9 @@
 
 Use this as the default starting point for a brand-new app.
 
-If the app is runtime-only, import `MHAppRuntimeCore` and stop at the runtime,
-bootstrap, and environment helpers. The full `MHAppRuntime` product is only for
-apps that want the default StoreKit, ads, or license integrations.
+`MHPlatform` is the default app-facing package for new apps. Import
+`MHAppRuntime` directly only when the app intentionally wants the narrower
+runtime/bootstrap foundation or explicit split-runtime-bundle composition.
 
 ## Root Ownership
 
@@ -21,13 +21,18 @@ root view with `View.mhAppRuntimeBootstrap(_:)`.
 
 If the app does not use route, mutation, or review shells, stop here:
 
-- import `MHAppRuntimeCore`
+- import `MHAppRuntime`
 - create one `MHAppRuntimeBootstrap`
 - use `.mhAppRuntimeBootstrap(...)` for a real app root
 - use `.mhAppRuntimeEnvironment(...)` for preview/test runtime injection only
 
 Keep preview/test-only model containers and service doubles in the app factory.
 MHPlatform intentionally does not own that assembly.
+
+If the app wants package-owned StoreKit, ads, or license integrations without
+the full `MHPlatform` umbrella, compose `MHAppRuntime` manually with
+`MHAppRuntimeDefaultsBundle`, `MHAppRuntimeAdsBundle`, and
+`MHAppRuntimeLicensesBundle`.
 
 ## Route-enabled Path
 
@@ -64,7 +69,7 @@ final class AppAssembly {
         )
 
         bootstrap = .init(
-            configuration: runtimeConfiguration,
+            runtimeOnlyConfiguration: runtimeConfiguration,
             lifecyclePlan: .init(
                 activeTasks: [
                     routePipeline.task(name: "synchronizePendingRoutes")

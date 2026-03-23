@@ -21,7 +21,7 @@ let kPackage = Package(
             name: "RuntimeOnlyConsumer",
             dependencies: [
                 .product(
-                    name: "MHAppRuntimeCore",
+                    name: "MHAppRuntime",
                     package: "MHPlatform"
                 )
             ]

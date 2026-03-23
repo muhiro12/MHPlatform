@@ -1,6 +1,5 @@
 import Foundation
-import MHAppRuntime
-@testable import MHAppRuntimeCore
+@testable import MHAppRuntime
 import MHPreferences
 import MHRouteExecution
 import SwiftUI
@@ -122,7 +121,7 @@ struct MHAppRuntimeTests {
         }
 
         let runtime = MHAppRuntime(
-            configuration: .init(preferencesSuiteName: suiteName)
+            runtimeOnly: .init(preferencesSuiteName: suiteName)
         )
         runtime.preferenceStore.set(true, for: key)
 

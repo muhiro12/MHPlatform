@@ -1,4 +1,4 @@
-import MHAppRuntimeCore
+import MHAppRuntime
 import SwiftUI
 
 enum RuntimeOnlyConsumer {

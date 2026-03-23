@@ -1,3 +1,4 @@
+import MHAppRuntime
 import MHAppRuntimeAds
 import MHAppRuntimeDefaults
 import MHAppRuntimeLicenses

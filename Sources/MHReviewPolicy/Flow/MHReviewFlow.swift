@@ -1,4 +1,4 @@
-import MHAppRuntimeCore
+import MHAppRuntime
 import MHLogging
 import MHMutationFlow
 

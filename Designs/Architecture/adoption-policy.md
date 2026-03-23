@@ -26,19 +26,21 @@ turns every downstream build into an implicit integration test.
 
 - App composition targets that want the full platform surface may adopt
   `MHPlatform`.
-- App targets that only want the default runtime path may adopt `MHAppRuntime`.
-- Runtime/bootstrap-only apps should adopt `MHAppRuntimeCore`.
+- App targets that want a narrower runtime/bootstrap foundation may adopt
+  `MHAppRuntime`.
 - Shared packages and shared libraries should adopt `MHPlatformCore` or
   granular core-safe modules.
 - Route, mutation, and review shells remain opt-in additions. They do not
   change the base product recommendation for a target.
 
-Supported first-class consumer entry points:
+Supported default pillars:
 
 - `MHPlatform`
-- `MHAppRuntime`
-- `MHAppRuntimeCore`
 - `MHPlatformCore`
+
+Advanced public app path:
+
+- `MHAppRuntime`
 
 Advanced composition surfaces that should not be the default onboarding path:
 
@@ -70,7 +72,7 @@ it should migrate to `MHPlatformCore`.
 Do not keep the full `MHPlatform` umbrella in a shared library only because an
 app target happens to use it elsewhere.
 
-## Runtime-only Migration Rule
+## Advanced Runtime Migration Rule
 
 If an app target only needs:
 
@@ -80,10 +82,11 @@ If an app target only needs:
 - `View.mhAppRuntimeEnvironment(_:)`
 - optional route plumbing from `MHAppRoutePipeline`
 
-it should stay on `MHAppRuntimeCore`.
+it should adopt `MHAppRuntime`.
 
-Move to `MHAppRuntime` only when the target actually wants package-owned
-StoreKit, ads, or license integrations.
+Add `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, and `MHAppRuntimeLicenses`
+explicitly only when the target wants those package-owned integrations without
+moving to the full `MHPlatform` umbrella.
 
 ## Optional Shell Rule
 

@@ -24,9 +24,9 @@ For a brand-new app starting point, pair this design note with
 [`minimal-app-setup.md`](minimal-app-setup.md). For older app-side glue, use
 [`migrating-to-current-shells.md`](migrating-to-current-shells.md).
 
-Runtime-only apps can import `MHAppRuntimeCore` instead of the full
-`MHAppRuntime` product when they do not use StoreKit, ads, or runtime-owned
-license views.
+Apps that do not want the full `MHPlatform` umbrella can import
+`MHAppRuntime` directly. `MHAppRuntime` is the advanced runtime/bootstrap
+foundation for those narrower app roots.
 
 This moves the repeated "runtime + lifecycle + route root wiring + environment"
 shape out of app roots and into MHPlatform while leaving app-specific services,
@@ -34,9 +34,11 @@ model containers, and route meanings outside the package.
 
 ## Opt-in default adapters
 
-`MHAppRuntime` remains the convenience product for apps that want all package-
-owned defaults through one import. Internally, it now composes three additive
-bundle products:
+`MHPlatform` is the convenience product for apps that want all package-owned
+defaults through one import. It keeps the one-step
+`MHAppRuntime(configuration:)` and
+`MHAppRuntimeBootstrap(configuration:...)` initializers while composing three
+additive bundle products behind that surface:
 
 - `MHAppRuntimeDefaults`:
   `MHAppRuntimeDefaultsBundle(configuration:)` for preference-store and
@@ -47,11 +49,11 @@ bundle products:
 - `MHAppRuntimeLicenses`:
   `MHAppRuntimeLicensesBundle(configuration:)` for license-screen defaults
 
-Apps that want only some package-owned defaults should import
-`MHAppRuntimeCore` plus the specific bundle products they need, then pass those
-bundle outputs into the explicit `MHAppRuntime` initializer. Shared packages
-should stop at `MHPlatformCore` or granular modules instead of depending on the
-full app umbrella.
+Apps that want only some package-owned defaults should import `MHAppRuntime`
+plus the specific bundle products they need, then pass those bundle outputs
+into the explicit `MHAppRuntime` initializer. Shared packages should stop at
+`MHPlatformCore` or granular modules instead of depending on the full app
+umbrella.
 
 ## Lifecycle shell
 
@@ -98,7 +100,8 @@ Apps still own route enums, parsing meaning, and final route application.
 
 ## What runtime initializes
 
-`MHAppRuntime` currently initializes:
+Through the full `MHPlatform` convenience path, `MHAppRuntime` currently
+initializes:
 
 - StoreKit subscription monitoring and paywall section wiring
 - Google Mobile Ads startup (when ad unit is configured)

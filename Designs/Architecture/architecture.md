@@ -5,7 +5,6 @@
 - `MHPlatform`
 - `MHPlatformCore`
 - `MHAppRuntime`
-- `MHAppRuntimeCore`
 - `MHAppRuntimeDefaults`
 - `MHAppRuntimeAds`
 - `MHAppRuntimeLicenses`
@@ -21,9 +20,12 @@
 - `MHPlatformTesting`
 
 `MHPlatform` is the full app umbrella. It re-exports `MHPlatformCore`,
-`MHAppRuntime`, `MHMutationFlow`, and `MHReviewPolicy`.
+`MHAppRuntime`, `MHMutationFlow`, and `MHReviewPolicy`, and it keeps the
+one-step default runtime convenience APIs.
 `MHPlatformCore` is the shared-package umbrella. It re-exports the shared-safe
 modules used by watch-capable and library-first package adopters.
+`MHAppRuntime` is the advanced app-runtime foundation for narrower app roots
+and explicit split-runtime-bundle composition.
 
 ## Public Modules
 
@@ -36,10 +38,11 @@ modules used by watch-capable and library-first package adopters.
 - `MHPreferences`
 - `MHPlatformTesting`
 
-Consumers may either `import MHPlatform` for app targets, `import MHPlatformCore`
-for shared packages, or import concrete module names directly for granular
-adoption. Third-party runtime symbols remain direct dependencies even when the
-full umbrella is adopted.
+Consumers may either `import MHPlatform` for default app targets,
+`import MHAppRuntime` for advanced app-runtime composition,
+`import MHPlatformCore` for shared packages, or import concrete module names
+directly for granular adoption. Third-party runtime symbols remain direct
+dependencies even when the full umbrella is adopted.
 MHPlatform is maintained as an internal app platform foundation for reusable
 non-domain app infrastructure.
 
@@ -52,8 +55,9 @@ non-domain app infrastructure.
 ## Adoption Snapshot
 
 - Incomes and Cookle currently adopt the umbrella `MHPlatform` product.
-- `MHAppRuntime` is the primary shared runtime/startup surface already used in
-  both apps.
+- `MHAppRuntime` remains the shared runtime/startup foundation already used
+  transitively through `MHPlatform` in both apps and available directly for
+  narrower app-root composition.
 - `MHReviewPolicy` is shared today, but review triggers and surrounding
   workflow decisions remain app-specific.
 - `MHRouteExecution` now includes both low-level queue/executor primitives and
@@ -80,7 +84,18 @@ non-domain app infrastructure.
   `MHAppRuntime` or third-party runtime adapters
 - Does not own `MHAppRuntime`, mutation workflow, or review workflow surfaces
 
-### `MHAppRuntimeCore`
+### `MHPlatform`
+
+- Re-exports `MHAppRuntime`, `MHPlatformCore`, `MHMutationFlow`, and
+  `MHReviewPolicy`
+- Owns the one-step default app path through
+  `MHAppRuntime(configuration:)` and
+  `MHAppRuntimeBootstrap(configuration:...)`
+- Directly composes the split runtime bundles behind that convenience surface
+- Does not own additional runtime logic beyond aggregation and convenience
+  assembly
+
+### `MHAppRuntime`
 
 - Owns runtime-start orchestration and idempotent startup entry points:
   `MHAppRuntime.start()`, `MHAppRuntime.startIfNeeded()`
@@ -90,27 +105,13 @@ non-domain app infrastructure.
   `MHAppRuntimeBootstrap`, `MHAppRuntimeLifecycle`, `MHAppRoutePipeline`
 - Does not own StoreKit, ads, or license adapters
 
-### `MHAppRuntime`
-
-Integration contract:
-[`MHAppRuntime`](integration-contracts.md#mhappruntime)
-
-- Re-exports `MHAppRuntimeCore` for convenience adoption
-- Owns the full default adapter assembly path by composing the split defaults
-  bundles below
-- Owns app-facing default runtime surfaces backed by those adapters:
-  paywall section, native ad view, license view
-- Serves as the main shared startup/runtime surface already adopted by Incomes
-  and Cookle
-- Does not own domain policy, app-specific route state, or persistence model rules
-
 ### `MHAppRuntimeDefaults`
 
 - Owns the package-owned preference store and StoreKit convenience bundle:
   `MHAppRuntimeDefaultsBundle`
 - Exposes `preferenceStore`, `startStore`, and
   `subscriptionSectionFactory` for explicit composition into
-  `MHAppRuntimeCore.MHAppRuntime`
+  `MHAppRuntime`
 - Uses `StoreKitWrapper` only where that dependency is available
 
 ### `MHAppRuntimeAds`
@@ -118,7 +119,7 @@ Integration contract:
 - Owns the package-owned ads convenience bundle:
   `MHAppRuntimeAdsBundle`
 - Exposes `startAds` and `nativeAdFactory` for explicit composition into
-  `MHAppRuntimeCore.MHAppRuntime`
+  `MHAppRuntime`
 - Uses `GoogleMobileAdsWrapper` only where that dependency is available
 
 ### `MHAppRuntimeLicenses`
@@ -126,7 +127,7 @@ Integration contract:
 - Owns the package-owned licenses convenience bundle:
   `MHAppRuntimeLicensesBundle`
 - Exposes `licensesFactory` for explicit composition into
-  `MHAppRuntimeCore.MHAppRuntime`
+  `MHAppRuntime`
 - Uses `LicenseList` only where that dependency is available
 
 ### `MHDeepLinking`
@@ -271,21 +272,20 @@ Integration contract:
 ## Dependency Rules
 
 - Module dependencies are intentionally flat for v1.
-- `MHPlatform` depends on `MHPlatformCore`, `MHAppRuntime`, `MHMutationFlow`,
-  and `MHReviewPolicy`, and must stay a thin aggregation layer without
-  independent runtime logic.
+- `MHPlatform` depends on `MHPlatformCore`, `MHAppRuntime`,
+  `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`,
+  `MHMutationFlow`, and `MHReviewPolicy`, and must stay a thin aggregation
+  layer without independent runtime logic.
 - `MHPlatformCore` depends on `MHDeepLinking`, `MHLogging`,
   `MHNotificationPlans`, `MHNotificationPayloads`, `MHRouteExecution`,
   `MHPersistenceMaintenance`, and `MHPreferences`.
-- `MHAppRuntimeCore` depends on `MHDeepLinking`, `MHLogging`,
-  `MHPreferences`, and `MHRouteExecution`.
-- `MHAppRuntime` depends on `MHAppRuntimeCore`, `MHAppRuntimeDefaults`,
-  `MHAppRuntimeAds`, and `MHAppRuntimeLicenses`.
-- `MHAppRuntimeDefaults` depends on `MHAppRuntimeCore`, `MHPreferences`, and
+- `MHAppRuntime` depends on `MHDeepLinking`, `MHLogging`, `MHPreferences`, and
+  `MHRouteExecution`.
+- `MHAppRuntimeDefaults` depends on `MHAppRuntime`, `MHPreferences`, and
   `StoreKitWrapper` (iOS, macOS).
-- `MHAppRuntimeAds` depends on `MHAppRuntimeCore` and
+- `MHAppRuntimeAds` depends on `MHAppRuntime` and
   `GoogleMobileAdsWrapper` (iOS).
-- `MHAppRuntimeLicenses` depends on `MHAppRuntimeCore` and `LicenseList` (iOS).
+- `MHAppRuntimeLicenses` depends on `MHAppRuntime` and `LicenseList` (iOS).
 - `MHDeepLinking` has no dependency on the other modules.
 - `MHNotificationPlans` has no dependency on the other modules.
 - `MHNotificationPayloads` depends on `MHDeepLinking` for shared pending-route
@@ -295,7 +295,7 @@ Integration contract:
   helpers and on `MHLogging` for `MHRouteLifecycle` outcome logging.
 - `MHPersistenceMaintenance` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
-- `MHReviewPolicy` depends on `MHAppRuntimeCore`, `MHLogging`, and
+- `MHReviewPolicy` depends on `MHAppRuntime`, `MHLogging`, and
   `MHMutationFlow` for runtime-task, outcome logging, and mutation-step
   integration.
 - `MHLogging` has no dependency on the other modules.

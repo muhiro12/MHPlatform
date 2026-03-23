@@ -1,5 +1,5 @@
 import Foundation
-import MHAppRuntimeCore
+import MHAppRuntime
 import MHPreferences
 import SwiftUI
 
