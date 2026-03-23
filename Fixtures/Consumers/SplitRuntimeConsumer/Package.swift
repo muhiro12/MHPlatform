@@ -3,14 +3,14 @@
 import PackageDescription
 
 let kPackage = Package(
-    name: "DefaultRuntimeConsumer",
+    name: "SplitRuntimeConsumer",
     platforms: [
         .macOS(.v15)
     ],
     products: [
         .library(
-            name: "DefaultRuntimeConsumer",
-            targets: ["DefaultRuntimeConsumer"]
+            name: "SplitRuntimeConsumer",
+            targets: ["SplitRuntimeConsumer"]
         )
     ],
     dependencies: [
@@ -18,7 +18,7 @@ let kPackage = Package(
     ],
     targets: [
         .target(
-            name: "DefaultRuntimeConsumer",
+            name: "SplitRuntimeConsumer",
             dependencies: [
                 .product(
                     name: "MHAppRuntime",
@@ -39,8 +39,8 @@ let kPackage = Package(
             ]
         ),
         .testTarget(
-            name: "DefaultRuntimeConsumerTests",
-            dependencies: ["DefaultRuntimeConsumer"]
+            name: "SplitRuntimeConsumerTests",
+            dependencies: ["SplitRuntimeConsumer"]
         )
     ]
 )

@@ -76,7 +76,7 @@ Fixture-backed adoption references:
   `MHPlatformCore` path.
 - `Fixtures/Consumers/RuntimeOnlyConsumer/` builds the
   advanced `MHAppRuntime` runtime/bootstrap-only path.
-- `Fixtures/Consumers/DefaultRuntimeConsumer/` builds the advanced
+- `Fixtures/Consumers/SplitRuntimeConsumer/` builds the advanced
   `MHAppRuntime` plus split-runtime-bundle composition path.
 - `Fixtures/Consumers/OptionalShellConsumer/` builds the opt-in
   `MHMutationFlow` + `MHReviewPolicy` shell path.
@@ -87,7 +87,7 @@ Minimum adoption evidence for documented consumer paths:
   reminder-policy wiring
 - runtime-only path: fixture smoke tests start an `MHAppRuntime` lifecycle
   without split runtime bundles
-- explicit default-runtime composition: fixture smoke tests start an
+- explicit split-runtime composition: fixture smoke tests start an
   `MHAppRuntime` lifecycle with split runtime bundles
 - optional-shell path: fixture smoke tests run `MHMutationWorkflow` with
   `MHReviewFlow`
@@ -336,7 +336,7 @@ when invalid deep links should present app-owned error UI.
 `failureLogger` (or the default `MHAppRoutePipeline` logger). Provide
 `onFailure:` when the app also needs analytics, telemetry fan-out, or custom
 error presentation hooks.
-Runtime-bootstrap-only adoption is a first-class path. Apps that do not use
+Runtime-bootstrap-only adoption remains a supported advanced path. Apps that do not use
 route, review, or mutation shells can stop at `MHAppRuntimeBootstrap` and
 `View.mhAppRuntimeEnvironment(_:)` without pulling additional workflow APIs
 into their root.

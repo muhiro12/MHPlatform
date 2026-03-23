@@ -78,7 +78,7 @@ Apps still own the mutation result schema and follow-up policy.
   `MHPlatformCore` path.
 - `Fixtures/Consumers/RuntimeOnlyConsumer/` proves the advanced
   `MHAppRuntime` runtime-only path.
-- `Fixtures/Consumers/DefaultRuntimeConsumer/` proves explicit split-runtime
+- `Fixtures/Consumers/SplitRuntimeConsumer/` proves explicit split-runtime
   composition around `MHAppRuntime`.
 - `Fixtures/Consumers/OptionalShellConsumer/` proves route/review/mutation
   shells stay opt-in instead of defining the platform baseline.

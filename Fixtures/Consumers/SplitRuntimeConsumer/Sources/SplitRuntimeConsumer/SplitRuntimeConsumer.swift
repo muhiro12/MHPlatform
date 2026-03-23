@@ -4,11 +4,11 @@ import MHAppRuntimeDefaults
 import MHAppRuntimeLicenses
 import SwiftUI
 
-enum DefaultRuntimeConsumer {
+enum SplitRuntimeConsumer {
     private enum Constants {
         static let subscriptionProductID = "premium.monthly"
-        static let preferencesSuiteName = "fixture.default-runtime"
-        static let startupTaskName = "defaultRuntimeStartup"
+        static let preferencesSuiteName = "fixture.split-runtime"
+        static let startupTaskName = "splitRuntimeStartup"
     }
 
     @MainActor

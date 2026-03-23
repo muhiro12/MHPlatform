@@ -33,7 +33,7 @@ mkdir -p \
 fixtures=(
   "SharedLibraryConsumer"
   "RuntimeOnlyConsumer"
-  "DefaultRuntimeConsumer"
+  "SplitRuntimeConsumer"
   "OptionalShellConsumer"
 )
 

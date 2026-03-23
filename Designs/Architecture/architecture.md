@@ -325,5 +325,8 @@ Integration contract:
 
 - Changes stay inside `MHPlatform/`.
 - `Incomes/` and `Cookle/` remain read-only reference material.
-- `swift test` must pass.
-- `MHPlatformExample` in `Example/` must build through `xcodebuild`.
+- Run `bash ci_scripts/tasks/verify.sh` for the full repository verification
+  path.
+- Run `bash ci_scripts/tasks/run_required_builds.sh` when only the required
+  incremental checks are needed.
+- Inspect `.build/ci/runs/<RUN_ID>/` artifacts when verification fails.

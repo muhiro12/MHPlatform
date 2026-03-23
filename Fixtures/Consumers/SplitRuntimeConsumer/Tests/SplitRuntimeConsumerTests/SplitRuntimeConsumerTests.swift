@@ -1,11 +1,11 @@
-@testable import DefaultRuntimeConsumer
+@testable import SplitRuntimeConsumer
 import Testing
 
 @MainActor
-struct DefaultRuntimeConsumerTests {
+struct SplitRuntimeConsumerTests {
     @Test
-    func lifecycle_starts_default_runtime_on_initial_appearance() async {
-        let bootstrap = DefaultRuntimeConsumer.makeBootstrap()
+    func lifecycle_starts_split_runtime_on_initial_appearance() async {
+        let bootstrap = SplitRuntimeConsumer.makeBootstrap()
         let lifecycle = bootstrap.makeLifecycle()
 
         #expect(bootstrap.runtime.hasStarted == false)

@@ -40,7 +40,7 @@ Advanced composition surfaces:
   `MHPreferences`
 - opt-in workflow shells: `MHMutationFlow`, `MHReviewPolicy`
 
-Start from a first-class entry point unless the target is intentionally doing
+Start from a documented public entry point unless the target is intentionally doing
 advanced composition around one focused concern.
 
 ## Normative Rules
@@ -94,7 +94,7 @@ advanced composition around one focused concern.
 - Shared-library consumer fixture: `Fixtures/Consumers/SharedLibraryConsumer/`
 - Runtime-only consumer fixture: `Fixtures/Consumers/RuntimeOnlyConsumer/`
 - Explicit split-runtime consumer fixture:
-  `Fixtures/Consumers/DefaultRuntimeConsumer/`
+  `Fixtures/Consumers/SplitRuntimeConsumer/`
 - Optional-shell consumer fixture: `Fixtures/Consumers/OptionalShellConsumer/`
 - Shared-package-safe umbrella tests: `Tests/MHPlatformCoreTests/`
 - Full umbrella tests: `Tests/MHPlatformTests/`

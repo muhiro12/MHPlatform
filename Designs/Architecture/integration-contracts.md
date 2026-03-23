@@ -15,26 +15,52 @@ This document is normative for integration design.
 
 ### Required Inputs
 
-- `MHAppConfiguration`
-  - `subscriptionProductIDs`
-  - `subscriptionGroupID`
-  - `nativeAdUnitID`
-  - `preferencesSuiteName`
-  - `showsLicenses`
+- For advanced runtime-only adoption:
+  - `MHAppConfiguration` for `MHAppRuntime(runtimeOnly:)`
+  - or `MHAppRuntimeBootstrap(runtimeOnlyConfiguration:)`
+- For advanced explicit runtime composition:
+  - `MHAppConfiguration`
+    - `subscriptionProductIDs`
+    - `subscriptionGroupID`
+    - `nativeAdUnitID`
+    - `preferencesSuiteName`
+    - `showsLicenses`
+  - `MHPreferenceStore`
+  - `startStore`
+  - `MHRuntimeViewFactory` for `subscriptionSectionFactory`
+  - optional `startAds`
+  - optional `MHRuntimeNativeAdViewFactory`
+  - optional `MHRuntimeViewFactory` for `licensesFactory`
+- For the one-step default app path imported through `MHPlatform`:
+  - `MHAppConfiguration`
+  - package-owned composition of:
+    - `MHAppRuntimeDefaultsBundle`
+    - `MHAppRuntimeAdsBundle`
+    - `MHAppRuntimeLicensesBundle`
 - Optional route bootstrap primitive:
   - `MHAppRoutePipeline<Route>`
   - app-owned lifecycle placement for `routePipeline.task(name:)`
 
 ### Outputs
 
+- Advanced runtime foundation:
+  - `MHAppRuntime`
+    - `init(runtimeOnly:)`
+    - `init(configuration:preferenceStore:startStore:subscriptionSectionFactory:startAds:nativeAdFactory:licensesFactory:)`
 - Bootstrap shell:
   - `MHAppRuntimeBootstrap`
     - `runtime`
     - `lifecyclePlan`
     - `routeInbox`
     - `makeLifecycle()`
+    - `init(runtime:lifecyclePlan:)`
+    - `init(runtimeOnlyConfiguration:lifecyclePlan:)`
   - SwiftUI adapter:
     - `View.mhAppRuntimeBootstrap(_:)`
+- Full app convenience path imported through `MHPlatform`:
+  - `MHAppRuntime(configuration:)`
+  - `MHAppRuntimeBootstrap(configuration:lifecyclePlan:)`
+  - `MHAppRuntimeBootstrap(configuration:lifecyclePlan:routePipeline:)`
 - Startup APIs:
   - `startIfNeeded()`
   - `start()`
@@ -68,6 +94,9 @@ This document is normative for integration design.
 
 ### Intended Call Sites
 
+- App roots that intentionally import `MHAppRuntime` for runtime-only or
+  explicit split-runtime composition
+- App roots that import `MHPlatform` for the one-step default runtime path
 - App launch bootstrap assembly for production / preview factories
 - SwiftUI roots that want a single package-owned runtime entry point
 - App foreground transitions (`scenePhase == .active`)
