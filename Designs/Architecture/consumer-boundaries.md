@@ -3,7 +3,7 @@
 This note is the normative 1.0 consumer matrix for MHPlatform.
 Use it to decide which product each adopter should depend on before adding any
 module import.
-For version pinning and rollout rules, pair it with
+For product-selection rationale and migration notes, pair it with
 [adoption-policy.md](./adoption-policy.md).
 
 ## Consumer Matrix

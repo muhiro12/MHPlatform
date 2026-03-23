@@ -10,7 +10,6 @@ around runtime, route, review, mutation, or product selection.
 | shared library target depends on `MHPlatform` but only imports core-safe APIs | `MHPlatformCore` | keep route meaning, preference meaning, and notification semantics in the adopter |
 | runtime/bootstrap-focused app depends on `MHPlatform` only to reach bootstrap, lifecycle, environment, and optional route plumbing | `MHAppRuntime` | add split runtime bundles later only if package-owned StoreKit, ads, or license integrations become necessary |
 | target adds route, mutation, or review concerns by switching umbrellas | keep the existing base product and add only the required shell | route, mutation, and review shells are optional |
-| app repository pins MHPlatform with `branch: "main"` | exact tag or coordinated exact revision | see `adoption-policy.md` for the supported 1.0 posture |
 
 ## Old Glue -> Current Surface
 
@@ -35,11 +34,6 @@ around runtime, route, review, mutation, or product selection.
   `MHAppRuntime` when they do not need the full umbrella
 - apps that still want package-owned StoreKit, ads, or license integrations on
   the narrower runtime path should add the split runtime bundles explicitly
-- released app repositories should stop using `branch: "main"` and move to
-  exact tag adoption
-- coordinated pre-release validation may use an exact revision, but that is
-  still a controlled pin rather than rolling branch adoption
-- pin edits in downstream app repositories are outside the scope of this run
 - keep low-level primitives when the app genuinely needs custom composition
 - do not move route enums, navigation destinations, or domain effect meaning
   into MHPlatform
