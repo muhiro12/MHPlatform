@@ -15,8 +15,8 @@ Coordinated pre-release validation may use:
 - exact revision
 
 MHPlatform release automation publishes short tags such as `1.0` and `1.1`
-from manual workflow dispatches on `main`. Those tags are intended for exact
-tag pinning, not SwiftPM semantic-version requirements.
+from pushes to `main`. Those tags are intended for exact tag pinning, not
+SwiftPM semantic-version requirements.
 
 `branch: "main"` is not a supported 1.0 adoption strategy.
 Using the moving main branch bypasses the package-owned consumer contract and

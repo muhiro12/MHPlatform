@@ -1,7 +1,9 @@
 name: Release
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -12,62 +14,18 @@ concurrency:
 
 jobs:
   release:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Check release eligibility
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [[ "${GITHUB_REF_NAME}" != "main" ]]; then
-            echo "Releases are only published from main." >&2
-            exit 1
-          fi
-
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          fetch-tags: true
-
-      - name: Refresh tags
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --force --tags origin
-
-      - name: Install SwiftLint
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if command -v swiftlint >/dev/null 2>&1; then
-            swiftlint version
-            exit 0
-          fi
-
-          brew install swiftlint
-
-      - name: Verify repository
-        shell: bash
-        run: bash ci_scripts/tasks/verify.sh
 
       - name: Calculate next release tag
         id: release_tag
         shell: bash
         run: |
           set -euo pipefail
-
-          existing_release_tag=$(
-            git tag --points-at HEAD | grep -E '^[0-9]+\.[0-9]+$' | head -n 1 || true
-          )
-
-          if [[ -n "$existing_release_tag" ]]; then
-            echo "already_released=true" >>"$GITHUB_OUTPUT"
-            echo "existing_tag=$existing_release_tag" >>"$GITHUB_OUTPUT"
-            echo "Commit ${GITHUB_SHA} already has release tag ${existing_release_tag}."
-            exit 0
-          fi
 
           latest_release_tag=$(
             git tag --list '[0-9]*.[0-9]*' --sort=version:refname \
@@ -82,12 +40,10 @@ jobs:
             next_release_tag="${major_version}.$((minor_version + 1))"
           fi
 
-          echo "already_released=false" >>"$GITHUB_OUTPUT"
           echo "next_tag=$next_release_tag" >>"$GITHUB_OUTPUT"
           echo "Publishing release tag ${next_release_tag} for ${GITHUB_SHA}."
 
       - name: Create GitHub release
-        if: steps.release_tag.outputs.already_released == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
