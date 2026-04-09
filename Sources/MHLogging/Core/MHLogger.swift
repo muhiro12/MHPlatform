@@ -7,18 +7,21 @@ public struct MHLogger: Sendable {
 
     private let store: MHLogStore
     private let policy: MHLogPolicy
+    private let runtimeState: MHLogRuntimeState?
 
     public init(
         _ fileID: String,
         store: MHLogStore,
         subsystem: String? = nil,
         category: String? = nil,
-        policy: MHLogPolicy = .default
+        policy: MHLogPolicy = .default,
+        runtimeState: MHLogRuntimeState? = nil
     ) {
         self.subsystem = Self.resolveSubsystem(subsystem)
         self.category = category ?? fileID
         self.store = store
         self.policy = policy
+        self.runtimeState = runtimeState
     }
 
     public func debug(
@@ -131,7 +134,7 @@ public struct MHLogger: Sendable {
         function: String = #function,
         line: Int = #line
     ) {
-        guard level >= policy.minimumLevel else {
+        guard shouldCapture(level) else {
             return
         }
 
@@ -160,7 +163,7 @@ public struct MHLogger: Sendable {
         function: String = #function,
         line: Int = #line
     ) async {
-        guard level >= policy.minimumLevel else {
+        guard shouldCapture(level) else {
             return
         }
 
@@ -212,5 +215,13 @@ private extension MHLogger {
             source: source,
             metadata: metadata
         )
+    }
+
+    func shouldCapture(_ level: MHLogLevel) -> Bool {
+        if let runtimeState {
+            return runtimeState.shouldCapture(level)
+        }
+
+        return level >= policy.minimumLevel
     }
 }

@@ -121,6 +121,25 @@ struct MHLogStoreTests {
 
         #expect(await sinkRecorder.events().map(\.message) == ["message-1"])
     }
+
+    @Test
+    func seed_deduplicates_and_preserves_chronological_order() async {
+        let policy = MHLogPolicy(
+            minimumLevel: .debug,
+            persistsToDisk: false,
+            maximumInMemoryEvents: 20,
+            maximumDiskBytes: 1_000
+        )
+        let store = MHLogStore(policy: policy)
+        let earlyEvent = makeEvent(index: 1, level: .warning)
+        let lateEvent = makeEvent(index: 2, level: .error)
+
+        await store.record(lateEvent)
+        await store.seed([lateEvent, earlyEvent])
+
+        let events = await store.events()
+        #expect(events.map(\.message) == ["message-1", "message-2"])
+    }
 }
 
 private extension MHLogStoreTests {

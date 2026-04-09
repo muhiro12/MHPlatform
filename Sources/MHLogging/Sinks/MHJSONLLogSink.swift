@@ -22,6 +22,19 @@ public actor MHJSONLLogSink: MHLogSink {
         self.decoder = MHLogJSONCodec.makeDecoder()
     }
 
+    public init(
+        maximumFileSizeBytes: Int,
+        fileManager: FileManager = .default
+    ) {
+        let fileURL = Self.defaultFileURL(fileManager: fileManager)
+        self.fileURL = fileURL
+        self.archivedFileURL = fileURL.appendingPathExtension("1")
+        self.maximumFileSizeBytes = max(maximumFileSizeBytes, 1)
+        self.fileManager = fileManager
+        self.encoder = MHLogJSONCodec.makeEncoder()
+        self.decoder = MHLogJSONCodec.makeDecoder()
+    }
+
     public func write(_ event: MHLogEvent) async {
         await Task.yield()
 
@@ -84,6 +97,25 @@ public actor MHJSONLLogSink: MHLogSink {
 }
 
 private extension MHJSONLLogSink {
+    static func defaultFileURL(fileManager: FileManager) -> URL {
+        let baseDirectory = fileManager.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first ?? fileManager.temporaryDirectory
+
+        let bundleIdentifier = Bundle.main.bundleIdentifier?.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        let directoryName = bundleIdentifier?.isEmpty == false
+            ? bundleIdentifier ?? "MHPlatform"
+            : "MHPlatform"
+
+        return baseDirectory
+            .appendingPathComponent(directoryName)
+            .appendingPathComponent("MHLogging")
+            .appendingPathComponent("logs.jsonl")
+    }
+
     func candidateURLs(includeArchived: Bool) -> [URL] {
         if includeArchived {
             return [archivedFileURL, fileURL]

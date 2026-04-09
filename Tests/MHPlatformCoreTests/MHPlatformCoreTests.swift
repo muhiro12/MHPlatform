@@ -13,9 +13,11 @@ struct MHPlatformCoreTests {
             MHStoreMigrationPlan.self,
             MHPreferenceStore.self,
             MHLogPolicy.self,
-            MHLoggerFactory.self
+            MHLoggerFactory.self,
+            MHLogRuntimeState.self,
+            MHLoggingBootstrap.self
         ]
 
-        #expect(exportedCoreSafeTypes.count == 9)
+        #expect(exportedCoreSafeTypes.count == 11)
     }
 }

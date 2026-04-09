@@ -1,7 +1,7 @@
 import Foundation
 
 /// Source location metadata captured at the logging call site.
-public struct MHLogSource: Codable, Equatable, Sendable {
+public struct MHLogSource: Codable, Equatable, Hashable, Sendable {
     public let file: String
     public let function: String
     public let line: Int

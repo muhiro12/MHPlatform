@@ -54,4 +54,33 @@ struct MHLoggerFactoryTests {
         #expect(event?.category == "Synthetic/InjectedLogger.swift")
         #expect(event?.message == "source-category")
     }
+
+    @Test
+    func factory_runtime_state_switches_capture_level() async {
+        let runtimeState = MHLogRuntimeState()
+        let factory = MHLoggerFactory(
+            policy: .init(
+                minimumLevel: .warning,
+                persistsToDisk: false,
+                maximumInMemoryEvents: 20,
+                maximumDiskBytes: 1_000
+            ),
+            subsystem: "tests.runtime",
+            runtimeState: runtimeState
+        )
+        let logger = factory.logger(
+            category: "Mode",
+            source: #fileID
+        )
+
+        await logger.logImmediately(.info, "skip-info")
+        await logger.logImmediately(.warning, "keep-warning")
+
+        runtimeState.isDebugMode = true
+
+        await logger.logImmediately(.debug, "keep-debug")
+
+        let events = await factory.store.events()
+        #expect(events.map(\.message) == ["keep-warning", "keep-debug"])
+    }
 }

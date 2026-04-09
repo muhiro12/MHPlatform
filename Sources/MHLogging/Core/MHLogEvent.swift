@@ -1,7 +1,7 @@
 import Foundation
 
 /// Structured log event model that can be stored and exported as JSON Lines.
-public struct MHLogEvent: Codable, Equatable, Sendable {
+public struct MHLogEvent: Codable, Equatable, Hashable, Sendable {
     public let timestamp: Date
     public let level: MHLogLevel
     public let subsystem: String

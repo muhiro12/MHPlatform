@@ -16,74 +16,64 @@ struct LoggingDemoView: View {
         static let batchCount = 5
     }
 
-    private static let policy = MHLogPolicy.debugDefault
-
-    private static let jsonFileURL: URL = {
-        let baseURL = FileManager.default.urls(
-            for: .cachesDirectory,
-            in: .userDomainMask
-        ).first ?? .temporaryDirectory
-        return baseURL
-            .appendingPathComponent("mhplatform-example")
-            .appendingPathComponent("logs.jsonl")
-    }()
-
-    private static let jsonSink = MHJSONLLogSink(
-        fileURL: jsonFileURL,
-        maximumFileSizeBytes: policy.maximumDiskBytes
+    @State private var logging = MHLoggingBootstrap(
+        subsystem: Constants.subsystem
     )
-
-    private static let loggerFactory = MHLoggerFactory(
-        policy: policy,
-        subsystem: Constants.subsystem,
-        sinks: [
-            MHOSLogSink(),
-            jsonSink
-        ]
-    )
-
-    private let logger = Self.loggerFactory.logger(
-        category: Constants.category,
-        source: #fileID
-    )
-
     @State private var previewText = "No persisted JSONL yet."
     @State private var status = "Emit samples or open the console for filtering."
 
     var body: some View {
         NavigationStack {
             List {
-                emitSection
-                actionsSection
-                previewSection
-                consoleSection
-                statusSection
+                modeSection()
+                emitSection()
+                actionsSection()
+                previewSection()
+                consoleSection()
+                statusSection()
             }
             .navigationTitle("MHLogging")
             .task {
+                await logging.waitForInitialLoad()
                 await refreshPreview()
             }
         }
     }
 
-    private var emitSection: some View {
+    private func modeSection() -> some View {
+        @Bindable var logging = logging
+
+        return Section("Mode") {
+            Toggle("Debug Mode", isOn: $logging.isDebugMode)
+        }
+    }
+
+    private func emitSection() -> some View {
         Section("Emit Sample Events") {
             Button("Emit Info") {
-                emitInfoEvent()
+                Task {
+                    await emitInfoEvent()
+                }
             }
             Button("Emit Warning") {
-                emitWarningEvent()
+                Task {
+                    await emitWarningEvent()
+                }
             }
             Button("Emit Error") {
-                emitErrorEvent()
+                Task {
+                    await emitErrorEvent()
+                }
             }
             Button("Emit Batch") {
-                emitBatchEvents()
+                Task {
+                    await emitBatchEvents()
+                }
             }
         }
     }
 
-    private var actionsSection: some View {
+    private func actionsSection() -> some View {
         Section("Actions") {
             Button("Refresh JSONL Preview") {
                 Task {
@@ -103,7 +93,7 @@ struct LoggingDemoView: View {
         }
     }
 
-    private var previewSection: some View {
+    private func previewSection() -> some View {
         Section("Persisted JSONL Preview") {
             Text(previewText)
                 .font(.caption.monospaced())
@@ -111,10 +101,10 @@ struct LoggingDemoView: View {
         }
     }
 
-    private var consoleSection: some View {
+    private func consoleSection() -> some View {
         Section("Console") {
             NavigationLink("Open MHLogConsoleView") {
-                MHLogConsoleView(store: Self.loggerFactory.store)
+                MHLogConsoleView(store: logging.store)
             }
             Text("Use level/category/search filters in the console.")
                 .foregroundStyle(.secondary)
@@ -122,7 +112,7 @@ struct LoggingDemoView: View {
         }
     }
 
-    private var statusSection: some View {
+    private func statusSection() -> some View {
         Section("Status") {
             Text(status)
                 .font(.caption.monospaced())
@@ -131,8 +121,10 @@ struct LoggingDemoView: View {
     }
 
     private func refreshPreview() async {
-        let text = await Self.jsonSink.readJSONLines()
-        let lines = text.split(whereSeparator: \.isNewline)
+        let text = await logging.persistedJSONLines()
+        let lines = text.split { character in
+            character.isNewline
+        }
         let visibleLines = lines.suffix(Constants.previewLineLimit)
         let preview = visibleLines.isEmpty
             ? "No persisted JSONL yet."
@@ -143,20 +135,36 @@ struct LoggingDemoView: View {
         }
     }
 
-    private func emitInfoEvent() {
+    private func emitInfoEvent() async {
+        let logger = logging.logger(
+            category: Constants.category,
+            source: #fileID
+        )
         logger.info("Demo info event")
-        status = "Info event emitted"
+        await MainActor.run {
+            status = "Info event emitted"
+        }
     }
 
-    private func emitWarningEvent() {
+    private func emitWarningEvent() async {
+        let logger = logging.logger(
+            category: Constants.category,
+            source: #fileID
+        )
         logger.warning(
             "Demo warning event",
             metadata: ["scope": "demo"]
         )
-        status = "Warning event emitted"
+        await MainActor.run {
+            status = "Warning event emitted"
+        }
     }
 
-    private func emitErrorEvent() {
+    private func emitErrorEvent() async {
+        let logger = logging.logger(
+            category: Constants.category,
+            source: #fileID
+        )
         logger.error(
             "Demo error event",
             metadata: [
@@ -164,30 +172,38 @@ struct LoggingDemoView: View {
                 "hint": "open-console"
             ]
         )
-        status = "Error event emitted"
+        await MainActor.run {
+            status = "Error event emitted"
+        }
     }
 
-    private func emitBatchEvents() {
-        Task {
-            for index in 1...Constants.batchCount {
-                await logger.logImmediately(
-                    .notice,
-                    "Batch event \(index)",
-                    metadata: ["batch": "\(index)"]
-                )
-            }
-            await refreshPreview()
-            await MainActor.run {
-                status = "Batch events emitted"
-            }
+    private func emitBatchEvents() async {
+        let logger = logging.logger(
+            category: Constants.category,
+            source: #fileID
+        )
+
+        for index in 1...Constants.batchCount {
+            await logger.logImmediately(
+                .notice,
+                "Batch event \(index)",
+                metadata: ["batch": "\(index)"]
+            )
+        }
+
+        await refreshPreview()
+        await MainActor.run {
+            status = "Batch events emitted"
         }
     }
 
     private func exportLatestEvents() async {
-        let jsonLines = await Self.loggerFactory.store.exportJSONLines(
+        let jsonLines = await logging.store.exportJSONLines(
             matching: .init(limit: Constants.exportLimit)
         )
-        let copied = copyToClipboard(jsonLines)
+        let copied = await MainActor.run {
+            copyToClipboard(jsonLines)
+        }
         await MainActor.run {
             status = copied
                 ? "Copied latest 100 events as JSONL"
@@ -196,8 +212,7 @@ struct LoggingDemoView: View {
     }
 
     private func clearAllLogs() async {
-        await Self.loggerFactory.store.clear()
-        await Self.jsonSink.clear()
+        await logging.clear()
         await refreshPreview()
         await MainActor.run {
             status = "Cleared in-memory and persisted logs"
