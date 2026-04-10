@@ -20,7 +20,7 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 
 | Term | Meaning | MHPlatform Examples |
 | --- | --- | --- |
-| `Outcome` | Terminal async/sync end state used by workflows | `MHRouteExecutionOutcome`, `MHMutationOutcome`, `MHNotificationRequestSyncOutcome`, `MHStoreMigrationOutcome` |
+| `Outcome` | Terminal async/sync end state used by workflows | `MHRouteExecutionOutcome`, `MHMutationOutcome`, `MHNotificationRequestSyncOutcome`, `MHDestructiveResetOutcome` |
 | `Event` | Ordered progress signal emitted while running | `MHMutationEvent`, `MHDestructiveResetEvent` |
 | `Plan` | Pure deterministic planning output with no side effect | `MHReminderPlan`, `MHSuggestionPlan` |
 | `Inbox` | Consume-once handoff slot (latest only) | `MHDeepLinkInbox` |
@@ -42,7 +42,7 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 | Notification planning | deterministic candidate -> plan transforms | UN scheduling policy and app-specific copy |
 | Notification payload routing | payload codec + response route resolving + optional bridge helpers | App notification-center adoption strategy |
 | Mutation orchestration | retry/cancel/event/outcome primitive | Domain mutation meaning and business validation |
-| Persistence maintenance | migration/reset orchestration | App-specific schema validation and data rules |
+| Persistence maintenance | destructive reset orchestration | App-specific schema validation and data rules |
 | Preferences | typed keys + AppStorage bridges + codable-as-Data | Feature semantics for each key |
 | Review request policy | lottery + delayed request orchestration | Product timing/eligibility strategy |
 
@@ -65,6 +65,8 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 
 ## Adoption Posture
 
-- Breaking changes are acceptable during pre-release.
-- API coherence is prioritized over temporary compatibility aliases.
+- `1.x` is treated as beta, so breaking changes are acceptable while the public
+  surface is still being shaped.
+- API coherence is prioritized over temporary compatibility aliases and
+  SDK-update migration helpers.
 - Documentation in `Designs/Architecture` is the source of integration truth.

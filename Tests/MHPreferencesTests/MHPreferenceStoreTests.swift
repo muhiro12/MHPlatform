@@ -220,7 +220,7 @@ struct MHPreferenceStoreTests {
     }
 
     @Test
-    func explicit_storage_key_preserves_legacy_key_names() {
+    func explicit_storage_key_supports_fully_qualified_keys() {
         let boolKey = MHBoolPreferenceKey(storageKey: "opaque-bool")
         let intKey = MHIntPreferenceKey(storageKey: "opaque-int")
         let stringKey = MHStringPreferenceKey(storageKey: "opaque-string")

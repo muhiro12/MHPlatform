@@ -440,7 +440,8 @@ struct DebugLogView: View {
 3. `MHNotificationPayloads` を導入し、payload codec と route resolver を統一する。
 4. `MHMutationWorkflow` と `MHMutationAdapter` で更新系ワークフローの
    ordered follow-up steps と default failure mapping を標準化する。
-5. `MHPersistenceMaintenance` と `MHPreferences` を段階導入し、起動時保守処理と typed preferences を統一する。
+5. `MHPersistenceMaintenance` と `MHPreferences` を段階導入し、reset
+   orchestration と typed preferences を統一する。
 6. 最後に `MHReviewPolicy` を `MHMutationOutcome.succeeded` 起点で接続する。
 7. `MHLogging` を導入し、Debug画面で `MHLogConsoleView` による検索と JSONL 抽出を提供する。
 
@@ -451,7 +452,7 @@ struct DebugLogView: View {
 3. `MHNotificationPlans` を導入して候補選定を deterministic 化する。
 4. `MHMutationWorkflow` を保存系処理へ適用し、app-owned effect metadata を
    ordered follow-up steps へ寄せる。
-5. `MHPersistenceMaintenance` を導入して migration/reset orchestration を共通化する。
+5. `MHPersistenceMaintenance` を導入して reset orchestration を共通化する。
 6. `MHReviewPolicy` は成功体験フローに限定して接続する。
 7. `MHLogging` を導入し、`Logger(#file)` 相当の呼び出しを `MHLogger` に統一する。
 

@@ -183,30 +183,27 @@ Minimal API sketch:
 ExampleApp validation:
 `PreferencesDemoView` demonstrates bool/int/string/codable read-write-reset and raw stored value inspection.
 
-## P2. Persistence migration and destructive reset unification was implemented
+## P2. Persistence destructive reset orchestration is implemented
 
 Status:
 Implemented in this phase as `MHPersistenceMaintenance`.
+The 1.x beta cleanup removed store-migration helpers that only existed to ease
+SDK updates for adopters.
 
 What was extracted:
-- store migration plan and skip semantics (`MHStoreMigrationPlan`, `MHStoreMigrationSkipReason`)
-- deterministic migration and legacy cleanup outcomes (`MHStoreMigrationOutcome`, `MHStoreLegacyCleanupOutcome`)
-- store migration and legacy cleanup execution (`MHStoreMigrator`)
 - ordered destructive reset orchestration (`MHDestructiveResetStep`, `MHDestructiveResetService`, `MHDestructiveResetOutcome`)
 
 Evidence:
-- `Incomes/IncomesLibrary/Sources/Common/DatabaseMigrator.swift`
 - `Incomes/IncomesLibrary/Sources/Common/DataMaintenanceService.swift`
-- `Cookle/CookleLibrary/Sources/Common/DatabaseMigrator.swift`
 - `Cookle/CookleLibrary/Sources/Common/DataResetService.swift`
 - `MHPlatform/Sources/MHPersistenceMaintenance/`
 
 Remaining work:
 - app-specific adoption in Incomes/Cookle call sites is intentionally deferred
-- migration-validation policy (for example object-count checks) remains app-specific
 
 ExampleApp validation:
-`PersistenceMaintenanceDemoView` demonstrates migration, legacy cleanup, and reset event flow with temporary sandbox files.
+`PersistenceMaintenanceDemoView` demonstrates reset event flow with temporary
+sandbox files.
 
 ## P2. Review request policy unification was implemented
 

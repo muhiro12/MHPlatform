@@ -10,7 +10,10 @@ struct MHPlatformCoreTests {
             MHNotificationPayload.self,
             MHRouteExecutionOutcome<Int>.self,
             MHObservableRouteInbox<Int>.self,
-            MHStoreMigrationPlan.self,
+            MHDestructiveResetStep.self,
+            MHDestructiveResetService.self,
+            MHDestructiveResetOutcome.self,
+            MHDestructiveResetEvent.self,
             MHPreferenceStore.self,
             MHLogPolicy.self,
             MHLoggerFactory.self,
@@ -18,6 +21,6 @@ struct MHPlatformCoreTests {
             MHLoggingBootstrap.self
         ]
 
-        #expect(exportedCoreSafeTypes.count == 11)
+        #expect(exportedCoreSafeTypes.count == 14)
     }
 }

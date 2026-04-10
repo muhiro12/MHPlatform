@@ -21,8 +21,9 @@ startup side effects.
 - SwiftUI root integration through `View.mhAppRuntimeBootstrap(_:)`
 
 For a brand-new app starting point, pair this design note with
-[`minimal-app-setup.md`](minimal-app-setup.md). For older app-side glue, use
-[`migrating-to-current-shells.md`](migrating-to-current-shells.md).
+[`minimal-app-setup.md`](minimal-app-setup.md). For current consumer product
+and shell selection guidance, use
+[`adoption-policy.md`](adoption-policy.md).
 
 Apps that do not want the full `MHPlatform` umbrella can import
 `MHAppRuntime` directly. `MHAppRuntime` is the advanced runtime/bootstrap

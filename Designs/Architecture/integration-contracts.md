@@ -435,35 +435,22 @@ This document is normative for integration design.
 
 ### Required Inputs
 
-- `MHStoreMigrationPlan`
-- Optional file manager override
-- Optional migration validation hook:
-  - `validateMigration(currentStoreURL, copiedFileNames)`
 - Destructive reset steps (`[MHDestructiveResetStep]`)
 
 ### Outputs
 
-- `MHStoreMigrationOutcome`
-- `MHStoreLegacyCleanupOutcome`
 - `MHDestructiveResetOutcome`
 - `MHDestructiveResetEvent` stream via callback
 
 ### Threading / Actor
 
-- Migration/cleanup are synchronous file operations.
 - Destructive reset orchestration is async and sequential.
 - Caller owns actor hops for UI updates.
 
 ### Intended Call Sites
 
-- Startup migration gate before model container/bootstrap
 - User-triggered maintenance/reset workflow
-
-### Validation Hook Rule (Normative)
-
-- Validation logic belongs to client app.
-- When validation throws after copy:
-  - copied current-store files are rolled back by migrator.
+- Developer/debug reset workflow
 
 ## MHReviewPolicy
 

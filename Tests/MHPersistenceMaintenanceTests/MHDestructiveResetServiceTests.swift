@@ -132,7 +132,7 @@ struct MHDestructiveResetServiceTests {
         let recorder = Recorder()
 
         do {
-            try await MHDestructiveResetService.runThrowing(
+            _ = try await MHDestructiveResetService.runThrowing(
                 steps: [
                     .init(name: "clear-cache") {
                         recorder.append("action:clear-cache")

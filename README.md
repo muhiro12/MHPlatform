@@ -6,15 +6,24 @@ Cookle. It ships a full app umbrella `MHPlatform`, a shared-package umbrella
 `MHPlatformCore`, and an advanced app-runtime foundation `MHAppRuntime` for
 explicit composition. The default consumer pillars are `MHPlatform` and
 `MHPlatformCore`, while `MHAppRuntime` remains public for narrower app-root
-adoption. The current v1 baseline focuses on runtime startup, deep-link
+adoption. The current 1.x beta baseline focuses on runtime startup, deep-link
 handling, route execution, deterministic notification planning,
 post-mutation side-effect orchestration, logging, preferences, and
-persistence maintenance primitives.
+destructive reset orchestration.
 
 Minimum supported platforms:
 - iOS 18.0+
 - macOS 15.0+
 - watchOS 11.0+
+
+## Versioning Posture
+
+- `1.x` is treated as beta. Public APIs may change while the shared surface is
+  still being shaped.
+- MHPlatform does not keep app-upgrade fallback paths, compatibility layers, or
+  migration helpers solely to ease SDK updates during `1.x`.
+- Adopters should follow the current documentation and current public surface on
+  each update.
 
 ## Documentation Map
 
@@ -27,7 +36,6 @@ Primary adoption docs:
 Reference and design docs:
 - [Architecture Guide](Designs/Architecture/ARCHITECTURE_GUIDE.md)
 - [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
-- [Migrating to Current Shells](Designs/Architecture/migrating-to-current-shells.md)
 - [Architecture](Designs/Architecture/architecture.md)
 - [Runtime-start Design](Designs/Architecture/runtime-start.md)
 - [North Star](Designs/Architecture/north-star.md)
@@ -61,9 +69,10 @@ Normative consumer matrix:
 | Optional shell adopter | Keep current product and add the specific shell | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Treating route, review, or mutation shells as mandatory |
 
 Use [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md) as the
-source of truth for 1.0 package adoption. The rest of this section explains the
-recommended paths in more detail. For product-selection rationale and migration
-notes, see [Consumer Adoption](Designs/Architecture/adoption-policy.md).
+source of truth for 1.x package adoption. The rest of this section explains the
+recommended paths in more detail. For product-selection rationale and current
+selection rules, see
+[Consumer Adoption](Designs/Architecture/adoption-policy.md).
 Compile-backed reference adopters live under `Fixtures/Consumers/`, while
 `Example/MHPlatformExample/` remains the full-umbrella demo app.
 
@@ -585,19 +594,14 @@ queue inspection.
 
 ## MHPersistenceMaintenance
 
-`MHPersistenceMaintenance` provides store-file migration helpers and ordered destructive reset orchestration.
+`MHPersistenceMaintenance` provides ordered destructive reset orchestration for
+app-owned persistence cleanup flows.
 
 Integration contract:
 [`MHPersistenceMaintenance`](Designs/Architecture/integration-contracts.md#mhpersistencemaintenance)
 
 ```swift
 import MHPersistenceMaintenance
-
-let plan = MHStoreMigrationPlan(
-    legacyStoreURL: legacyURL,
-    currentStoreURL: currentURL
-)
-let migrationOutcome = try MHStoreMigrator.migrateIfNeeded(plan: plan)
 
 let resetOutcome = await MHDestructiveResetService.run(
     steps: [

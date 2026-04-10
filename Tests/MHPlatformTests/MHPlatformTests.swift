@@ -14,7 +14,10 @@ struct MHPlatformTests {
             MHNotificationPayload.self,
             MHRouteExecutionOutcome<Int>.self,
             MHObservableRouteInbox<Int>.self,
-            MHStoreMigrationPlan.self,
+            MHDestructiveResetStep.self,
+            MHDestructiveResetService.self,
+            MHDestructiveResetOutcome.self,
+            MHDestructiveResetEvent.self,
             MHPreferenceStore.self,
             MHLogPolicy.self,
             MHLoggerFactory.self,
@@ -32,7 +35,7 @@ struct MHPlatformTests {
             coreSurface +
             optionalShellSurface
 
-        #expect(exportedTypes.count == 17)
+        #expect(exportedTypes.count == 20)
     }
 
     @MainActor

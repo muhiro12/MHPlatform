@@ -209,13 +209,11 @@ Integration contract:
 Integration contract:
 [`MHPersistenceMaintenance`](integration-contracts.md#mhpersistencemaintenance)
 
-- Owns store-file migration and legacy cleanup primitives:
-  `MHStoreMigrationPlan`, `MHStoreMigrator`, `MHStoreMigrationOutcome`,
-  `MHStoreLegacyCleanupOutcome`, `MHStoreMigrationSkipReason`
 - Owns ordered destructive-reset orchestration primitives:
   `MHDestructiveResetStep`, `MHDestructiveResetService`,
   `MHDestructiveResetOutcome`, `MHDestructiveResetEvent`
-- Does not own app-specific persistence model types, migration validation, or data-deletion policy decisions
+- Does not own app-specific persistence model types, startup migration logic,
+  or data-deletion policy decisions
 
 ### `MHPreferences`
 
@@ -316,7 +314,7 @@ Integration contract:
 
 - app-specific `UNUserNotificationCenter` adoption wiring in Incomes/Cookle
 - SwiftUI navigation-state executors
-- shared migration policy for existing app preference formats
+- upgrade-specific preference compatibility policy across Incomes and Cookle
 - shared mutation outcome/effect schema across Incomes and Cookle
 - remote config
 - collapsing all shared infrastructure into a monolithic implementation target

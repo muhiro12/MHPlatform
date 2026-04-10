@@ -1,8 +1,8 @@
 # MHPlatform Consumer Adoption
 
-This note summarizes product selection and migration expectations for MHPlatform
-consumers. It focuses on which package products to adopt and where those
-boundaries should sit.
+This note summarizes current product-selection rules for MHPlatform consumers.
+`1.x` is treated as beta, so adopters should follow the current public surface
+instead of expecting upgrade-specific compatibility layers inside MHPlatform.
 
 ## Consumer Rules
 
@@ -36,10 +36,9 @@ Advanced composition surfaces that should not be the default onboarding path:
 See [Consumer Boundaries](./consumer-boundaries.md) for the consumer product
 matrix.
 
-## Shared Library Migration Rule
+## Shared Library Selection Rule
 
-If a shared package currently depends on `MHPlatform` but only imports
-core-safe APIs such as:
+If a shared package only imports core-safe APIs such as:
 
 - `MHDeepLinking`
 - `MHPreferences`
@@ -49,12 +48,12 @@ core-safe APIs such as:
 - `MHPersistenceMaintenance`
 - `MHLogging`
 
-it should migrate to `MHPlatformCore`.
+it should adopt `MHPlatformCore`.
 
 Do not keep the full `MHPlatform` umbrella in a shared library only because an
 app target happens to use it elsewhere.
 
-## Advanced Runtime Migration Rule
+## Advanced Runtime Selection Rule
 
 If an app target only needs:
 
@@ -70,6 +69,19 @@ Add `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, and `MHAppRuntimeLicenses`
 explicitly only when the target wants those package-owned integrations without
 moving to the full `MHPlatform` umbrella.
 
+## Current Shell Preferences
+
+- Prefer `MHAppRuntimeBootstrap` as the default root entry point for new app
+  composition.
+- Prefer `MHAppRoutePipeline` when the root owns route ingestion and pending
+  route drain wiring.
+- Prefer `MHReviewFlow` for review-trigger orchestration instead of rebuilding
+  requester/task glue in app code.
+- Use `View.mhAppRuntimeEnvironment(_:)` for previews and tests that should not
+  start lifecycle tasks.
+- Keep lower-level primitives only when the app genuinely needs custom
+  composition.
+
 ## Optional Shell Rule
 
 - `MHAppRoutePipeline` and `mhRouteHandler` are optional route shells.
@@ -82,11 +94,12 @@ They are not part of the minimum runtime/bootstrap baseline.
 ## Adoption Checklist For App Repositories
 
 1. Pick the base product from the consumer matrix before adding imports.
-2. Move shared libraries off `MHPlatform` when they only need core-safe APIs.
+2. Prefer the current documented shells instead of keeping app-local
+   integration glue for historical adoption paths.
 3. Keep app-specific route meaning, preference meaning, mutation semantics, and
    notification semantics outside MHPlatform.
 
 ## Out Of Scope For This Run
 
 - Editing downstream app repositories
-- Preserving pre-1.0 compatibility aliases for incorrect adoption
+- Preserving upgrade-specific compatibility layers inside MHPlatform
