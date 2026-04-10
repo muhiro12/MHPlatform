@@ -1,133 +1,230 @@
 import Foundation
-import MHLogging
+@testable import MHLogging
+import MHPreferences
 import Testing
 
 @MainActor
 struct MHLoggingBootstrapTests {
-    @Test
-    func bootstrap_uses_explicit_capture_level_and_restores_persisted_logs() async {
-        let fileManager = FileManager.default
-        let directoryURL = temporaryDirectoryURL(name: "capture-level")
-        defer {
-            try? fileManager.removeItem(at: directoryURL)
-        }
+    private enum Constants {
+        static let previousSessionExportLineCount = 2
+    }
 
-        let fileURL = directoryURL.appendingPathComponent("logs.jsonl")
+    @Test
+    func bootstrap_without_snapshot_key_stays_memory_only() async {
         let bootstrap = MHLoggingBootstrap(
             captureLevel: .warning,
-            subsystem: "tests.bootstrap",
-            fileURL: fileURL,
-            fileManager: fileManager
+            subsystem: "tests.bootstrap"
         )
-        await bootstrap.waitForInitialLoad()
-
         let logger = bootstrap.logger(
-            category: "CaptureLevel",
+            category: "MemoryOnly",
             source: #fileID
         )
 
-        await logger.logImmediately(.info, "skip-info")
         await logger.logImmediately(.warning, "keep-warning")
 
-        bootstrap.captureLevel = .info
+        let currentEvents = await bootstrap.events(in: .current)
+        let previousEvents = await bootstrap.events(in: .previous)
 
-        await logger.logImmediately(.info, "keep-info")
-
-        let liveEvents = await bootstrap.store.events()
-        #expect(liveEvents.map(\.message) == [
-            "keep-warning",
-            "keep-info"
-        ])
-
-        let restoredBootstrap = MHLoggingBootstrap(
-            subsystem: "tests.bootstrap",
-            fileURL: fileURL,
-            fileManager: fileManager
-        )
-        await restoredBootstrap.waitForInitialLoad()
-
-        #expect(restoredBootstrap.captureLevel == .warning)
-
-        let restoredEvents = await restoredBootstrap.store.events()
-        #expect(restoredEvents.map(\.message) == [
-            "keep-warning",
-            "keep-info"
-        ])
+        #expect(currentEvents.map(\.message) == ["keep-warning"])
+        #expect(previousEvents.isEmpty)
+        #expect(bootstrap.hasPreviousSession == false)
     }
 
     @Test
-    func bootstrap_capture_level_updates_runtime_state() async {
-        let fileManager = FileManager.default
-        let directoryURL = temporaryDirectoryURL(name: "runtime-state")
+    func bootstrap_promotes_last_session_snapshot_to_previous_session() async throws {
+        try await exerciseSnapshotPromotion()
+    }
+
+    @Test
+    func bootstrap_same_session_restores_current_snapshot_without_promoting_previous() async throws {
+        let suiteName = "MHLoggingBootstrapTests.restore.\(UUID().uuidString)"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        userDefaults.removePersistentDomain(forName: suiteName)
         defer {
-            try? fileManager.removeItem(at: directoryURL)
+            userDefaults.removePersistentDomain(forName: suiteName)
         }
 
-        let fileURL = directoryURL.appendingPathComponent("logs.jsonl")
-        let bootstrap = MHLoggingBootstrap(
-            captureLevel: .warning,
-            subsystem: "tests.bootstrap",
-            fileURL: fileURL,
-            fileManager: fileManager
+        let snapshotStore = MHPreferenceStore(userDefaults: userDefaults)
+        let snapshotKey = MHCodablePreferenceKey<[MHLogEvent]>(
+            storageKey: "opaque.bootstrap.restore"
         )
-        await bootstrap.waitForInitialLoad()
+        let sessionIdentifier = UUID()
 
-        let logger = bootstrap.logger(
-            category: "CaptureLevel",
+        let firstBootstrap = makeBootstrap(
+            snapshotKey: snapshotKey,
+            snapshotStore: snapshotStore,
+            sessionIdentifier: sessionIdentifier
+        )
+        let firstLogger = firstBootstrap.logger(
+            category: "Restore",
             source: #fileID
         )
+        await firstLogger.logImmediately(.warning, "keep-warning")
 
-        await logger.logImmediately(.info, "skip-info")
-        bootstrap.captureLevel = .info
-        await logger.logImmediately(.info, "keep-info")
+        let restoredBootstrap = makeBootstrap(
+            snapshotKey: snapshotKey,
+            snapshotStore: snapshotStore,
+            sessionIdentifier: sessionIdentifier
+        )
 
-        let events = await bootstrap.store.events()
-        #expect(bootstrap.captureLevel == .info)
-        #expect(events.map(\.message) == ["keep-info"])
+        #expect(restoredBootstrap.hasPreviousSession == false)
+        #expect(
+            await restoredBootstrap.events(in: .current).map(\.message) == [
+                "keep-warning"
+            ]
+        )
+        #expect(await restoredBootstrap.events(in: .previous).isEmpty)
     }
 
     @Test
-    func bootstrap_clear_removes_memory_and_persisted_logs() async {
-        let fileManager = FileManager.default
-        let directoryURL = temporaryDirectoryURL(name: "clear")
+    func bootstrap_clear_removes_current_and_previous_session_snapshots() async throws {
+        let suiteName = "MHLoggingBootstrapTests.clear.\(UUID().uuidString)"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        userDefaults.removePersistentDomain(forName: suiteName)
         defer {
-            try? fileManager.removeItem(at: directoryURL)
+            userDefaults.removePersistentDomain(forName: suiteName)
         }
 
-        let fileURL = directoryURL.appendingPathComponent("logs.jsonl")
-        let bootstrap = MHLoggingBootstrap(
-            captureLevel: .debug,
-            subsystem: "tests.bootstrap",
-            fileURL: fileURL,
-            fileManager: fileManager
+        let snapshotStore = MHPreferenceStore(userDefaults: userDefaults)
+        let snapshotKey = MHCodablePreferenceKey<[MHLogEvent]>(
+            storageKey: "opaque.bootstrap.clear"
         )
-        await bootstrap.waitForInitialLoad()
 
-        let logger = bootstrap.logger(
+        let firstBootstrap = makeBootstrap(
+            snapshotKey: snapshotKey,
+            snapshotStore: snapshotStore,
+            sessionIdentifier: UUID()
+        )
+        let firstLogger = firstBootstrap.logger(
             category: "Clear",
             source: #fileID
         )
-        await logger.logImmediately(.warning, "keep-warning")
+        await firstLogger.logImmediately(.warning, "keep-warning")
 
-        await bootstrap.clear()
-
-        let restoredBootstrap = MHLoggingBootstrap(
-            subsystem: "tests.bootstrap",
-            fileURL: fileURL,
-            fileManager: fileManager
+        let secondBootstrap = makeBootstrap(
+            snapshotKey: snapshotKey,
+            snapshotStore: snapshotStore,
+            sessionIdentifier: UUID()
         )
-        await restoredBootstrap.waitForInitialLoad()
+        let secondLogger = secondBootstrap.logger(
+            category: "Clear",
+            source: #fileID
+        )
+        await secondLogger.logImmediately(.warning, "current-warning")
 
-        let restoredEvents = await restoredBootstrap.store.events()
-        #expect(restoredEvents.isEmpty)
+        await secondBootstrap.clear()
+
+        let restoredBootstrap = makeBootstrap(
+            snapshotKey: snapshotKey,
+            snapshotStore: snapshotStore,
+            sessionIdentifier: UUID()
+        )
+
+        #expect(await restoredBootstrap.events(in: .current).isEmpty)
+        #expect(await restoredBootstrap.events(in: .previous).isEmpty)
+        #expect(restoredBootstrap.hasPreviousSession == false)
     }
 }
 
 private extension MHLoggingBootstrapTests {
-    func temporaryDirectoryURL(name: String) -> URL {
-        FileManager.default.temporaryDirectory
-            .appendingPathComponent("MHLoggingBootstrapTests")
-            .appendingPathComponent(name)
-            .appendingPathComponent(UUID().uuidString)
+    func exerciseSnapshotPromotion() async throws {
+        let suiteName = "MHLoggingBootstrapTests.promote.\(UUID().uuidString)"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        userDefaults.removePersistentDomain(forName: suiteName)
+        defer {
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let snapshotStore = MHPreferenceStore(userDefaults: userDefaults)
+        let snapshotKey = MHCodablePreferenceKey<[MHLogEvent]>(
+            storageKey: "opaque.bootstrap.promote"
+        )
+        let firstBootstrap = makeBootstrap(
+            snapshotKey: snapshotKey,
+            snapshotStore: snapshotStore,
+            sessionIdentifier: UUID()
+        )
+        let firstLogger = firstBootstrap.logger(category: "Promote", source: #fileID)
+        await recordPromotionSeed(with: firstBootstrap, logger: firstLogger)
+
+        let secondBootstrap = makeBootstrap(
+            snapshotKey: snapshotKey,
+            snapshotStore: snapshotStore,
+            sessionIdentifier: UUID()
+        )
+        await assertInitialPromotionState(of: secondBootstrap)
+
+        let secondLogger = secondBootstrap.logger(category: "Promote", source: #fileID)
+        await secondLogger.logImmediately(.warning, "current-warning")
+
+        await assertMessages(in: secondBootstrap, scope: .current, expected: ["current-warning"])
+        await assertMessages(
+            in: secondBootstrap,
+            scope: .previous,
+            expected: ["keep-warning", "keep-info"]
+        )
+        await assertExportedLineCount(
+            in: secondBootstrap,
+            scope: .previous,
+            count: Constants.previousSessionExportLineCount
+        )
+    }
+
+    func makeBootstrap(
+        snapshotKey: MHCodablePreferenceKey<[MHLogEvent]>,
+        snapshotStore: MHPreferenceStore,
+        sessionIdentifier: UUID
+    ) -> MHLoggingBootstrap {
+        MHLoggingBootstrap(
+            captureLevel: .warning,
+            policy: nil,
+            subsystem: "tests.bootstrap",
+            snapshotKey: snapshotKey,
+            snapshotStore: snapshotStore,
+            additionalSinks: [],
+            sessionIdentifier: sessionIdentifier
+        )
+    }
+
+    func recordPromotionSeed(
+        with bootstrap: MHLoggingBootstrap,
+        logger: MHLogger
+    ) async {
+        await logger.logImmediately(.info, "skip-info")
+        await logger.logImmediately(.warning, "keep-warning")
+        bootstrap.captureLevel = .info
+        await logger.logImmediately(.info, "keep-info")
+    }
+
+    func assertInitialPromotionState(
+        of bootstrap: MHLoggingBootstrap
+    ) async {
+        #expect(bootstrap.hasPreviousSession)
+        await assertMessages(in: bootstrap, scope: .current, expected: [])
+        await assertMessages(
+            in: bootstrap,
+            scope: .previous,
+            expected: ["keep-warning", "keep-info"]
+        )
+    }
+
+    func assertMessages(
+        in bootstrap: MHLoggingBootstrap,
+        scope: MHLogSessionScope,
+        expected: [String]
+    ) async {
+        let events = await bootstrap.events(in: scope)
+
+        #expect(events.map(\.message) == expected)
+    }
+
+    func assertExportedLineCount(
+        in bootstrap: MHLoggingBootstrap,
+        scope: MHLogSessionScope,
+        count: Int
+    ) async {
+        let jsonLines = await bootstrap.exportJSONLines(in: scope)
+
+        #expect(jsonLines.split(whereSeparator: \.isNewline).count == count)
     }
 }

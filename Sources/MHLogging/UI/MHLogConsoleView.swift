@@ -25,6 +25,7 @@ public struct MHLogConsoleView: View {
     let logging: MHLoggingBootstrap?
 
     // swiftlint:disable private_swiftui_state
+    @State var sessionScope: MHLogSessionScope = .current
     @State var visibleMinimumLevel: MHLogLevel = .debug
     @State var categoryFilter = String()
     @State var searchText = String()
@@ -50,6 +51,11 @@ public struct MHLogConsoleView: View {
         .navigationTitle("Diagnostics Console")
         .task {
             await prepareConsole()
+        }
+        .onChange(of: sessionScope) {
+            Task {
+                await refreshEvents()
+            }
         }
         .onChange(of: visibleMinimumLevel) {
             Task {
@@ -86,6 +92,15 @@ public struct MHLogConsoleView: View {
             }
         }
         #endif
+    }
+
+    var availableSessionScopes: [MHLogSessionScope] {
+        if let logging,
+           logging.hasPreviousSession {
+            return MHLogSessionScope.allCases
+        }
+
+        return [.current]
     }
 
     public init(store: MHLogStore) {

@@ -503,12 +503,12 @@ This document is normative for integration design.
 - Log store sinks (`[MHLogSink]`)
 - Optional thin setup helper:
   `MHLoggerFactory`
+- Optional last-session snapshot bootstrap:
+  - `MHLoggingBootstrap`
+  - `snapshotKey`
 - Logger call-site context:
   - `file` / `function` / `line`
   - `subsystem` / `category`
-- Optional JSONL sink configuration:
-  - `fileURL`
-  - `maximumFileSizeBytes`
 
 ### Outputs
 
@@ -518,9 +518,11 @@ This document is normative for integration design.
 - Queryable in-memory store:
   - `MHLogStore.events(matching:)`
   - `MHLogStore.exportJSONLines(matching:)`
+- Session-aware bootstrap:
+  - `MHLoggingBootstrap`
+  - `MHLogSessionScope`
 - Sink adapters:
   - `MHOSLogSink`
-  - `MHJSONLLogSink`
 - Thin logger setup helper:
   `MHLoggerFactory`
 - Reusable console UI:
@@ -529,7 +531,6 @@ This document is normative for integration design.
 ### Threading / Actor
 
 - `MHLogStore` is an `actor`; record/query/export/clear are serialized.
-- `MHJSONLLogSink` is an `actor`; append/rotation/load are serialized.
 - `MHLogger` is value-typed and actor-agnostic; sync methods enqueue writes via `Task`.
 - Console UI fetches actor state asynchronously and updates on `MainActor`.
 
@@ -540,13 +541,13 @@ This document is normative for integration design.
 - Shared app logger setup that still owns its policy/subsystem decisions locally
 - In-app debug console and incident triage
 - JSONL export for machine-assisted analysis
+- Optional last-session snapshot inspection when the app provides a storage key
 
 ### Retention Rules (Normative)
 
-- Debug default policy keeps verbose events and enables JSONL persistence.
-- Release default policy keeps warning/error/critical events and disables JSONL persistence.
+- Debug default policy keeps verbose events in memory.
+- Release default policy keeps warning/error/critical events in memory.
 - Ring buffer uses latest-wins eviction when capacity is exceeded.
-- JSONL sink rotates to a single archive file when byte cap is exceeded.
 
 ## Canonical Naming Decision
 

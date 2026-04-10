@@ -194,7 +194,6 @@ struct MHRouteLifecycleCodecTests {
 private extension MHRouteLifecycleCodecTests {
     enum TestConstants {
         static let maximumInMemoryEvents = 20
-        static let maximumDiskBytes = 1_000
         static let routePathComponentCount = 2
     }
 
@@ -247,9 +246,7 @@ private extension MHRouteLifecycleCodecTests {
         let logStore = MHLogStore(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents,
-                maximumDiskBytes: TestConstants.maximumDiskBytes
+                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents
             )
         )
         let logger = MHLogger(

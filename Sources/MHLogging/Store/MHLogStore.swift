@@ -5,7 +5,6 @@ public actor MHLogStore {
     private let policy: MHLogPolicy
     private let runtimeState: MHLogRuntimeState?
     private let sinks: [any MHLogSink]
-    private let encoder: JSONEncoder
 
     private var bufferedEvents = [MHLogEvent]()
 
@@ -13,12 +12,19 @@ public actor MHLogStore {
     public init(
         policy: MHLogPolicy = .default,
         runtimeState: MHLogRuntimeState? = nil,
-        sinks: [any MHLogSink] = []
+        sinks: [any MHLogSink] = [],
+        initialEvents: [MHLogEvent] = []
     ) {
+        var bufferedEvents = initialEvents
+        let overflow = bufferedEvents.count - policy.maximumInMemoryEvents
+        if overflow > 0 {
+            bufferedEvents.removeFirst(overflow)
+        }
+
         self.policy = policy
         self.runtimeState = runtimeState
         self.sinks = sinks
-        self.encoder = MHLogJSONCodec.makeEncoder()
+        self.bufferedEvents = bufferedEvents
     }
 
     /// Records an event into the ring buffer and forwards it to configured sinks.
@@ -31,10 +37,6 @@ public actor MHLogStore {
         trimIfNeeded()
 
         for sink in sinks {
-            if policy.persistsToDisk == false,
-               sink is MHJSONLLogSink {
-                continue
-            }
             await sink.write(event)
         }
     }
@@ -71,14 +73,10 @@ public actor MHLogStore {
     public func exportJSONLines(
         matching query: MHLogQuery = .init()
     ) -> String {
-        let values = filteredEvents(matching: query)
-        let lines: [String] = values.compactMap { event in
-            guard let data = try? encoder.encode(event) else {
-                return nil
-            }
-            return String(data: data, encoding: .utf8)
-        }
-        return lines.joined(separator: "\n")
+        MHLogEventCollection.exportJSONLines(
+            from: bufferedEvents,
+            matching: query
+        )
     }
 
     /// Clears all in-memory buffered events.
@@ -107,41 +105,9 @@ private extension MHLogStore {
     func filteredEvents(
         matching query: MHLogQuery
     ) -> [MHLogEvent] {
-        var values = bufferedEvents
-
-        if let minimumLevel = query.minimumLevel {
-            values = values.filter { event in
-                event.level >= minimumLevel
-            }
-        }
-
-        if let category = query.category {
-            values = values.filter { event in
-                event.category.localizedCaseInsensitiveContains(category)
-            }
-        }
-
-        if let searchText = query.searchText {
-            values = values.filter { event in
-                event.message.localizedCaseInsensitiveContains(searchText)
-                    || event.subsystem.localizedCaseInsensitiveContains(searchText)
-                    || event.category.localizedCaseInsensitiveContains(searchText)
-                    || event.source.file.localizedCaseInsensitiveContains(searchText)
-                    || event.metadata.keys.contains { key in
-                        key.localizedCaseInsensitiveContains(searchText)
-                    }
-                    || event.metadata.values.contains { value in
-                        value.localizedCaseInsensitiveContains(searchText)
-                    }
-            }
-        }
-
-        if let limit = query.limit,
-           limit > 0,
-           values.count > limit {
-            values = Array(values.suffix(limit))
-        }
-
-        return values
+        MHLogEventCollection.filteredEvents(
+            in: bufferedEvents,
+            matching: query
+        )
     }
 }

@@ -194,16 +194,13 @@ struct MHReviewFlowTests {
 private extension MHReviewFlowTests {
     private enum Constants {
         static let maximumInMemoryEvents = 20
-        static let maximumDiskBytes = 1_000
     }
 
     static func makeStore() -> MHLogStore {
         .init(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: Constants.maximumInMemoryEvents,
-                maximumDiskBytes: Constants.maximumDiskBytes
+                maximumInMemoryEvents: Constants.maximumInMemoryEvents
             )
         )
     }

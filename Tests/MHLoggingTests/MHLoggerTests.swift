@@ -8,9 +8,7 @@ struct MHLoggerTests {
         let factory = MHLoggerFactory(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: 20,
-                maximumDiskBytes: 1_000
+                maximumInMemoryEvents: 20
             ),
             subsystem: "tests.factory"
         )
@@ -39,9 +37,7 @@ struct MHLoggerTests {
         let store = MHLogStore(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: 20,
-                maximumDiskBytes: 1_000
+                maximumInMemoryEvents: 20
             )
         )
         let logger = MHLogger(
@@ -50,9 +46,7 @@ struct MHLoggerTests {
             subsystem: "tests.logger",
             policy: .init(
                 minimumLevel: .warning,
-                persistsToDisk: false,
-                maximumInMemoryEvents: 20,
-                maximumDiskBytes: 1_000
+                maximumInMemoryEvents: 20
             )
         )
 
@@ -70,9 +64,7 @@ struct MHLoggerTests {
         let store = MHLogStore(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: 20,
-                maximumDiskBytes: 1_000
+                maximumInMemoryEvents: 20
             )
         )
         let logger = MHLogger(

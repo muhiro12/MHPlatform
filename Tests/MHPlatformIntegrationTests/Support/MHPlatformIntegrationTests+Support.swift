@@ -102,9 +102,7 @@ extension MHPlatformIntegrationTests {
         .init(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents,
-                maximumDiskBytes: TestConstants.maximumDiskBytes
+                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents
             ),
             sinks: [sinkRecorder]
         )

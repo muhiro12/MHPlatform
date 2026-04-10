@@ -241,7 +241,7 @@ What was extracted:
 - structured log event model and levels (`MHLogEvent`, `MHLogLevel`, `MHLogSource`)
 - logger and policy surface (`MHLogger`, `MHLogPolicy`)
 - queryable ring-buffer store (`MHLogStore`, `MHLogQuery`)
-- sink abstractions and adapters (`MHLogSink`, `MHOSLogSink`, `MHJSONLLogSink`)
+- sink abstractions and adapters (`MHLogSink`, `MHOSLogSink`)
 - reusable log console UI (`MHLogConsoleView`)
 
 Evidence:

@@ -250,9 +250,9 @@ Integration contract:
 - Owns in-memory queryable store:
   `MHLogStore`, `MHLogQuery`
 - Owns sink abstractions and default adapters:
-  `MHLogSink`, `MHOSLogSink`, `MHJSONLLogSink`
+  `MHLogSink`, `MHOSLogSink`
 - Owns a lightweight logger setup helper:
-  `MHLoggerFactory`
+  `MHLoggerFactory`, `MHLoggingBootstrap`
 - Owns reusable log console UI:
   `MHLogConsoleView`, with watchOS-safe availability guards for unsupported
   selection and clipboard features

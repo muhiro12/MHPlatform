@@ -172,16 +172,13 @@ struct MHRouteLifecycleTests {
 private extension MHRouteLifecycleTests {
     enum TestConstants {
         static let maximumInMemoryEvents = 20
-        static let maximumDiskBytes = 1_000
     }
 
     func makeLogger() -> (MHLogger, MHLogStore) {
         let store = MHLogStore(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents,
-                maximumDiskBytes: TestConstants.maximumDiskBytes
+                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents
             )
         )
         let logger = MHLogger(

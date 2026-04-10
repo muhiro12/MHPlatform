@@ -403,29 +403,17 @@ import SwiftUI
 
 @MainActor
 final class AppLogging {
-    let policy: MHLogPolicy
-    let store: MHLogStore
+    let logging: MHLoggingBootstrap
     let logger: MHLogger
 
     init() {
-        policy = .default
-
-        let jsonFileURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("app.logs.jsonl")
-        let jsonSink = MHJSONLLogSink(
-            fileURL: jsonFileURL,
-            maximumFileSizeBytes: policy.maximumDiskBytes
-        )
-
-        store = MHLogStore(
-            policy: policy,
-            sinks: [MHOSLogSink(), jsonSink]
-        )
-        logger = MHLogger(
-            #fileID,
+        logging = MHLoggingBootstrap(
             subsystem: "com.example.app",
-            store: store,
-            policy: policy
+            snapshotKey: .init(storageKey: "opaque.example.logging.snapshot")
+        )
+        logger = logging.logger(
+            category: "startup",
+            source: #fileID
         )
     }
 
@@ -438,7 +426,7 @@ struct DebugLogView: View {
     let logging: AppLogging
 
     var body: some View {
-        MHLogConsoleView(store: logging.store)
+        MHLogConsoleView(logging: logging.logging)
     }
 }
 ```

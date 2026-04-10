@@ -8,9 +8,7 @@ struct MHLogStoreTests {
     func stores_ring_buffer_with_latest_wins() async {
         let policy = MHLogPolicy(
             minimumLevel: .debug,
-            persistsToDisk: false,
-            maximumInMemoryEvents: 3,
-            maximumDiskBytes: 1_000
+            maximumInMemoryEvents: 3
         )
         let store = MHLogStore(policy: policy)
 
@@ -28,9 +26,7 @@ struct MHLogStoreTests {
     func filters_by_level_category_search_and_limit() async {
         let policy = MHLogPolicy(
             minimumLevel: .debug,
-            persistsToDisk: false,
-            maximumInMemoryEvents: 20,
-            maximumDiskBytes: 1_000
+            maximumInMemoryEvents: 20
         )
         let store = MHLogStore(policy: policy)
 
@@ -77,9 +73,7 @@ struct MHLogStoreTests {
     func exports_query_result_as_jsonl() async throws {
         let policy = MHLogPolicy(
             minimumLevel: .debug,
-            persistsToDisk: false,
-            maximumInMemoryEvents: 20,
-            maximumDiskBytes: 1_000
+            maximumInMemoryEvents: 20
         )
         let store = MHLogStore(policy: policy)
 
@@ -107,9 +101,7 @@ struct MHLogStoreTests {
     func forwards_events_to_custom_sink_recorder() async {
         let policy = MHLogPolicy(
             minimumLevel: .debug,
-            persistsToDisk: false,
-            maximumInMemoryEvents: 20,
-            maximumDiskBytes: 1_000
+            maximumInMemoryEvents: 20
         )
         let sinkRecorder = MHLogSinkRecorder()
         let store = MHLogStore(
@@ -126,9 +118,7 @@ struct MHLogStoreTests {
     func seed_deduplicates_and_preserves_chronological_order() async {
         let policy = MHLogPolicy(
             minimumLevel: .debug,
-            persistsToDisk: false,
-            maximumInMemoryEvents: 20,
-            maximumDiskBytes: 1_000
+            maximumInMemoryEvents: 20
         )
         let store = MHLogStore(policy: policy)
         let earlyEvent = makeEvent(index: 1, level: .warning)

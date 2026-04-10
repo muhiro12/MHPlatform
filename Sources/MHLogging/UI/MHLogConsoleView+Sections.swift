@@ -7,26 +7,10 @@ extension MHLogConsoleView {
             let captureLevel = logging.captureLevel
 
             Section("Capture") {
-                Picker(
-                    "Capture Level",
-                    selection: Binding(
-                        get: {
-                            logging.captureLevel
-                        },
-                        set: { newValue in
-                            logging.captureLevel = newValue
-                            statusMessage = "Capture level set to \(newValue.name.uppercased())"
-                        }
-                    )
-                ) {
-                    ForEach(MHLogLevel.allCases, id: \.self) { level in
-                        Text(level.name.uppercased())
-                            .tag(level)
-                    }
-                }
-                Text("Currently capturing \(captureLevel.name.uppercased()) and higher for new events.")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
+                sessionScopePicker()
+                captureLevelPicker(logging: logging)
+                captureSummaryText(captureLevel: captureLevel)
+                previousSessionAvailabilityText(logging: logging)
             }
         }
     }
@@ -83,8 +67,12 @@ extension MHLogConsoleView {
     var eventSection: some View {
         Section("Events") {
             if events.isEmpty {
-                Text("No events")
-                    .foregroundStyle(.secondary)
+                Text(
+                    sessionScope == .previous
+                        ? "No previous session events"
+                        : "No events"
+                )
+                .foregroundStyle(.secondary)
             } else {
                 ForEach(
                     Array(events.enumerated()),
@@ -148,6 +136,63 @@ extension MHLogConsoleView {
             return .orange
         case .error, .critical:
             return .red
+        }
+    }
+
+    @ViewBuilder
+    private func sessionScopePicker() -> some View {
+        Picker(
+            "Session",
+            selection: $sessionScope
+        ) {
+            ForEach(availableSessionScopes, id: \.self) { scope in
+                Text(scope.title)
+                    .tag(scope)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func captureLevelPicker(logging: MHLoggingBootstrap) -> some View {
+        Picker(
+            "Capture Level",
+            selection: Binding(
+                get: {
+                    logging.captureLevel
+                },
+                set: { newValue in
+                    logging.captureLevel = newValue
+                    statusMessage = "Capture level set to \(newValue.name.uppercased())"
+                }
+            )
+        ) {
+            ForEach(MHLogLevel.allCases, id: \.self) { level in
+                Text(level.name.uppercased())
+                    .tag(level)
+            }
+        }
+        .disabled(sessionScope == .previous)
+    }
+
+    @ViewBuilder
+    private func captureSummaryText(captureLevel: MHLogLevel) -> some View {
+        if sessionScope == .current {
+            Text("Currently capturing \(captureLevel.name.uppercased()) and higher for new events.")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+        } else {
+            Text("Previous session snapshots are read-only.")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+        }
+    }
+
+    @ViewBuilder
+    private func previousSessionAvailabilityText(logging: MHLoggingBootstrap) -> some View {
+        if logging.hasPreviousSession == false {
+            Text("No previous session snapshot is available.")
+                .foregroundStyle(.secondary)
+                .font(.caption)
         }
     }
 }

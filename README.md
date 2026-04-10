@@ -655,7 +655,7 @@ in the app layer.
 ## MHLogging
 
 `MHLogging` provides a structured logging surface with in-memory query support,
-JSONL persistence, and reusable console UI. `MHLoggerFactory` is a thin helper
+optional last-session snapshot storage, and reusable console UI. `MHLoggerFactory` is a thin helper
 for app-owned logger setup; it does not move runtime wiring or policy decisions
 into MHPlatform.
 
@@ -666,24 +666,21 @@ Integration contract:
 import MHLogging
 
 let policy = MHLogPolicy.default
-let jsonSink = MHJSONLLogSink(
-    fileURL: FileManager.default.temporaryDirectory
-        .appendingPathComponent("app.logs.jsonl"),
-    maximumFileSizeBytes: policy.maximumDiskBytes
-)
 let loggerFactory = MHLoggerFactory(
     policy: policy,
     subsystem: "com.example.app",
-    sinks: [
-        MHOSLogSink(),
-        jsonSink
-    ]
+    sinks: [MHOSLogSink()]
 )
 let logger = loggerFactory.logger(
     category: "startup",
     source: #fileID
 )
 logger.info("App started")
+
+let logging = MHLoggingBootstrap(
+    subsystem: "com.example.app",
+    snapshotKey: .init(storageKey: "opaque.example.logging.snapshot")
+)
 ```
 
 ## Example App
@@ -699,7 +696,7 @@ It includes cross-module demos for:
 - RouteExecution low-level coordinator apply path
 - NotificationPlans + NotificationPayloads pipeline
 - MutationWorkflow-driven ReviewPolicy trigger
-- Structured logging + JSONL analysis workflow
+- Structured logging + last-session diagnostics workflow
 - MutationFlow adapter composition with ordered follow-up steps
 
 ## Requirements

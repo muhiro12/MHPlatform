@@ -91,7 +91,6 @@ struct MHRouteLifecycleMultiSourceHandoffTests {
 private extension MHRouteLifecycleMultiSourceHandoffTests {
     enum TestConstants {
         static let maximumInMemoryEvents = 20
-        static let maximumDiskBytes = 1_000
     }
 
     static func parseRoute(from url: URL) -> Int? {
@@ -102,9 +101,7 @@ private extension MHRouteLifecycleMultiSourceHandoffTests {
         let store = MHLogStore(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents,
-                maximumDiskBytes: TestConstants.maximumDiskBytes
+                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents
             )
         )
         let logger = MHLogger(

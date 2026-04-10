@@ -1,7 +1,7 @@
 import Foundation
 
 /// A typed `UserDefaults` adapter for primitive and `Codable` preferences.
-public struct MHPreferenceStore {
+public struct MHPreferenceStore: @unchecked Sendable {
     private let userDefaults: UserDefaults
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder

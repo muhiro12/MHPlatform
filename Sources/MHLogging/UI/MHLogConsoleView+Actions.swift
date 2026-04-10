@@ -18,27 +18,36 @@ extension MHLogConsoleView {
     }
 
     func prepareConsole() async {
-        if let logging {
-            await logging.waitForInitialLoad()
-        }
-
         await refreshEvents()
     }
 
     func refreshEvents() async {
+        let values: [MHLogEvent]
         if let logging {
-            await logging.waitForInitialLoad()
+            values = await logging.events(
+                in: sessionScope,
+                matching: activeQuery
+            )
+        } else {
+            values = await store.events(matching: activeQuery)
         }
 
-        let values = await store.events(matching: activeQuery)
         await MainActor.run {
             events = values
-            statusMessage = "Loaded \(values.count) event(s)"
+            statusMessage = "Loaded \(values.count) event(s) from \(sessionScope.title.lowercased())"
         }
     }
 
     func copyJSONL() async {
-        let jsonLines = await store.exportJSONLines(matching: activeQuery)
+        let jsonLines: String
+        if let logging {
+            jsonLines = await logging.exportJSONLines(
+                in: sessionScope,
+                matching: activeQuery
+            )
+        } else {
+            jsonLines = await store.exportJSONLines(matching: activeQuery)
+        }
         let copied = copyToClipboard(jsonLines)
         await MainActor.run {
             if copied {
@@ -50,7 +59,15 @@ extension MHLogConsoleView {
     }
 
     func exportJSONL() async {
-        let jsonLines = await store.exportJSONLines(matching: activeQuery)
+        let jsonLines: String
+        if let logging {
+            jsonLines = await logging.exportJSONLines(
+                in: sessionScope,
+                matching: activeQuery
+            )
+        } else {
+            jsonLines = await store.exportJSONLines(matching: activeQuery)
+        }
 
         #if !os(watchOS)
         await MainActor.run {
@@ -70,6 +87,9 @@ extension MHLogConsoleView {
     func clearLogs() async {
         if let logging {
             await logging.clear()
+            await MainActor.run {
+                sessionScope = .current
+            }
         } else {
             await store.clear()
         }
@@ -79,7 +99,7 @@ extension MHLogConsoleView {
             if logging == nil {
                 statusMessage = "Cleared in-memory logs"
             } else {
-                statusMessage = "Cleared in-memory and persisted logs"
+                statusMessage = "Cleared current and previous session snapshots"
             }
         }
     }

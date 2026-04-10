@@ -183,9 +183,7 @@ struct MHReviewRequesterTests {
         let store = MHLogStore(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: 20,
-                maximumDiskBytes: 1_000
+                maximumInMemoryEvents: 20
             )
         )
         let logger = MHLogger(

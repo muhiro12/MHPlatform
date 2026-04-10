@@ -198,7 +198,6 @@ struct MHAppRuntimeBootstrapTests {
 private extension MHAppRuntimeBootstrapTests {
     enum TestConstants {
         static let maximumInMemoryEvents = 20
-        static let maximumDiskBytes = 1_000
     }
 
     nonisolated static func parseRoute(from url: URL) -> Int? {
@@ -209,9 +208,7 @@ private extension MHAppRuntimeBootstrapTests {
         let store = MHLogStore(
             policy: .init(
                 minimumLevel: .debug,
-                persistsToDisk: false,
-                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents,
-                maximumDiskBytes: TestConstants.maximumDiskBytes
+                maximumInMemoryEvents: TestConstants.maximumInMemoryEvents
             )
         )
         return .init(

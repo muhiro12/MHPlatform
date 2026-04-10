@@ -204,7 +204,7 @@ let package = Package(
         ),
         .target(
             name: "MHLogging",
-            dependencies: []
+            dependencies: ["MHPreferences"]
         ),
 
         // Test support.
@@ -291,6 +291,7 @@ let package = Package(
             name: "MHLoggingTests",
             dependencies: [
                 "MHLogging",
+                "MHPreferences",
                 "MHPlatformTesting"
             ]
         ),
