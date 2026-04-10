@@ -57,9 +57,18 @@ struct MHLoggingBootstrapTests {
 
     @Test
     func bootstrap_capture_level_updates_runtime_state() async {
+        let fileManager = FileManager.default
+        let directoryURL = temporaryDirectoryURL(name: "runtime-state")
+        defer {
+            try? fileManager.removeItem(at: directoryURL)
+        }
+
+        let fileURL = directoryURL.appendingPathComponent("logs.jsonl")
         let bootstrap = MHLoggingBootstrap(
             captureLevel: .warning,
-            subsystem: "tests.bootstrap"
+            subsystem: "tests.bootstrap",
+            fileURL: fileURL,
+            fileManager: fileManager
         )
         await bootstrap.waitForInitialLoad()
 
