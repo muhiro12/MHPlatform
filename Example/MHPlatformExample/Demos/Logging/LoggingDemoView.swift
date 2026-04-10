@@ -1,50 +1,49 @@
 import MHPlatform
 import SwiftUI
 
-#if canImport(UIKit)
-import UIKit
-#elseif canImport(AppKit)
-import AppKit
-#endif
-
 struct LoggingDemoView: View {
     private enum Constants {
         static let subsystem = "MHPlatformExample"
         static let category = "LoggingDemo"
-        static let previewLineLimit = 8
-        static let exportLimit = 100
         static let batchCount = 5
     }
 
     @State private var logging = MHLoggingBootstrap(
         subsystem: Constants.subsystem
     )
-    @State private var previewText = "No persisted JSONL yet."
-    @State private var status = "Emit samples or open the console for filtering."
+    @State private var status = "Open the diagnostics console or emit sample events."
 
     var body: some View {
         NavigationStack {
             List {
-                modeSection()
+                diagnosticsSection()
                 emitSection()
-                actionsSection()
-                previewSection()
-                consoleSection()
                 statusSection()
             }
             .navigationTitle("MHLogging")
             .task {
                 await logging.waitForInitialLoad()
-                await refreshPreview()
+                await MainActor.run {
+                    status = "Capture level: \(logging.captureLevel.name.uppercased())"
+                }
             }
         }
     }
 
-    private func modeSection() -> some View {
+    private func diagnosticsSection() -> some View {
         @Bindable var logging = logging
 
-        return Section("Mode") {
-            Toggle("Debug Mode", isOn: $logging.isDebugMode)
+        return Section("Diagnostics") {
+            LabeledContent(
+                "Capture Level",
+                value: logging.captureLevel.name.uppercased()
+            )
+            NavigationLink("Open Diagnostics Console") {
+                MHLogConsoleView(logging: logging)
+            }
+            Text("The console can change capture level, inspect events, copy JSONL, export, and clear persisted logs.")
+                .foregroundStyle(.secondary)
+                .font(.caption)
         }
     }
 
@@ -73,65 +72,11 @@ struct LoggingDemoView: View {
         }
     }
 
-    private func actionsSection() -> some View {
-        Section("Actions") {
-            Button("Refresh JSONL Preview") {
-                Task {
-                    await refreshPreview()
-                }
-            }
-            Button("Export Latest 100 as JSONL to Clipboard") {
-                Task {
-                    await exportLatestEvents()
-                }
-            }
-            Button("Clear Store + JSONL") {
-                Task {
-                    await clearAllLogs()
-                }
-            }
-        }
-    }
-
-    private func previewSection() -> some View {
-        Section("Persisted JSONL Preview") {
-            Text(previewText)
-                .font(.caption.monospaced())
-                .textSelection(.enabled)
-        }
-    }
-
-    private func consoleSection() -> some View {
-        Section("Console") {
-            NavigationLink("Open MHLogConsoleView") {
-                MHLogConsoleView(store: logging.store)
-            }
-            Text("Use level/category/search filters in the console.")
-                .foregroundStyle(.secondary)
-                .font(.caption)
-        }
-    }
-
     private func statusSection() -> some View {
         Section("Status") {
             Text(status)
                 .font(.caption.monospaced())
                 .textSelection(.enabled)
-        }
-    }
-
-    private func refreshPreview() async {
-        let text = await logging.persistedJSONLines()
-        let lines = text.split { character in
-            character.isNewline
-        }
-        let visibleLines = lines.suffix(Constants.previewLineLimit)
-        let preview = visibleLines.isEmpty
-            ? "No persisted JSONL yet."
-            : visibleLines.joined(separator: "\n")
-
-        await MainActor.run {
-            previewText = preview
         }
     }
 
@@ -191,44 +136,8 @@ struct LoggingDemoView: View {
             )
         }
 
-        await refreshPreview()
         await MainActor.run {
             status = "Batch events emitted"
         }
-    }
-
-    private func exportLatestEvents() async {
-        let jsonLines = await logging.store.exportJSONLines(
-            matching: .init(limit: Constants.exportLimit)
-        )
-        let copied = await MainActor.run {
-            copyToClipboard(jsonLines)
-        }
-        await MainActor.run {
-            status = copied
-                ? "Copied latest 100 events as JSONL"
-                : "Clipboard is not supported on this platform"
-        }
-    }
-
-    private func clearAllLogs() async {
-        await logging.clear()
-        await refreshPreview()
-        await MainActor.run {
-            status = "Cleared in-memory and persisted logs"
-        }
-    }
-
-    private func copyToClipboard(_ value: String) -> Bool {
-        #if canImport(UIKit)
-        UIPasteboard.general.string = value
-        return true
-        #elseif canImport(AppKit)
-        NSPasteboard.general.clearContents()
-        return NSPasteboard.general.setString(value, forType: .string)
-        #else
-        _ = value
-        return false
-        #endif
     }
 }

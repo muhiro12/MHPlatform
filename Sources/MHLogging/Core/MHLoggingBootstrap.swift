@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// App-owned logging bootstrap that shares runtime mode, store, and persistence.
+/// App-owned logging bootstrap that shares runtime capture settings, store, and persistence.
 @preconcurrency
 @MainActor
 @Observable
@@ -13,17 +13,20 @@ public final class MHLoggingBootstrap {
         maximumDiskBytes: MHLogPolicy.debugDefault.maximumDiskBytes
     )
 
-    /// Controls whether the bootstrap captures detailed debug events.
-    public var isDebugMode: Bool {
+    /// Current minimum level captured by the shared logging runtime.
+    public var captureLevel: MHLogLevel {
         didSet {
-            runtimeState.isDebugMode = isDebugMode
+            guard captureLevel != oldValue else {
+                return
+            }
+
+            runtimeState.captureMinimumLevel = captureLevel
         }
     }
 
     /// Shared in-memory store used by debug UI and queries.
     public let store: MHLogStore
 
-    private let policy: MHLogPolicy
     private let loggerFactory: MHLoggerFactory
     private let runtimeState: MHLogRuntimeState
     private let jsonSink: MHJSONLLogSink?
@@ -32,7 +35,7 @@ public final class MHLoggingBootstrap {
 
     /// Creates a logging bootstrap with optional automatic JSONL persistence.
     public init(
-        isDebugMode: Bool = false,
+        captureLevel: MHLogLevel? = nil,
         policy: MHLogPolicy? = nil,
         subsystem: String? = nil,
         fileURL: URL? = nil,
@@ -40,28 +43,27 @@ public final class MHLoggingBootstrap {
         additionalSinks: [any MHLogSink] = []
     ) {
         let resolvedPolicy = policy ?? Self.defaultPolicy
+        let resolvedCaptureLevel = Self.resolveCaptureLevel(
+            captureLevel,
+            policy: resolvedPolicy
+        )
 
-        self.policy = resolvedPolicy
-        self.runtimeState = .init(isDebugMode: isDebugMode)
-        self.isDebugMode = isDebugMode
+        self.runtimeState = Self.makeRuntimeState(
+            captureLevel: resolvedCaptureLevel,
+            policy: resolvedPolicy
+        )
+        self.captureLevel = resolvedCaptureLevel
 
-        if resolvedPolicy.persistsToDisk {
-            let resolvedFileURL = fileURL ?? Self.defaultFileURL(
-                fileManager: fileManager
-            )
-            self.jsonSink = MHJSONLLogSink(
-                fileURL: resolvedFileURL,
-                maximumFileSizeBytes: resolvedPolicy.maximumDiskBytes
-            )
-        } else {
-            self.jsonSink = nil
-        }
+        self.jsonSink = Self.makeJSONLLogSink(
+            policy: resolvedPolicy,
+            fileURL: fileURL,
+            fileManager: fileManager
+        )
 
-        var sinks: [any MHLogSink] = [MHOSLogSink()]
-        if let jsonSink = self.jsonSink {
-            sinks.append(jsonSink)
-        }
-        sinks.append(contentsOf: additionalSinks)
+        let sinks = Self.makeSinks(
+            jsonSink: self.jsonSink,
+            additionalSinks: additionalSinks
+        )
 
         self.store = MHLogStore(
             policy: resolvedPolicy,
@@ -75,14 +77,10 @@ public final class MHLoggingBootstrap {
             runtimeState: self.runtimeState
         )
 
-        if let jsonSink = self.jsonSink {
-            restoreTask = Task { [store = self.store, jsonSink] in
-                let events = await jsonSink.loadEvents()
-                await store.seed(events)
-            }
-        } else {
-            restoreTask = Task { /* No persisted logs to restore. */ }
-        }
+        restoreTask = Self.makeRestoreTask(
+            store: self.store,
+            jsonSink: self.jsonSink
+        )
     }
 
     /// Returns a logger bound to the shared runtime state and store.
@@ -124,6 +122,67 @@ public final class MHLoggingBootstrap {
 }
 
 private extension MHLoggingBootstrap {
+    static func resolveCaptureLevel(
+        _ captureLevel: MHLogLevel?,
+        policy: MHLogPolicy
+    ) -> MHLogLevel {
+        captureLevel
+            ?? policy.minimumLevel
+    }
+
+    static func makeRuntimeState(
+        captureLevel: MHLogLevel,
+        policy: MHLogPolicy
+    ) -> MHLogRuntimeState {
+        .init(
+            captureMinimumLevel: captureLevel,
+            standardMinimumLevel: policy.minimumLevel,
+            debugMinimumLevel: .debug
+        )
+    }
+
+    static func makeJSONLLogSink(
+        policy: MHLogPolicy,
+        fileURL: URL?,
+        fileManager: FileManager
+    ) -> MHJSONLLogSink? {
+        guard policy.persistsToDisk else {
+            return nil
+        }
+
+        let resolvedFileURL = fileURL ?? defaultFileURL(fileManager: fileManager)
+        return MHJSONLLogSink(
+            fileURL: resolvedFileURL,
+            maximumFileSizeBytes: policy.maximumDiskBytes
+        )
+    }
+
+    static func makeSinks(
+        jsonSink: MHJSONLLogSink?,
+        additionalSinks: [any MHLogSink]
+    ) -> [any MHLogSink] {
+        var sinks: [any MHLogSink] = [MHOSLogSink()]
+        if let jsonSink {
+            sinks.append(jsonSink)
+        }
+        sinks.append(contentsOf: additionalSinks)
+        return sinks
+    }
+
+    static func makeRestoreTask(
+        store: MHLogStore,
+        jsonSink: MHJSONLLogSink?
+    ) -> Task<Void, Never> {
+        if let jsonSink {
+            return Task {
+                let events = await jsonSink.loadEvents()
+                await store.seed(events)
+            }
+        }
+
+        return Task { /* No persisted logs to restore. */ }
+    }
+
     static func defaultFileURL(fileManager: FileManager) -> URL {
         let baseDirectory = fileManager.urls(
             for: .applicationSupportDirectory,

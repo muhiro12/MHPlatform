@@ -4,7 +4,7 @@ import Foundation
 public final class MHLogRuntimeState: @unchecked Sendable {
     private let lock = NSLock()
 
-    private var _isDebugMode: Bool
+    private var _captureMinimumLevel: MHLogLevel
 
     /// Minimum level to capture while debug mode is disabled.
     public let standardMinimumLevel: MHLogLevel
@@ -12,34 +12,30 @@ public final class MHLogRuntimeState: @unchecked Sendable {
     /// Minimum level to capture while debug mode is enabled.
     public let debugMinimumLevel: MHLogLevel
 
-    /// Indicates whether detailed debug logging is enabled.
-    public var isDebugMode: Bool {
+    /// Returns the currently active minimum capture level.
+    public var captureMinimumLevel: MHLogLevel {
         get {
             lock.withLock {
-                _isDebugMode
+                _captureMinimumLevel
             }
         }
         set {
             lock.withLock {
-                _isDebugMode = newValue
+                _captureMinimumLevel = newValue
             }
         }
     }
 
-    /// Returns the currently active minimum capture level.
-    public var captureMinimumLevel: MHLogLevel {
-        isDebugMode ? debugMinimumLevel : standardMinimumLevel
-    }
-
     /// Creates a runtime logging state with the supplied defaults.
     public init(
-        isDebugMode: Bool = false,
+        captureMinimumLevel: MHLogLevel? = nil,
         standardMinimumLevel: MHLogLevel = .warning,
         debugMinimumLevel: MHLogLevel = .debug
     ) {
-        self._isDebugMode = isDebugMode
         self.standardMinimumLevel = standardMinimumLevel
         self.debugMinimumLevel = debugMinimumLevel
+        self._captureMinimumLevel = captureMinimumLevel
+            ?? standardMinimumLevel
     }
 
     /// Returns whether `level` should be captured in the current runtime mode.

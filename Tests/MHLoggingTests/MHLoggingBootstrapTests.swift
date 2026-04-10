@@ -5,16 +5,16 @@ import Testing
 @MainActor
 struct MHLoggingBootstrapTests {
     @Test
-    func bootstrap_switches_runtime_mode_and_restores_persisted_logs() async {
+    func bootstrap_uses_explicit_capture_level_and_restores_persisted_logs() async {
         let fileManager = FileManager.default
-        let directoryURL = temporaryDirectoryURL(name: "runtime-mode")
+        let directoryURL = temporaryDirectoryURL(name: "capture-level")
         defer {
             try? fileManager.removeItem(at: directoryURL)
         }
 
         let fileURL = directoryURL.appendingPathComponent("logs.jsonl")
         let bootstrap = MHLoggingBootstrap(
-            isDebugMode: false,
+            captureLevel: .warning,
             subsystem: "tests.bootstrap",
             fileURL: fileURL,
             fileManager: fileManager
@@ -22,39 +22,59 @@ struct MHLoggingBootstrapTests {
         await bootstrap.waitForInitialLoad()
 
         let logger = bootstrap.logger(
-            category: "Runtime",
+            category: "CaptureLevel",
             source: #fileID
         )
 
         await logger.logImmediately(.info, "skip-info")
         await logger.logImmediately(.warning, "keep-warning")
 
-        bootstrap.isDebugMode = true
+        bootstrap.captureLevel = .info
 
-        await logger.logImmediately(.debug, "keep-debug")
         await logger.logImmediately(.info, "keep-info")
 
         let liveEvents = await bootstrap.store.events()
         #expect(liveEvents.map(\.message) == [
             "keep-warning",
-            "keep-debug",
             "keep-info"
         ])
 
         let restoredBootstrap = MHLoggingBootstrap(
-            isDebugMode: false,
             subsystem: "tests.bootstrap",
             fileURL: fileURL,
             fileManager: fileManager
         )
         await restoredBootstrap.waitForInitialLoad()
 
+        #expect(restoredBootstrap.captureLevel == .warning)
+
         let restoredEvents = await restoredBootstrap.store.events()
         #expect(restoredEvents.map(\.message) == [
             "keep-warning",
-            "keep-debug",
             "keep-info"
         ])
+    }
+
+    @Test
+    func bootstrap_capture_level_updates_runtime_state() async {
+        let bootstrap = MHLoggingBootstrap(
+            captureLevel: .warning,
+            subsystem: "tests.bootstrap"
+        )
+        await bootstrap.waitForInitialLoad()
+
+        let logger = bootstrap.logger(
+            category: "CaptureLevel",
+            source: #fileID
+        )
+
+        await logger.logImmediately(.info, "skip-info")
+        bootstrap.captureLevel = .info
+        await logger.logImmediately(.info, "keep-info")
+
+        let events = await bootstrap.store.events()
+        #expect(bootstrap.captureLevel == .info)
+        #expect(events.map(\.message) == ["keep-info"])
     }
 
     @Test
@@ -67,7 +87,7 @@ struct MHLoggingBootstrapTests {
 
         let fileURL = directoryURL.appendingPathComponent("logs.jsonl")
         let bootstrap = MHLoggingBootstrap(
-            isDebugMode: true,
+            captureLevel: .debug,
             subsystem: "tests.bootstrap",
             fileURL: fileURL,
             fileManager: fileManager
@@ -83,7 +103,6 @@ struct MHLoggingBootstrapTests {
         await bootstrap.clear()
 
         let restoredBootstrap = MHLoggingBootstrap(
-            isDebugMode: false,
             subsystem: "tests.bootstrap",
             fileURL: fileURL,
             fileManager: fileManager

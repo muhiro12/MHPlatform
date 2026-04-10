@@ -203,7 +203,8 @@ let package = Package(
             ]
         ),
         .target(
-            name: "MHLogging"
+            name: "MHLogging",
+            dependencies: []
         ),
 
         // Test support.

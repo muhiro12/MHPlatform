@@ -57,7 +57,9 @@ struct MHLoggerFactoryTests {
 
     @Test
     func factory_runtime_state_switches_capture_level() async {
-        let runtimeState = MHLogRuntimeState()
+        let runtimeState = MHLogRuntimeState(
+            captureMinimumLevel: .warning
+        )
         let factory = MHLoggerFactory(
             policy: .init(
                 minimumLevel: .warning,
@@ -76,11 +78,12 @@ struct MHLoggerFactoryTests {
         await logger.logImmediately(.info, "skip-info")
         await logger.logImmediately(.warning, "keep-warning")
 
-        runtimeState.isDebugMode = true
+        runtimeState.captureMinimumLevel = .info
 
-        await logger.logImmediately(.debug, "keep-debug")
+        await logger.logImmediately(.debug, "skip-debug")
+        await logger.logImmediately(.info, "keep-info")
 
         let events = await factory.store.events()
-        #expect(events.map(\.message) == ["keep-warning", "keep-debug"])
+        #expect(events.map(\.message) == ["keep-warning", "keep-info"])
     }
 }
