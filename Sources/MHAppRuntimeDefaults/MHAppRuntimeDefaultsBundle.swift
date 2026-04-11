@@ -18,8 +18,8 @@ public struct MHAppRuntimeDefaultsBundle {
 
     /// Creates package-owned preference and StoreKit runtime defaults.
     public init(configuration: MHAppConfiguration) {
-        preferenceStore = Self.makePreferenceStore(
-            suiteName: configuration.preferencesSuiteName
+        preferenceStore = .init(
+            selection: configuration.preferencesDefaults
         )
 
         #if canImport(StoreKitWrapper)
@@ -87,16 +87,5 @@ private extension MHAppRuntimeDefaultsBundle {
         }
 
         return normalizedValues
-    }
-
-    static func makePreferenceStore(
-        suiteName: String?
-    ) -> MHPreferenceStore {
-        guard let normalizedSuiteName = normalizeText(suiteName),
-              let userDefaults = UserDefaults(suiteName: normalizedSuiteName) else {
-            return .init()
-        }
-
-        return .init(userDefaults: userDefaults)
     }
 }

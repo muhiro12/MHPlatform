@@ -91,9 +91,7 @@ public final class MHAppRuntime {
         self.init(
             configuration: configuration,
             preferenceStore: .init(
-                userDefaults: Self.makeUserDefaults(
-                    suiteName: configuration.preferencesSuiteName
-                )
+                selection: configuration.preferencesDefaults
             ),
             startStore: { purchasedProductIDsDidSet in
                 purchasedProductIDsDidSet([])
@@ -195,14 +193,5 @@ private extension MHAppRuntime {
         }
 
         return normalizedProductIDs
-    }
-
-    static func makeUserDefaults(suiteName: String?) -> UserDefaults {
-        guard let normalizedSuiteName = normalizeText(suiteName),
-              let userDefaults = UserDefaults(suiteName: normalizedSuiteName) else {
-            return .standard
-        }
-
-        return userDefaults
     }
 }

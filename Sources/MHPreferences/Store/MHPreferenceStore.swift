@@ -17,6 +17,19 @@ public struct MHPreferenceStore: @unchecked Sendable {
         self.decoder = decoder
     }
 
+    /// Creates a preference store backed by the selected `UserDefaults`.
+    public init(
+        selection: MHUserDefaultsSelection,
+        encoder: JSONEncoder = .init(),
+        decoder: JSONDecoder = .init()
+    ) {
+        self.init(
+            userDefaults: selection.resolveUserDefaults(),
+            encoder: encoder,
+            decoder: decoder
+        )
+    }
+
     /// Returns a boolean preference value or the key default when unset.
     public func bool(for key: MHBoolPreferenceKey) -> Bool {
         guard userDefaults.object(forKey: key.storageKey) != nil else {

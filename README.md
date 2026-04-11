@@ -307,7 +307,7 @@ let routePipeline = MHAppRoutePipeline(
 }
 let bootstrap = MHAppRuntimeBootstrap(
     runtimeOnlyConfiguration: .init(
-        preferencesSuiteName: "group.com.example.app"
+        preferencesDefaults: .suite("group.com.example.app")
     ),
     lifecyclePlan: .init(
         commonTasks: [
@@ -352,7 +352,7 @@ For previews and tests that only need runtime injection, prefer:
 ```swift
 let bootstrap = MHAppRuntimeBootstrap(
     runtimeOnlyConfiguration: .init(
-        preferencesSuiteName: "group.com.example.preview"
+        preferencesDefaults: .suite("group.com.example.preview")
     )
 )
 
@@ -386,7 +386,7 @@ let codec = MHDeepLinkCodec<MyRoute>(
 let routeInbox = MHObservableDeepLinkInbox()
 let notificationInbox = MHDeepLinkInbox()
 let intentStore = MHDeepLinkStore(
-    userDefaults: .standard,
+    selection: .standard,
     key: "pendingIntentRouteURL"
 )
 let handoffSources = MHDeepLinkSourceChain(
@@ -622,7 +622,9 @@ Integration contract:
 ```swift
 import MHPreferences
 
-let store = MHPreferenceStore()
+let store = MHPreferenceStore(
+    selection: .suite("group.com.example.app")
+)
 let key = MHBoolPreferenceKey(
     storageKey: "app.preferences.notifications.enabled",
     default: true
@@ -716,7 +718,8 @@ let logging = MHLoggingBootstrap(
         previous: .init(
             storageKey: "opaque.example.logging.previous-session"
         )
-    )
+    ),
+    snapshotDefaults: .suite("group.com.example.app")
 )
 ```
 

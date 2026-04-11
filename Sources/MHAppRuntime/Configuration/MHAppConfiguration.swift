@@ -1,3 +1,5 @@
+import MHPreferences
+
 /// App-specific identifiers and options for bootstrapping `MHAppRuntime`.
 public struct MHAppConfiguration: Sendable, Hashable {
     /// Product identifiers used to determine premium subscription state.
@@ -9,8 +11,8 @@ public struct MHAppConfiguration: Sendable, Hashable {
     /// Optional ad unit identifier for native ad loading.
     public let nativeAdUnitID: String?
 
-    /// Optional `UserDefaults` suite name for shared preference storage.
-    public let preferencesSuiteName: String?
+    /// Declares which `UserDefaults` domain backs the app's main preferences.
+    public let preferencesDefaults: MHUserDefaultsSelection
 
     /// Controls whether the runtime exposes license screens.
     public let showsLicenses: Bool
@@ -20,13 +22,13 @@ public struct MHAppConfiguration: Sendable, Hashable {
         subscriptionProductIDs: [String] = [],
         subscriptionGroupID: String? = nil,
         nativeAdUnitID: String? = nil,
-        preferencesSuiteName: String? = nil,
+        preferencesDefaults: MHUserDefaultsSelection = .standard,
         showsLicenses: Bool = true
     ) {
         self.subscriptionProductIDs = subscriptionProductIDs
         self.subscriptionGroupID = subscriptionGroupID
         self.nativeAdUnitID = nativeAdUnitID
-        self.preferencesSuiteName = preferencesSuiteName
+        self.preferencesDefaults = preferencesDefaults
         self.showsLicenses = showsLicenses
     }
 }

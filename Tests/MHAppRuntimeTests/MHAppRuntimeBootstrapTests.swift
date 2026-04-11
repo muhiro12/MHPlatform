@@ -2,6 +2,7 @@ import Foundation
 @testable import MHAppRuntime
 import MHLogging
 import MHPlatformTesting
+import MHPreferences
 import MHRouteExecution
 import SwiftUI
 import Testing
@@ -39,7 +40,9 @@ struct MHAppRuntimeBootstrapTests {
     @Test
     func runtime_only_configuration_init_keeps_runtime_and_plan() {
         let configuration = MHAppConfiguration(
-            preferencesSuiteName: "MHPlatform.Bootstrap.RuntimeOnly.Tests"
+            preferencesDefaults: .suite(
+                "MHPlatform.Bootstrap.RuntimeOnly.Tests"
+            )
         )
         let lifecyclePlan = MHAppRuntimeLifecyclePlan(
             skipFirstActivePhase: true

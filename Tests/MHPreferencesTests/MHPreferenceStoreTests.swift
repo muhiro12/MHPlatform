@@ -193,6 +193,24 @@ struct MHPreferenceStoreTests {
         #expect(!store.contains(key))
     }
 
+    @Test
+    func selection_initializer_uses_selected_suite() throws {
+        let suiteName = "MHPreferenceStoreTests.selection.\(UUID().uuidString)"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        userDefaults.removePersistentDomain(forName: suiteName)
+        defer {
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+        let store = MHPreferenceStore(
+            selection: .suite("  \(suiteName)\n")
+        )
+        let key = makeBoolKey("selection-key")
+
+        store.set(true, for: key)
+
+        #expect(userDefaults.bool(forKey: key.storageKey))
+    }
+
     private func makeStore(
         suiteName: String
     ) throws -> (MHPreferenceStore, UserDefaults) {

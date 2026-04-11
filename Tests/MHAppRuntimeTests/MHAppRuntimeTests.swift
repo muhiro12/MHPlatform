@@ -120,7 +120,9 @@ struct MHAppRuntimeTests {
         }
 
         let runtime = MHAppRuntime(
-            runtimeOnly: .init(preferencesSuiteName: suiteName)
+            runtimeOnly: .init(
+                preferencesDefaults: .suite(suiteName)
+            )
         )
         runtime.preferenceStore.set(true, for: key)
 
@@ -280,7 +282,9 @@ struct MHAppRuntimeTests {
         #expect(String(describing: type(of: bootstrapView)).contains("ModifiedContent"))
         #expect(runtime.hasStarted == false)
     }
+}
 
+extension MHAppRuntimeTests {
     @MainActor
     @Test
     func route_handler_modifier_builds_without_eager_route_application() {

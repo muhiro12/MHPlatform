@@ -9,7 +9,7 @@ struct MHPlatformExampleApp: App {
                 "com.example.mhplatform.premium.monthly"
             ],
             nativeAdUnitID: MHPlatformExampleAdMobConfiguration.nativeAdUnitID,
-            preferencesSuiteName: "MHPlatformExample.Runtime",
+            preferencesDefaults: .suite("MHPlatformExample.Runtime"),
             showsLicenses: true
         )
     )

@@ -15,6 +15,7 @@ struct MHPlatformCoreTests {
             MHDestructiveResetOutcome.self,
             MHDestructiveResetEvent.self,
             MHPreferenceStore.self,
+            MHUserDefaultsSelection.self,
             MHRawStorageKey.self,
             MHUserDefaultsCleanupReport.self,
             MHUserDefaultsCleanupService.self,
@@ -24,6 +25,6 @@ struct MHPlatformCoreTests {
             MHLoggingBootstrap.self
         ]
 
-        #expect(exportedCoreSafeTypes.count == 17)
+        #expect(exportedCoreSafeTypes.count == 18)
     }
 }

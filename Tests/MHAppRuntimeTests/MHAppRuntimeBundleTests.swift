@@ -26,7 +26,9 @@ struct MHAppRuntimeBundleTests {
         }
 
         let bundle = MHAppRuntimeDefaultsBundle(
-            configuration: .init(preferencesSuiteName: suiteName)
+            configuration: .init(
+                preferencesDefaults: .suite(suiteName)
+            )
         )
         bundle.preferenceStore.set(true, for: key)
 

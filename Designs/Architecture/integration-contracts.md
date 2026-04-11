@@ -23,7 +23,7 @@ This document is normative for integration design.
     - `subscriptionProductIDs`
     - `subscriptionGroupID`
     - `nativeAdUnitID`
-    - `preferencesSuiteName`
+    - `preferencesDefaults`
     - `showsLicenses`
   - `MHPreferenceStore`
   - `startStore`
@@ -408,6 +408,7 @@ This document is normative for integration design.
   - `MHStringPreferenceKey`
   - `MHCodablePreferenceKey`
 - Backing `UserDefaults`
+- Optional `MHUserDefaultsSelection` for declarative defaults resolution
 
 ### Outputs
 
@@ -497,6 +498,7 @@ This document is normative for integration design.
 - Optional last-session snapshot bootstrap:
   - `MHLoggingBootstrap`
   - `snapshotStorageKeys`
+  - `snapshotDefaults`
 - Logger call-site context:
   - `file` / `function` / `line`
   - `subsystem` / `category`

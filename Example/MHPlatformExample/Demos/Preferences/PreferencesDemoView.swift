@@ -50,10 +50,9 @@ struct PreferencesDemoView: View {
     }
 
     private static let userDefaults: UserDefaults = {
-        if let userDefaults = UserDefaults(suiteName: Constants.suiteName) {
-            return userDefaults
-        }
-        return .standard
+        MHUserDefaultsSelection
+            .suite(Constants.suiteName)
+            .resolveUserDefaults()
     }()
 
     private static let boolKey = MHBoolPreferenceKey(
@@ -73,7 +72,9 @@ struct PreferencesDemoView: View {
     private static let obsoleteKey = MHRawStorageKey(
         storageKey: Constants.obsoleteStorageKey
     )
-    private static let store = MHPreferenceStore(userDefaults: userDefaults)
+    private static let store = MHPreferenceStore(
+        selection: .suite(Constants.suiteName)
+    )
 
     private static var currentValues: CurrentValues {
         let boolValue = store.bool(for: boolKey)

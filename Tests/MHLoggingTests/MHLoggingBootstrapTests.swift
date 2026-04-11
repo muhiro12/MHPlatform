@@ -124,6 +124,37 @@ struct MHLoggingBootstrapTests {
         #expect(await restoredBootstrap.events(in: .previous).isEmpty)
         #expect(restoredBootstrap.hasPreviousSession == false)
     }
+
+    @Test
+    func bootstrap_snapshot_defaults_use_selected_suite() async throws {
+        let suiteName = "MHLoggingBootstrapTests.selection.\(UUID().uuidString)"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        userDefaults.removePersistentDomain(forName: suiteName)
+        defer {
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let snapshotStorageKeys = makeSnapshotStorageKeys(
+            baseStorageKey: "opaque.bootstrap.selection"
+        )
+        let bootstrap = MHLoggingBootstrap(
+            captureLevel: .warning,
+            subsystem: "tests.bootstrap",
+            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotDefaults: .suite("  \(suiteName)\n")
+        )
+        let logger = bootstrap.logger(
+            category: "Selection",
+            source: #fileID
+        )
+
+        await logger.logImmediately(.warning, "keep-warning")
+
+        #expect(
+            userDefaults.object(forKey: snapshotStorageKeys.current.storageKey)
+                is Data
+        )
+    }
 }
 
 private extension MHLoggingBootstrapTests {

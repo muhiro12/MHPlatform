@@ -41,7 +41,31 @@ public final class MHLoggingBootstrap {
         policy: MHLogPolicy? = nil,
         subsystem: String? = nil,
         snapshotStorageKeys: MHLogSnapshotStorageKeys? = nil,
-        snapshotStore: MHPreferenceStore = .init(),
+        snapshotDefaults: MHUserDefaultsSelection = .standard,
+        additionalSinks: [any MHLogSink] = []
+    ) {
+        let snapshotStore = snapshotStorageKeys.map { _ in
+            MHPreferenceStore(selection: snapshotDefaults)
+        } ?? .init()
+
+        self.init(
+            captureLevel: captureLevel,
+            policy: policy,
+            subsystem: subsystem,
+            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStore: snapshotStore,
+            additionalSinks: additionalSinks
+        )
+    }
+
+    // swiftlint:disable function_default_parameter_at_end
+    /// Creates a logging bootstrap with an explicitly injected snapshot store.
+    public convenience init(
+        captureLevel: MHLogLevel? = nil,
+        policy: MHLogPolicy? = nil,
+        subsystem: String? = nil,
+        snapshotStorageKeys: MHLogSnapshotStorageKeys? = nil,
+        snapshotStore: MHPreferenceStore,
         additionalSinks: [any MHLogSink] = []
     ) {
         self.init(
@@ -54,6 +78,7 @@ public final class MHLoggingBootstrap {
             sessionIdentifier: MHLogSessionSnapshotSink.processSessionIdentifier
         )
     }
+    // swiftlint:enable function_default_parameter_at_end
 
     init(
         captureLevel: MHLogLevel?,

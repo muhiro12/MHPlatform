@@ -106,7 +106,7 @@ struct DeepLinkingDemoView: View {
 
     private static let inbox = MHDeepLinkInbox()
     private static let store = MHDeepLinkStore(
-        userDefaults: .standard,
+        selection: .standard,
         key: "MHPlatformExample.pendingDeepLink"
     )
 

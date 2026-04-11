@@ -167,7 +167,8 @@ let package = Package(
             ]
         ),
         .target(
-            name: "MHDeepLinking"
+            name: "MHDeepLinking",
+            dependencies: ["MHPreferences"]
         ),
         .target(
             name: "MHNotificationPlans"
@@ -243,7 +244,10 @@ let package = Package(
         ),
         .testTarget(
             name: "MHDeepLinkingTests",
-            dependencies: ["MHDeepLinking"]
+            dependencies: [
+                "MHDeepLinking",
+                "MHPreferences"
+            ]
         ),
         .testTarget(
             name: "MHNotificationPlansTests",

@@ -45,6 +45,16 @@ struct AppStorageRepresentableBridgeTests {
                 store: store
             )
         }
+
+        init(
+            key: some MHBoolPreferenceKeyRepresentable,
+            selection: MHUserDefaultsSelection
+        ) {
+            _value = AppStorage(
+                key,
+                selection: selection
+            )
+        }
     }
 
     private struct IntHarness {
@@ -148,6 +158,27 @@ struct AppStorageRepresentableBridgeTests {
         let harness = BoolHarness(
             key: key,
             store: userDefaults
+        )
+
+        #expect(harness.wrappedValue)
+    }
+
+    @Test
+    func bool_bridge_supports_selection_for_representable_keys() throws {
+        let suiteName = "representable-selection-bool"
+        let userDefaults = try makeUserDefaults(suiteName: suiteName)
+        let key = BoolRepresentableKey(
+            preferenceKey: .init(
+                storageKey: "representable-selection-bool-key",
+                default: false
+            )
+        )
+        userDefaults.set(true, forKey: key.preferenceKey.storageKey)
+        let harness = BoolHarness(
+            key: key,
+            selection: .suite(
+                "  AppStorageRepresentableBridgeTests.\(suiteName)\n"
+            )
         )
 
         #expect(harness.wrappedValue)

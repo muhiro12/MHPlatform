@@ -6,12 +6,34 @@ public extension AppStorage {
     /// Creates a boolean app-storage binding using a typed preference key.
     init(
         _ key: MHBoolPreferenceKey,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value == Bool {
+        self.init(
+            key,
+            store: selection.resolveUserDefaults()
+        )
+    }
+
+    /// Creates a boolean app-storage binding using a typed preference key.
+    init(
+        _ key: MHBoolPreferenceKey,
         store: UserDefaults = .standard
     ) where Value == Bool {
         self.init(
             wrappedValue: key.defaultValue,
             key.storageKey,
             store: store
+        )
+    }
+
+    /// Creates an integer app-storage binding using a typed preference key.
+    init(
+        _ key: MHIntPreferenceKey,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value == Int {
+        self.init(
+            key,
+            store: selection.resolveUserDefaults()
         )
     }
 
@@ -30,11 +52,35 @@ public extension AppStorage {
     /// Creates an optional-string app-storage binding using a typed preference key.
     init(
         _ key: MHStringPreferenceKey,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value == String? {
+        self.init(
+            key,
+            store: selection.resolveUserDefaults()
+        )
+    }
+
+    /// Creates an optional-string app-storage binding using a typed preference key.
+    init(
+        _ key: MHStringPreferenceKey,
         store: UserDefaults = .standard
     ) where Value == String? {
         self.init(
             key.storageKey,
             store: store
+        )
+    }
+
+    /// Creates a string app-storage binding using a typed preference key.
+    init(
+        _ key: MHStringPreferenceKey,
+        default defaultValue: String,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value == String {
+        self.init(
+            key,
+            default: defaultValue,
+            store: selection.resolveUserDefaults()
         )
     }
 
@@ -55,12 +101,36 @@ public extension AppStorage {
     init(
         _ key: MHStringPreferenceKey,
         default defaultValue: Value,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value: RawRepresentable, Value.RawValue == String {
+        self.init(
+            key,
+            default: defaultValue,
+            store: selection.resolveUserDefaults()
+        )
+    }
+
+    /// Creates a raw-string app-storage binding using a typed preference key.
+    init(
+        _ key: MHStringPreferenceKey,
+        default defaultValue: Value,
         store: UserDefaults = .standard
     ) where Value: RawRepresentable, Value.RawValue == String {
         self.init(
             wrappedValue: defaultValue,
             key.storageKey,
             store: store
+        )
+    }
+
+    /// Creates a boolean app-storage binding using a representable typed key.
+    init(
+        _ key: some MHBoolPreferenceKeyRepresentable,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value == Bool {
+        self.init(
+            key,
+            store: selection.resolveUserDefaults()
         )
     }
 
@@ -78,6 +148,17 @@ public extension AppStorage {
     /// Creates an integer app-storage binding using a representable typed key.
     init(
         _ key: some MHIntPreferenceKeyRepresentable,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value == Int {
+        self.init(
+            key,
+            store: selection.resolveUserDefaults()
+        )
+    }
+
+    /// Creates an integer app-storage binding using a representable typed key.
+    init(
+        _ key: some MHIntPreferenceKeyRepresentable,
         store: UserDefaults = .standard
     ) where Value == Int {
         self.init(
@@ -89,11 +170,33 @@ public extension AppStorage {
     /// Creates an optional-string app-storage binding using a representable typed key.
     init(
         _ key: some MHStringPreferenceKeyRepresentable,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value == String? {
+        self.init(
+            key,
+            store: selection.resolveUserDefaults()
+        )
+    }
+
+    /// Creates an optional-string app-storage binding using a representable typed key.
+    init(
+        _ key: some MHStringPreferenceKeyRepresentable,
         store: UserDefaults = .standard
     ) where Value == String? {
         self.init(
             key.preferenceKey,
             store: store
+        )
+    }
+
+    /// Creates a string app-storage binding using a representable typed key.
+    init(
+        _ key: some MHStringPreferenceKeyRepresentable,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value == String {
+        self.init(
+            key,
+            store: selection.resolveUserDefaults()
         )
     }
 
@@ -113,12 +216,38 @@ public extension AppStorage {
     init(
         _ key: some MHStringPreferenceKeyRepresentable,
         default defaultValue: String,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value == String {
+        self.init(
+            key,
+            default: defaultValue,
+            store: selection.resolveUserDefaults()
+        )
+    }
+
+    /// Creates a string app-storage binding using a representable typed key and an explicit default.
+    init(
+        _ key: some MHStringPreferenceKeyRepresentable,
+        default defaultValue: String,
         store: UserDefaults = .standard
     ) where Value == String {
         self.init(
             wrappedValue: defaultValue,
             key.preferenceKey.storageKey,
             store: store
+        )
+    }
+
+    /// Creates a raw-string app-storage binding using a representable typed key.
+    init(
+        _ key: some MHStringPreferenceKeyRepresentable,
+        default defaultValue: Value,
+        selection: MHUserDefaultsSelection = .standard
+    ) where Value: RawRepresentable, Value.RawValue == String {
+        self.init(
+            key,
+            default: defaultValue,
+            store: selection.resolveUserDefaults()
         )
     }
 

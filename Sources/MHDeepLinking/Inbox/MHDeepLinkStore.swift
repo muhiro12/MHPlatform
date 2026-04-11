@@ -1,4 +1,5 @@
 import Foundation
+import MHPreferences
 
 /// UserDefaults-backed pending deep-link storage.
 public final class MHDeepLinkStore: @unchecked Sendable {
@@ -14,17 +15,13 @@ public final class MHDeepLinkStore: @unchecked Sendable {
         self.key = key
     }
 
-    /// Creates a persistent deep-link store backed by a suite-scoped `UserDefaults`.
-    public convenience init?(
-        suiteName: String,
+    /// Creates a persistent deep-link store backed by the selected `UserDefaults`.
+    public convenience init(
+        selection: MHUserDefaultsSelection,
         key: String
     ) {
-        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
-            return nil
-        }
-
         self.init(
-            userDefaults: userDefaults,
+            userDefaults: selection.resolveUserDefaults(),
             key: key
         )
     }

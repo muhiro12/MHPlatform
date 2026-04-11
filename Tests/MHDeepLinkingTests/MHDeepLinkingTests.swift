@@ -1,5 +1,6 @@
 import Foundation
 import MHDeepLinking
+import MHPreferences
 import Testing
 
 struct MHDeepLinkingTests {
@@ -215,13 +216,11 @@ struct MHDeepLinkingTests {
     }
 
     @Test
-    func suite_store_consumes_value_once() throws {
+    func selection_store_consumes_value_once() throws {
         let suiteName = "MHDeepLinkStoreTests.suite"
-        let store = try #require(
-            MHDeepLinkStore(
-                suiteName: suiteName,
-                key: "pendingURL"
-            )
+        let store = MHDeepLinkStore(
+            selection: .suite("  \(suiteName)\n"),
+            key: "pendingURL"
         )
         let userDefaults = try #require(UserDefaults(suiteName: suiteName))
         let url = try #require(URL(string: "mhplatform://item?id=suite"))

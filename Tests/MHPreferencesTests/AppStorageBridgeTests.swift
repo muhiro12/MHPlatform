@@ -35,6 +35,16 @@ struct AppStorageBridgeTests {
                 store: store
             )
         }
+
+        init(
+            key: MHBoolPreferenceKey,
+            selection: MHUserDefaultsSelection
+        ) {
+            _value = AppStorage(
+                key,
+                selection: selection
+            )
+        }
     }
 
     private struct IntHarness {
@@ -211,6 +221,21 @@ struct AppStorageBridgeTests {
     }
 
     @Test
+    func selection_injection_is_respected() throws {
+        let suiteName = "selection-store"
+        let userDefaults = try makeUserDefaults(suiteName: suiteName)
+        let key = makeBoolKey("selection-bool-key")
+        var harness = BoolHarness(
+            key: key,
+            selection: .suite("  AppStorageBridgeTests.\(suiteName)\n")
+        )
+
+        harness.wrappedValue = Constants.injectedBoolValue
+
+        #expect(userDefaults.bool(forKey: key.storageKey) == Constants.injectedBoolValue)
+    }
+
+    @Test
     func string_bridge_with_default_uses_default_then_round_trips() throws {
         let userDefaults = try makeUserDefaults(suiteName: "required-string")
         let key = makeStringKey("required-string-key")
@@ -242,8 +267,10 @@ struct AppStorageBridgeTests {
         harness.wrappedValue = .first
         #expect(userDefaults.string(forKey: key.storageKey) == DemoRawStringValue.first.rawValue)
     }
+}
 
-    private func makeUserDefaults(suiteName: String) throws -> UserDefaults {
+private extension AppStorageBridgeTests {
+    func makeUserDefaults(suiteName: String) throws -> UserDefaults {
         let resolvedSuiteName = "AppStorageBridgeTests.\(suiteName)"
         let userDefaults = try #require(
             UserDefaults(suiteName: resolvedSuiteName)

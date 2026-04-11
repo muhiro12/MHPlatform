@@ -86,7 +86,7 @@ import MHAppRuntime
 final class RuntimeOnlyAssembly {
     let bootstrap = MHAppRuntimeBootstrap(
         runtimeOnlyConfiguration: .init(
-            preferencesSuiteName: "group.com.example.runtime-only"
+            preferencesDefaults: .suite("group.com.example.runtime-only")
         ),
         lifecyclePlan: .init()
     )
@@ -155,7 +155,7 @@ final class AppRootModel {
         bootstrap = .init(
             configuration: .init(
                 subscriptionProductIDs: ["com.example.app.premium.monthly"],
-                preferencesSuiteName: "group.com.example.app"
+                preferencesDefaults: .suite("group.com.example.app")
             ),
             lifecyclePlan: .init(
                 startupTasks: [
