@@ -6,14 +6,19 @@ struct LoggingDemoView: View {
         static let subsystem = "MHPlatformExample"
         static let category = "LoggingDemo"
         static let batchCount = 5
-        static let snapshotKey = MHCodablePreferenceKey<[MHLogEvent]>(
-            storageKey: "mhplatform-example.logging.last-session"
+        static let snapshotStorageKeys = MHLogSnapshotStorageKeys(
+            current: .init(
+                storageKey: "mhplatform-example.logging.current-session"
+            ),
+            previous: .init(
+                storageKey: "mhplatform-example.logging.previous-session"
+            )
         )
     }
 
     @State private var logging = MHLoggingBootstrap(
         subsystem: Constants.subsystem,
-        snapshotKey: Constants.snapshotKey
+        snapshotStorageKeys: Constants.snapshotStorageKeys
     )
     @State private var status = "Open the diagnostics console or emit sample events."
 

@@ -6,7 +6,7 @@ import Testing
 
 struct AppStorageBridgeTests {
     private enum Constants {
-        static let namespace = "tests.app-storage"
+        static let storageKeyPrefix = "tests.app-storage"
 
         static let boolDefaultValue = true
         static let intDefaultValue = 30
@@ -141,9 +141,8 @@ struct AppStorageBridgeTests {
     @Test
     func bool_bridge_uses_default_value() throws {
         let userDefaults = try makeUserDefaults(suiteName: "bool-default")
-        let key = MHBoolPreferenceKey(
-            namespace: Constants.namespace,
-            name: "bool-default-key",
+        let key = makeBoolKey(
+            "bool-default-key",
             default: Constants.boolDefaultValue
         )
         let harness = BoolHarness(
@@ -157,9 +156,8 @@ struct AppStorageBridgeTests {
     @Test
     func int_bridge_uses_default_value() throws {
         let userDefaults = try makeUserDefaults(suiteName: "int-default")
-        let key = MHIntPreferenceKey(
-            namespace: Constants.namespace,
-            name: "int-default-key",
+        let key = makeIntKey(
+            "int-default-key",
             default: Constants.intDefaultValue
         )
         let harness = IntHarness(
@@ -173,10 +171,7 @@ struct AppStorageBridgeTests {
     @Test
     func string_bridge_round_trips_and_removes_nil() throws {
         let userDefaults = try makeUserDefaults(suiteName: "string-roundtrip")
-        let key = MHStringPreferenceKey(
-            namespace: Constants.namespace,
-            name: "string-roundtrip-key"
-        )
+        let key = makeStringKey("string-roundtrip-key")
         var harness = StringHarness(
             key: key,
             store: userDefaults
@@ -194,17 +189,13 @@ struct AppStorageBridgeTests {
     @Test
     func store_injection_is_respected() throws {
         let userDefaults = try makeUserDefaults(suiteName: "injected-store")
-        let key = MHBoolPreferenceKey(
-            namespace: Constants.namespace,
-            name: "injected-store-key"
-        )
+        let key = makeBoolKey("injected-store-key")
         var boolHarness = BoolHarness(
             key: key,
             store: userDefaults
         )
-        let intKey = MHIntPreferenceKey(
-            namespace: Constants.namespace,
-            name: "injected-int-key",
+        let intKey = makeIntKey(
+            "injected-int-key",
             default: Constants.intDefaultValue
         )
         var intHarness = IntHarness(
@@ -222,10 +213,7 @@ struct AppStorageBridgeTests {
     @Test
     func string_bridge_with_default_uses_default_then_round_trips() throws {
         let userDefaults = try makeUserDefaults(suiteName: "required-string")
-        let key = MHStringPreferenceKey(
-            namespace: Constants.namespace,
-            name: "required-string-key"
-        )
+        let key = makeStringKey("required-string-key")
         var harness = RequiredStringHarness(
             key: key,
             default: "fallback",
@@ -241,10 +229,7 @@ struct AppStorageBridgeTests {
     @Test
     func raw_string_bridge_round_trips_existing_storage() throws {
         let userDefaults = try makeUserDefaults(suiteName: "raw-string")
-        let key = MHStringPreferenceKey(
-            namespace: Constants.namespace,
-            name: "raw-string-key"
-        )
+        let key = makeStringKey("raw-string-key")
         userDefaults.set("second", forKey: key.storageKey)
         var harness = RawStringHarness(
             key: key,
@@ -265,6 +250,30 @@ struct AppStorageBridgeTests {
         )
         userDefaults.removePersistentDomain(forName: resolvedSuiteName)
         return userDefaults
+    }
+
+    func makeBoolKey(
+        _ name: String,
+        default defaultValue: Bool = false
+    ) -> MHBoolPreferenceKey {
+        .init(
+            storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            default: defaultValue
+        )
+    }
+
+    func makeIntKey(
+        _ name: String,
+        default defaultValue: Int = .zero
+    ) -> MHIntPreferenceKey {
+        .init(
+            storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            default: defaultValue
+        )
+    }
+
+    func makeStringKey(_ name: String) -> MHStringPreferenceKey {
+        .init(storageKey: "\(Constants.storageKeyPrefix).\(name)")
     }
 }
 #endif

@@ -402,7 +402,7 @@ This document is normative for integration design.
 
 ### Required Inputs
 
-- Typed keys with namespace:
+- Typed keys identified by `storageKey`:
   - `MHBoolPreferenceKey`
   - `MHIntPreferenceKey`
   - `MHStringPreferenceKey`
@@ -427,8 +427,7 @@ This document is normative for integration design.
 
 ### Storage Rules (Normative)
 
-- Fully qualified storage key is `"\(namespace).\(name)"`.
-- Namespace/name must be non-empty.
+- `storageKey` must be non-empty.
 - Codable values are encoded to `Data`; non-`Data` decode path returns `nil`.
 
 ## MHPersistenceMaintenance
@@ -492,7 +491,7 @@ This document is normative for integration design.
   `MHLoggerFactory`
 - Optional last-session snapshot bootstrap:
   - `MHLoggingBootstrap`
-  - `snapshotKey`
+  - `snapshotStorageKeys`
 - Logger call-site context:
   - `file` / `function` / `line`
   - `subsystem` / `category`

@@ -40,7 +40,7 @@ public final class MHLoggingBootstrap {
         captureLevel: MHLogLevel? = nil,
         policy: MHLogPolicy? = nil,
         subsystem: String? = nil,
-        snapshotKey: MHCodablePreferenceKey<[MHLogEvent]>? = nil,
+        snapshotStorageKeys: MHLogSnapshotStorageKeys? = nil,
         snapshotStore: MHPreferenceStore = .init(),
         additionalSinks: [any MHLogSink] = []
     ) {
@@ -48,7 +48,7 @@ public final class MHLoggingBootstrap {
             captureLevel: captureLevel,
             policy: policy,
             subsystem: subsystem,
-            snapshotKey: snapshotKey,
+            snapshotStorageKeys: snapshotStorageKeys,
             snapshotStore: snapshotStore,
             additionalSinks: additionalSinks,
             sessionIdentifier: MHLogSessionSnapshotSink.processSessionIdentifier
@@ -59,7 +59,7 @@ public final class MHLoggingBootstrap {
         captureLevel: MHLogLevel?,
         policy: MHLogPolicy?,
         subsystem: String?,
-        snapshotKey: MHCodablePreferenceKey<[MHLogEvent]>?,
+        snapshotStorageKeys: MHLogSnapshotStorageKeys?,
         snapshotStore: MHPreferenceStore,
         additionalSinks: [any MHLogSink],
         sessionIdentifier: UUID
@@ -74,7 +74,7 @@ public final class MHLoggingBootstrap {
             policy: resolvedPolicy
         )
         let snapshotSeed = Self.makeSnapshotSeed(
-            snapshotKey: snapshotKey,
+            snapshotStorageKeys: snapshotStorageKeys,
             snapshotStore: snapshotStore,
             sessionIdentifier: sessionIdentifier
         )
@@ -184,16 +184,16 @@ private extension MHLoggingBootstrap {
     }
 
     static func makeSnapshotSeed(
-        snapshotKey: MHCodablePreferenceKey<[MHLogEvent]>?,
+        snapshotStorageKeys: MHLogSnapshotStorageKeys?,
         snapshotStore: MHPreferenceStore,
         sessionIdentifier: UUID
     ) -> MHLogSessionSnapshotSink.Seed? {
-        guard let snapshotKey else {
+        guard let snapshotStorageKeys else {
             return nil
         }
 
         return MHLogSessionSnapshotSink.makeSeed(
-            snapshotKey: snapshotKey,
+            snapshotStorageKeys: snapshotStorageKeys,
             snapshotStore: snapshotStore,
             sessionIdentifier: sessionIdentifier
         )

@@ -624,8 +624,7 @@ import MHPreferences
 
 let store = MHPreferenceStore()
 let key = MHBoolPreferenceKey(
-    namespace: "app.preferences",
-    name: "notifications.enabled",
+    storageKey: "app.preferences.notifications.enabled",
     default: true
 )
 let isEnabled = store.bool(for: key)
@@ -683,7 +682,14 @@ logger.info("App started")
 
 let logging = MHLoggingBootstrap(
     subsystem: "com.example.app",
-    snapshotKey: .init(storageKey: "opaque.example.logging.snapshot")
+    snapshotStorageKeys: .init(
+        current: .init(
+            storageKey: "opaque.example.logging.current-session"
+        ),
+        previous: .init(
+            storageKey: "opaque.example.logging.previous-session"
+        )
+    )
 )
 ```
 

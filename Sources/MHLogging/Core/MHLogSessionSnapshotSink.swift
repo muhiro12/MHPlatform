@@ -38,15 +38,15 @@ actor MHLogSessionSnapshotSink: MHLogSink {
     }
 
     static func makeSeed(
-        snapshotKey: MHCodablePreferenceKey<[MHLogEvent]>,
+        snapshotStorageKeys: MHLogSnapshotStorageKeys,
         snapshotStore: MHPreferenceStore,
         sessionIdentifier: UUID
     ) -> Seed {
         let currentKey = MHCodablePreferenceKey<StoredSnapshot>(
-            storageKey: "\(snapshotKey.storageKey).current"
+            storageKey: snapshotStorageKeys.current.storageKey
         )
         let previousKey = MHCodablePreferenceKey<StoredSnapshot>(
-            storageKey: "\(snapshotKey.storageKey).previous"
+            storageKey: snapshotStorageKeys.previous.storageKey
         )
 
         let storedCurrentSnapshot = snapshotStore.codable(for: currentKey)

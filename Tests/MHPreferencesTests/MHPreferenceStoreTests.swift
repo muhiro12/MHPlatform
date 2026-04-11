@@ -4,7 +4,7 @@ import Testing
 
 struct MHPreferenceStoreTests {
     private enum Constants {
-        static let namespace = "tests.preference-store"
+        static let storageKeyPrefix = "tests.preference-store"
 
         static let trueDefault = true
         static let falseDefault = false
@@ -24,9 +24,8 @@ struct MHPreferenceStoreTests {
     @Test
     func bool_returns_default_value_when_unset() throws {
         let (store, _) = try makeStore(suiteName: "bool-default")
-        let key = MHBoolPreferenceKey(
-            namespace: Constants.namespace,
-            name: "bool-default-key",
+        let key = makeBoolKey(
+            "bool-default-key",
             default: Constants.trueDefault
         )
 
@@ -38,9 +37,8 @@ struct MHPreferenceStoreTests {
     @Test
     func bool_returns_stored_value_after_set() throws {
         let (store, _) = try makeStore(suiteName: "bool-set")
-        let key = MHBoolPreferenceKey(
-            namespace: Constants.namespace,
-            name: "bool-set-key",
+        let key = makeBoolKey(
+            "bool-set-key",
             default: Constants.falseDefault
         )
 
@@ -52,9 +50,8 @@ struct MHPreferenceStoreTests {
     @Test
     func int_returns_default_value_when_unset() throws {
         let (store, _) = try makeStore(suiteName: "int-default")
-        let key = MHIntPreferenceKey(
-            namespace: Constants.namespace,
-            name: "int-default-key",
+        let key = makeIntKey(
+            "int-default-key",
             default: Constants.defaultIntValue
         )
 
@@ -66,9 +63,8 @@ struct MHPreferenceStoreTests {
     @Test
     func int_preserves_explicit_zero_value() throws {
         let (store, _) = try makeStore(suiteName: "int-zero")
-        let key = MHIntPreferenceKey(
-            namespace: Constants.namespace,
-            name: "int-zero-key",
+        let key = makeIntKey(
+            "int-zero-key",
             default: Constants.defaultIntValue
         )
 
@@ -80,10 +76,7 @@ struct MHPreferenceStoreTests {
     @Test
     func string_round_trips() throws {
         let (store, _) = try makeStore(suiteName: "string-roundtrip")
-        let key = MHStringPreferenceKey(
-            namespace: Constants.namespace,
-            name: "string-key"
-        )
+        let key = makeStringKey("string-key")
         let expectedValue = "hello"
 
         store.set(expectedValue, for: key)
@@ -94,10 +87,7 @@ struct MHPreferenceStoreTests {
     @Test
     func string_nil_removes_value() throws {
         let (store, userDefaults) = try makeStore(suiteName: "string-remove")
-        let key = MHStringPreferenceKey(
-            namespace: Constants.namespace,
-            name: "string-remove-key"
-        )
+        let key = makeStringKey("string-remove-key")
 
         store.set("value", for: key)
         store.set(nil, for: key)
@@ -109,10 +99,7 @@ struct MHPreferenceStoreTests {
     @Test
     func codable_round_trips_data_storage() throws {
         let (store, userDefaults) = try makeStore(suiteName: "codable-roundtrip")
-        let key = MHCodablePreferenceKey<DemoPayload>(
-            namespace: Constants.namespace,
-            name: "codable-roundtrip-key"
-        )
+        let key = makeCodableKey("codable-roundtrip-key")
         let expectedValue = DemoPayload(
             title: "rent",
             count: Constants.persistedIntValue
@@ -129,10 +116,7 @@ struct MHPreferenceStoreTests {
     @Test
     func codable_returns_nil_for_non_data_storage() throws {
         let (store, userDefaults) = try makeStore(suiteName: "codable-non-data")
-        let key = MHCodablePreferenceKey<DemoPayload>(
-            namespace: Constants.namespace,
-            name: "codable-non-data-key"
-        )
+        let key = makeCodableKey("codable-non-data-key")
         userDefaults.set("not-data", forKey: key.storageKey)
 
         let decodedValue = store.codable(for: key)
@@ -143,10 +127,7 @@ struct MHPreferenceStoreTests {
     @Test
     func codable_returns_nil_for_invalid_data() throws {
         let (store, userDefaults) = try makeStore(suiteName: "codable-invalid-data")
-        let key = MHCodablePreferenceKey<DemoPayload>(
-            namespace: Constants.namespace,
-            name: "codable-invalid-data-key"
-        )
+        let key = makeCodableKey("codable-invalid-data-key")
         userDefaults.set(
             Data([Constants.invalidDataByte0, Constants.invalidDataByte1]),
             forKey: key.storageKey
@@ -160,22 +141,10 @@ struct MHPreferenceStoreTests {
     @Test
     func remove_supports_all_key_types() throws {
         let (store, userDefaults) = try makeStore(suiteName: "remove-all")
-        let boolKey = MHBoolPreferenceKey(
-            namespace: Constants.namespace,
-            name: "remove-bool"
-        )
-        let intKey = MHIntPreferenceKey(
-            namespace: Constants.namespace,
-            name: "remove-int"
-        )
-        let stringKey = MHStringPreferenceKey(
-            namespace: Constants.namespace,
-            name: "remove-string"
-        )
-        let codableKey = MHCodablePreferenceKey<DemoPayload>(
-            namespace: Constants.namespace,
-            name: "remove-codable"
-        )
+        let boolKey = makeBoolKey("remove-bool")
+        let intKey = makeIntKey("remove-int")
+        let stringKey = makeStringKey("remove-string")
+        let codableKey = makeCodableKey("remove-codable")
         let payload = DemoPayload(
             title: "payload",
             count: Constants.persistedIntValue
@@ -198,29 +167,7 @@ struct MHPreferenceStoreTests {
     }
 
     @Test
-    func namespace_keeps_keys_isolated_even_with_same_name() throws {
-        let (store, userDefaults) = try makeStore(suiteName: "namespace-safety")
-        let primaryKey = MHBoolPreferenceKey(
-            namespace: "tests.primary",
-            name: "same-name",
-            default: false
-        )
-        let secondaryKey = MHBoolPreferenceKey(
-            namespace: "tests.secondary",
-            name: "same-name",
-            default: false
-        )
-
-        store.set(true, for: primaryKey)
-
-        #expect(store.bool(for: primaryKey) == true)
-        #expect(store.bool(for: secondaryKey) == false)
-        #expect(userDefaults.object(forKey: primaryKey.storageKey) != nil)
-        #expect(userDefaults.object(forKey: secondaryKey.storageKey) == nil)
-    }
-
-    @Test
-    func explicit_storage_key_supports_fully_qualified_keys() {
+    func storage_key_is_the_public_contract() {
         let boolKey = MHBoolPreferenceKey(storageKey: "opaque-bool")
         let intKey = MHIntPreferenceKey(storageKey: "opaque-int")
         let stringKey = MHStringPreferenceKey(storageKey: "opaque-string")
@@ -235,10 +182,7 @@ struct MHPreferenceStoreTests {
     @Test
     func contains_tracks_presence_changes() throws {
         let (store, _) = try makeStore(suiteName: "contains")
-        let key = MHBoolPreferenceKey(
-            namespace: Constants.namespace,
-            name: "contains-key"
-        )
+        let key = makeBoolKey("contains-key")
 
         #expect(!store.contains(key))
 
@@ -259,5 +203,35 @@ struct MHPreferenceStoreTests {
         userDefaults.removePersistentDomain(forName: resolvedSuiteName)
         let store = MHPreferenceStore(userDefaults: userDefaults)
         return (store, userDefaults)
+    }
+
+    private func makeBoolKey(
+        _ name: String,
+        default defaultValue: Bool = false
+    ) -> MHBoolPreferenceKey {
+        .init(
+            storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            default: defaultValue
+        )
+    }
+
+    private func makeIntKey(
+        _ name: String,
+        default defaultValue: Int = .zero
+    ) -> MHIntPreferenceKey {
+        .init(
+            storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            default: defaultValue
+        )
+    }
+
+    private func makeStringKey(_ name: String) -> MHStringPreferenceKey {
+        .init(storageKey: "\(Constants.storageKeyPrefix).\(name)")
+    }
+
+    private func makeCodableKey(
+        _ name: String
+    ) -> MHCodablePreferenceKey<DemoPayload> {
+        .init(storageKey: "\(Constants.storageKeyPrefix).\(name)")
     }
 }

@@ -106,8 +106,7 @@ struct MHAppRuntimeTests {
     func preference_store_uses_configured_suite_name() {
         let suiteName = "MHAppRuntimeTests.PreferenceStore.\(UUID().uuidString)"
         let key = MHBoolPreferenceKey(
-            namespace: "mhplatform.runtime.tests",
-            name: "suite",
+            storageKey: "mhplatform.runtime.tests.suite",
             default: false
         )
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {

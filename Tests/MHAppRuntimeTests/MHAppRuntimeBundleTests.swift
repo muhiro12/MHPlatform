@@ -12,8 +12,7 @@ struct MHAppRuntimeBundleTests {
     func defaults_bundle_uses_configured_suite_name() {
         let suiteName = "MHAppRuntimeTests.DefaultsBundle.\(UUID().uuidString)"
         let key = MHBoolPreferenceKey(
-            namespace: "mhplatform.runtime.tests",
-            name: "defaultsBundle",
+            storageKey: "mhplatform.runtime.tests.defaultsBundle",
             default: false
         )
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {

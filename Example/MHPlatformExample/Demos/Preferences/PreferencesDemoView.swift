@@ -4,11 +4,10 @@ import SwiftUI
 struct PreferencesDemoView: View {
     private enum Constants {
         static let suiteName = "MHPlatformExample.PreferencesDemo"
-        static let namespace = "mhplatform.example.preferences"
-        static let boolKeyName = "bool"
-        static let intKeyName = "int"
-        static let stringKeyName = "string"
-        static let codableKeyName = "codable"
+        static let boolStorageKey = "mhplatform.example.preferences.bool"
+        static let intStorageKey = "mhplatform.example.preferences.int"
+        static let stringStorageKey = "mhplatform.example.preferences.string"
+        static let codableStorageKey = "mhplatform.example.preferences.codable"
 
         static let defaultBoolValue = true
         static let defaultIntValue = 5
@@ -37,22 +36,18 @@ struct PreferencesDemoView: View {
     }()
 
     private static let boolKey = MHBoolPreferenceKey(
-        namespace: Constants.namespace,
-        name: Constants.boolKeyName,
+        storageKey: Constants.boolStorageKey,
         default: Constants.defaultBoolValue
     )
     private static let intKey = MHIntPreferenceKey(
-        namespace: Constants.namespace,
-        name: Constants.intKeyName,
+        storageKey: Constants.intStorageKey,
         default: Constants.defaultIntValue
     )
     private static let stringKey = MHStringPreferenceKey(
-        namespace: Constants.namespace,
-        name: Constants.stringKeyName
+        storageKey: Constants.stringStorageKey
     )
     private static let codableKey = MHCodablePreferenceKey<DemoPreferencesPayload>(
-        namespace: Constants.namespace,
-        name: Constants.codableKeyName
+        storageKey: Constants.codableStorageKey
     )
     private static let store = MHPreferenceStore(userDefaults: userDefaults)
 

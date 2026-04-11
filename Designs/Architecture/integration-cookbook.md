@@ -409,7 +409,14 @@ final class AppLogging {
     init() {
         logging = MHLoggingBootstrap(
             subsystem: "com.example.app",
-            snapshotKey: .init(storageKey: "opaque.example.logging.snapshot")
+            snapshotStorageKeys: .init(
+                current: .init(
+                    storageKey: "opaque.example.logging.current-session"
+                ),
+                previous: .init(
+                    storageKey: "opaque.example.logging.previous-session"
+                )
+            )
         )
         logger = logging.logger(
             category: "startup",
