@@ -414,6 +414,7 @@ This document is normative for integration design.
 - Typed reads/writes through `MHPreferenceStore`
 - Codable persistence as `Data` only
 - SwiftUI bridges via `AppStorage` initializers for primitive keys
+- Unknown-key cleanup through `MHUserDefaultsCleanupService`
 
 ### Threading / Actor
 
@@ -429,6 +430,10 @@ This document is normative for integration design.
 
 - `storageKey` must be non-empty.
 - Codable values are encoded to `Data`; non-`Data` decode path returns `nil`.
+- Unknown-key cleanup uses caller-owned `knownKeys` only; the package does not
+  auto-discover app keys.
+- Unknown-key cleanup reads and writes persistent domains by explicit
+  `domainName`.
 
 ## MHPersistenceMaintenance
 

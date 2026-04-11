@@ -8,6 +8,7 @@ struct PreferencesDemoView: View {
         static let intStorageKey = "mhplatform.example.preferences.int"
         static let stringStorageKey = "mhplatform.example.preferences.string"
         static let codableStorageKey = "mhplatform.example.preferences.codable"
+        static let obsoleteStorageKey = "mhplatform.example.preferences.legacy"
 
         static let defaultBoolValue = true
         static let defaultIntValue = 5
@@ -18,6 +19,26 @@ struct PreferencesDemoView: View {
     nonisolated private struct DemoPreferencesPayload: Codable, Equatable, Sendable {
         let title: String
         let count: Int
+    }
+
+    private enum KnownStorageKey: CaseIterable, MHStorageKeyProtocol {
+        case bool
+        case int
+        case string
+        case codable
+
+        var storageKey: String {
+            switch self {
+            case .bool:
+                Constants.boolStorageKey
+            case .int:
+                Constants.intStorageKey
+            case .string:
+                Constants.stringStorageKey
+            case .codable:
+                Constants.codableStorageKey
+            }
+        }
     }
 
     private struct CurrentValues {
@@ -48,6 +69,9 @@ struct PreferencesDemoView: View {
     )
     private static let codableKey = MHCodablePreferenceKey<DemoPreferencesPayload>(
         storageKey: Constants.codableStorageKey
+    )
+    private static let obsoleteKey = MHRawStorageKey(
+        storageKey: Constants.obsoleteStorageKey
     )
     private static let store = MHPreferenceStore(userDefaults: userDefaults)
 
@@ -130,6 +154,12 @@ struct PreferencesDemoView: View {
             Button("Reset Keys") {
                 resetKeys()
             }
+            Button("Insert Unknown Key") {
+                insertUnknownKey()
+            }
+            Button("Remove Unknown Keys") {
+                removeUnknownKeys()
+            }
         }
     }
 
@@ -146,6 +176,9 @@ struct PreferencesDemoView: View {
             }
             LabeledContent("Codable") {
                 Text(codableStorageStatus)
+            }
+            LabeledContent("Legacy key exists") {
+                Text(containsKey(Self.obsoleteKey.storageKey) ? "true" : "false")
             }
         }
     }
@@ -217,7 +250,31 @@ struct PreferencesDemoView: View {
         Self.store.remove(Self.intKey)
         Self.store.remove(Self.stringKey)
         Self.store.remove(Self.codableKey)
+        Self.userDefaults.removeObject(forKey: Self.obsoleteKey.storageKey)
         reloadFromStore()
         status = "Removed all keys from suite"
+    }
+
+    private func insertUnknownKey() {
+        Self.userDefaults.set(
+            "legacy",
+            forKey: Self.obsoleteKey.storageKey
+        )
+        status = "Inserted unknown key \(Self.obsoleteKey.storageKey)"
+    }
+
+    private func removeUnknownKeys() {
+        let report = MHUserDefaultsCleanupService.removeUnknownKeys(
+            from: Self.userDefaults,
+            domainName: Constants.suiteName,
+            knownKeys: KnownStorageKey.allCases
+        )
+
+        if report.removedStorageKeys.isEmpty {
+            status = "Cleanup ran without removing any keys"
+            return
+        }
+
+        status = "Removed unknown keys: \(report.removedStorageKeys.joined(separator: ", "))"
     }
 }

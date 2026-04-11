@@ -631,6 +631,33 @@ let isEnabled = store.bool(for: key)
 store.set(false, for: key)
 ```
 
+It also provides explicit unknown-key cleanup for caller-owned domains.
+
+```swift
+enum AppDefaultsKey: CaseIterable, MHStorageKeyProtocol {
+    case notifications
+    case pendingDeepLink
+
+    var storageKey: String {
+        switch self {
+        case .notifications:
+            "app.preferences.notifications.enabled"
+        case .pendingDeepLink:
+            "app.pending-deeplink"
+        }
+    }
+}
+
+let cleanupReport = MHUserDefaultsCleanupService.removeUnknownKeys(
+    from: userDefaults,
+    domainName: "group.com.example.app",
+    knownKeys: AppDefaultsKey.allCases
+)
+```
+
+Use this API from app startup or a settings maintenance action when you want to
+prune stale `UserDefaults` values that no longer belong to the current key set.
+
 ## MHReviewPolicy
 
 `MHReviewPolicy` provides review-request lottery policy plus a higher-level flow shell with runtime and mutation wiring.

@@ -19,6 +19,9 @@ struct MHPlatformTests {
             MHDestructiveResetOutcome.self,
             MHDestructiveResetEvent.self,
             MHPreferenceStore.self,
+            MHRawStorageKey.self,
+            MHUserDefaultsCleanupReport.self,
+            MHUserDefaultsCleanupService.self,
             MHLogPolicy.self,
             MHLoggerFactory.self,
             MHLogRuntimeState.self,
@@ -35,7 +38,7 @@ struct MHPlatformTests {
             coreSurface +
             optionalShellSurface
 
-        #expect(exportedTypes.count == 20)
+        #expect(exportedTypes.count == 23)
     }
 
     @MainActor
