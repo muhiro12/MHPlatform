@@ -91,6 +91,10 @@ struct DeepLinkingDemoView: View {
         static let parsedURLRowSpacing = 6.0
         static let builtRowVerticalPadding = 4.0
         static let parsedRowVerticalPadding = 2.0
+        static let pendingDeepLinkDescriptor = MHRawStorageDescriptor(
+            storageKey: "MHPlatformExample.pendingDeepLink",
+            defaultSelection: .standard
+        )
     }
 
     private static let configuration = MHDeepLinkConfiguration(
@@ -106,8 +110,7 @@ struct DeepLinkingDemoView: View {
 
     private static let inbox = MHDeepLinkInbox()
     private static let store = MHDeepLinkStore(
-        selection: .standard,
-        key: "MHPlatformExample.pendingDeepLink"
+        key: Constants.pendingDeepLinkDescriptor
     )
 
     @State private var inboxStatus = "No pending inbox URL"

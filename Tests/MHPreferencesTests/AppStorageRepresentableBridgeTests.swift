@@ -5,23 +5,25 @@ import SwiftUI
 import Testing
 
 struct AppStorageRepresentableBridgeTests {
-    private struct BoolRepresentableKey: MHBoolPreferenceKeyRepresentable {
-        let preferenceKey: MHBoolPreferenceKey
+    private struct BoolRepresentableKey: MHBoolPrefDescriptorRepresentable {
+        let preferenceDescriptor: MHBoolPreferenceDescriptor
     }
 
-    private struct IntRepresentableKey: MHIntPreferenceKeyRepresentable {
+    private struct IntRepresentableKey: MHIntPrefDescriptorRepresentable {
         let storageKey: String
+        let defaultSelection: MHUserDefaultsSelection
 
-        func preferenceKey(default defaultValue: Int) -> MHIntPreferenceKey {
+        func preferenceDescriptor(default defaultValue: Int) -> MHIntPreferenceDescriptor {
             .init(
                 storageKey: storageKey,
+                defaultSelection: defaultSelection,
                 default: defaultValue
             )
         }
     }
 
-    private struct StringRepresentableKey: MHStringPreferenceKeyRepresentable {
-        let preferenceKey: MHStringPreferenceKey
+    private struct StringRepresentableKey: MHStringPrefDescriptorRepresentable {
+        let preferenceDescriptor: MHStringPreferenceDescriptor
     }
 
     private enum DemoRawStringValue: String {
@@ -37,7 +39,7 @@ struct AppStorageRepresentableBridgeTests {
         }
 
         init(
-            key: some MHBoolPreferenceKeyRepresentable,
+            key: some MHBoolPrefDescriptorRepresentable,
             store: UserDefaults
         ) {
             _value = AppStorage(
@@ -47,12 +49,10 @@ struct AppStorageRepresentableBridgeTests {
         }
 
         init(
-            key: some MHBoolPreferenceKeyRepresentable,
-            selection: MHUserDefaultsSelection
+            key: some MHBoolPrefDescriptorRepresentable
         ) {
             _value = AppStorage(
-                key,
-                selection: selection
+                key
             )
         }
     }
@@ -65,7 +65,7 @@ struct AppStorageRepresentableBridgeTests {
         }
 
         init(
-            key: some MHIntPreferenceKeyRepresentable,
+            key: some MHIntPrefDescriptorRepresentable,
             store: UserDefaults
         ) {
             _value = AppStorage(
@@ -88,7 +88,7 @@ struct AppStorageRepresentableBridgeTests {
         }
 
         init(
-            key: some MHStringPreferenceKeyRepresentable,
+            key: some MHStringPrefDescriptorRepresentable,
             store: UserDefaults
         ) {
             _value = AppStorage(
@@ -111,7 +111,7 @@ struct AppStorageRepresentableBridgeTests {
         }
 
         init(
-            key: some MHStringPreferenceKeyRepresentable,
+            key: some MHStringPrefDescriptorRepresentable,
             store: UserDefaults
         ) {
             _value = AppStorage(
@@ -134,7 +134,7 @@ struct AppStorageRepresentableBridgeTests {
         }
 
         init(
-            key: some MHStringPreferenceKeyRepresentable,
+            key: some MHStringPrefDescriptorRepresentable,
             default defaultValue: DemoRawStringValue,
             store: UserDefaults
         ) {
@@ -150,8 +150,9 @@ struct AppStorageRepresentableBridgeTests {
     func bool_bridge_supports_representable_keys() throws {
         let userDefaults = try makeUserDefaults(suiteName: "representable-bool")
         let key = BoolRepresentableKey(
-            preferenceKey: .init(
+            preferenceDescriptor: .init(
                 storageKey: "representable-bool-key",
+                defaultSelection: .standard,
                 default: true
             )
         )
@@ -164,21 +165,21 @@ struct AppStorageRepresentableBridgeTests {
     }
 
     @Test
-    func bool_bridge_supports_selection_for_representable_keys() throws {
+    func bool_bridge_supports_default_selection_for_representable_keys() throws {
         let suiteName = "representable-selection-bool"
         let userDefaults = try makeUserDefaults(suiteName: suiteName)
         let key = BoolRepresentableKey(
-            preferenceKey: .init(
+            preferenceDescriptor: .init(
                 storageKey: "representable-selection-bool-key",
+                defaultSelection: .suite(
+                    "  AppStorageRepresentableBridgeTests.\(suiteName)\n"
+                ),
                 default: false
             )
         )
-        userDefaults.set(true, forKey: key.preferenceKey.storageKey)
+        userDefaults.set(true, forKey: key.preferenceDescriptor.storageKey)
         let harness = BoolHarness(
-            key: key,
-            selection: .suite(
-                "  AppStorageRepresentableBridgeTests.\(suiteName)\n"
-            )
+            key: key
         )
 
         #expect(harness.wrappedValue)
@@ -187,7 +188,10 @@ struct AppStorageRepresentableBridgeTests {
     @Test
     func int_bridge_supports_representable_keys() throws {
         let userDefaults = try makeUserDefaults(suiteName: "representable-int")
-        let key = IntRepresentableKey(storageKey: "representable-int-key")
+        let key = IntRepresentableKey(
+            storageKey: "representable-int-key",
+            defaultSelection: .standard
+        )
         let harness = IntHarness(
             key: key,
             store: userDefaults
@@ -200,7 +204,10 @@ struct AppStorageRepresentableBridgeTests {
     func string_bridge_supports_representable_keys() throws {
         let userDefaults = try makeUserDefaults(suiteName: "representable-string")
         let key = StringRepresentableKey(
-            preferenceKey: .init(storageKey: "representable-string-key")
+            preferenceDescriptor: .init(
+                storageKey: "representable-string-key",
+                defaultSelection: .standard
+            )
         )
         var harness = StringHarness(
             key: key,
@@ -210,14 +217,20 @@ struct AppStorageRepresentableBridgeTests {
         #expect(harness.wrappedValue == nil)
 
         harness.wrappedValue = "value"
-        #expect(userDefaults.string(forKey: key.preferenceKey.storageKey) == "value")
+        #expect(
+            userDefaults.string(forKey: key.preferenceDescriptor.storageKey)
+                == "value"
+        )
     }
 
     @Test
     func required_string_bridge_supports_representable_keys() throws {
         let userDefaults = try makeUserDefaults(suiteName: "representable-required-string")
         let key = StringRepresentableKey(
-            preferenceKey: .init(storageKey: "representable-required-string-key")
+            preferenceDescriptor: .init(
+                storageKey: "representable-required-string-key",
+                defaultSelection: .standard
+            )
         )
         let harness = RequiredStringHarness(
             key: key,
@@ -231,9 +244,12 @@ struct AppStorageRepresentableBridgeTests {
     func raw_string_bridge_supports_representable_keys() throws {
         let userDefaults = try makeUserDefaults(suiteName: "representable-raw-string")
         let key = StringRepresentableKey(
-            preferenceKey: .init(storageKey: "representable-raw-string-key")
+            preferenceDescriptor: .init(
+                storageKey: "representable-raw-string-key",
+                defaultSelection: .standard
+            )
         )
-        userDefaults.set("second", forKey: key.preferenceKey.storageKey)
+        userDefaults.set("second", forKey: key.preferenceDescriptor.storageKey)
         var harness = RawStringHarness(
             key: key,
             default: .first,
@@ -244,7 +260,7 @@ struct AppStorageRepresentableBridgeTests {
 
         harness.wrappedValue = .first
         #expect(
-            userDefaults.string(forKey: key.preferenceKey.storageKey)
+            userDefaults.string(forKey: key.preferenceDescriptor.storageKey)
                 == DemoRawStringValue.first.rawValue
         )
     }

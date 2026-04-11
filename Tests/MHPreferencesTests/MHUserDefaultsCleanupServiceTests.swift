@@ -18,7 +18,7 @@ struct MHUserDefaultsCleanupServiceTests {
         let title: String
     }
 
-    private enum KnownStorageKey: CaseIterable, MHStorageKeyProtocol {
+    private enum KnownStorageDescriptor: CaseIterable, MHStorageDescriptorProtocol {
         case bool
         case raw
 
@@ -30,25 +30,33 @@ struct MHUserDefaultsCleanupServiceTests {
                 Constants.rawStorageKey
             }
         }
+
+        var defaultSelection: MHUserDefaultsSelection {
+            .standard
+        }
     }
 
     @Test
     func removeUnknownKeys_keeps_known_typed_keys_and_prunes_unknown_keys() throws {
         let domainName = makeDomainName(suffix: "typed-prune")
         let userDefaults = try makeSuiteUserDefaults(domainName: domainName)
-        let boolKey = MHBoolPreferenceKey(
+        let boolKey = MHBoolPreferenceDescriptor(
             storageKey: Constants.boolStorageKey,
+            defaultSelection: .standard,
             default: true
         )
-        let intKey = MHIntPreferenceKey(
+        let intKey = MHIntPreferenceDescriptor(
             storageKey: Constants.intStorageKey,
+            defaultSelection: .standard,
             default: 5
         )
-        let stringKey = MHStringPreferenceKey(
-            storageKey: Constants.stringStorageKey
+        let stringKey = MHStringPreferenceDescriptor(
+            storageKey: Constants.stringStorageKey,
+            defaultSelection: .standard
         )
-        let codableKey = MHCodablePreferenceKey<DemoPayload>(
-            storageKey: Constants.codableStorageKey
+        let codableKey = MHCodablePreferenceDescriptor<DemoPayload>(
+            storageKey: Constants.codableStorageKey,
+            defaultSelection: .standard
         )
         let store = MHPreferenceStore(userDefaults: userDefaults)
 
@@ -77,11 +85,15 @@ struct MHUserDefaultsCleanupServiceTests {
     func removeUnknownKeys_keeps_additional_raw_storage_keys() throws {
         let domainName = makeDomainName(suffix: "raw-key")
         let userDefaults = try makeSuiteUserDefaults(domainName: domainName)
-        let boolKey = MHBoolPreferenceKey(
+        let boolKey = MHBoolPreferenceDescriptor(
             storageKey: Constants.boolStorageKey,
+            defaultSelection: .standard,
             default: true
         )
-        let rawKey = MHRawStorageKey(storageKey: Constants.rawStorageKey)
+        let rawKey = MHRawStorageDescriptor(
+            storageKey: Constants.rawStorageKey,
+            defaultSelection: .standard
+        )
 
         userDefaults.set(true, forKey: boolKey.storageKey)
         userDefaults.set("keep", forKey: rawKey.storageKey)
@@ -103,8 +115,14 @@ struct MHUserDefaultsCleanupServiceTests {
     func removeUnknownKeys_deduplicates_known_keys() throws {
         let domainName = makeDomainName(suffix: "dedupe")
         let userDefaults = try makeSuiteUserDefaults(domainName: domainName)
-        let key = MHStringPreferenceKey(storageKey: Constants.stringStorageKey)
-        let duplicateRawKey = MHRawStorageKey(storageKey: Constants.stringStorageKey)
+        let key = MHStringPreferenceDescriptor(
+            storageKey: Constants.stringStorageKey,
+            defaultSelection: .standard
+        )
+        let duplicateRawKey = MHRawStorageDescriptor(
+            storageKey: Constants.stringStorageKey,
+            defaultSelection: .standard
+        )
 
         userDefaults.set("value", forKey: key.storageKey)
         userDefaults.set("legacy", forKey: Constants.unknownStorageKey)
@@ -138,7 +156,10 @@ struct MHUserDefaultsCleanupServiceTests {
     func removeUnknownKeys_runs_for_standard_domain() {
         let domainName = makeDomainName(suffix: "standard-domain")
         let userDefaults = UserDefaults.standard
-        let rawKey = MHRawStorageKey(storageKey: Constants.rawStorageKey)
+        let rawKey = MHRawStorageDescriptor(
+            storageKey: Constants.rawStorageKey,
+            defaultSelection: .standard
+        )
 
         userDefaults.setPersistentDomain(
             [
@@ -176,7 +197,7 @@ struct MHUserDefaultsCleanupServiceTests {
     }
 
     @Test
-    func removeUnknownKeys_accepts_case_iterable_known_key_sequences() throws {
+    func removeUnknownKeys_accepts_case_iterable_known_descriptor_sequences() throws {
         let domainName = makeDomainName(suffix: "case-iterable")
         let userDefaults = try makeSuiteUserDefaults(domainName: domainName)
 
@@ -187,7 +208,7 @@ struct MHUserDefaultsCleanupServiceTests {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
-            knownKeys: KnownStorageKey.allCases
+            knownKeys: KnownStorageDescriptor.allCases
         )
 
         #expect(report.didRun)

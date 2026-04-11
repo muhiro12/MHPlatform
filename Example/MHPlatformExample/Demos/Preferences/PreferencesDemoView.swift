@@ -4,6 +4,7 @@ import SwiftUI
 struct PreferencesDemoView: View {
     private enum Constants {
         static let suiteName = "MHPlatformExample.PreferencesDemo"
+        static let defaultSelection = MHUserDefaultsSelection.suite(suiteName)
         static let boolStorageKey = "mhplatform.example.preferences.bool"
         static let intStorageKey = "mhplatform.example.preferences.int"
         static let stringStorageKey = "mhplatform.example.preferences.string"
@@ -21,7 +22,7 @@ struct PreferencesDemoView: View {
         let count: Int
     }
 
-    private enum KnownStorageKey: CaseIterable, MHStorageKeyProtocol {
+    private enum KnownStorageDescriptor: CaseIterable, MHStorageDescriptorProtocol {
         case bool
         case int
         case string
@@ -39,6 +40,10 @@ struct PreferencesDemoView: View {
                 Constants.codableStorageKey
             }
         }
+
+        var defaultSelection: MHUserDefaultsSelection {
+            Constants.defaultSelection
+        }
     }
 
     private struct CurrentValues {
@@ -50,31 +55,32 @@ struct PreferencesDemoView: View {
     }
 
     private static let userDefaults: UserDefaults = {
-        MHUserDefaultsSelection
-            .suite(Constants.suiteName)
-            .resolveUserDefaults()
+        Constants.defaultSelection.resolveUserDefaults()
     }()
 
-    private static let boolKey = MHBoolPreferenceKey(
+    private static let boolKey = MHBoolPreferenceDescriptor(
         storageKey: Constants.boolStorageKey,
+        defaultSelection: Constants.defaultSelection,
         default: Constants.defaultBoolValue
     )
-    private static let intKey = MHIntPreferenceKey(
+    private static let intKey = MHIntPreferenceDescriptor(
         storageKey: Constants.intStorageKey,
+        defaultSelection: Constants.defaultSelection,
         default: Constants.defaultIntValue
     )
-    private static let stringKey = MHStringPreferenceKey(
-        storageKey: Constants.stringStorageKey
+    private static let stringKey = MHStringPreferenceDescriptor(
+        storageKey: Constants.stringStorageKey,
+        defaultSelection: Constants.defaultSelection
     )
-    private static let codableKey = MHCodablePreferenceKey<DemoPreferencesPayload>(
-        storageKey: Constants.codableStorageKey
+    private static let codableKey = MHCodablePreferenceDescriptor<DemoPreferencesPayload>(
+        storageKey: Constants.codableStorageKey,
+        defaultSelection: Constants.defaultSelection
     )
-    private static let obsoleteKey = MHRawStorageKey(
-        storageKey: Constants.obsoleteStorageKey
+    private static let obsoleteKey = MHRawStorageDescriptor(
+        storageKey: Constants.obsoleteStorageKey,
+        defaultSelection: Constants.defaultSelection
     )
-    private static let store = MHPreferenceStore(
-        selection: .suite(Constants.suiteName)
-    )
+    private static let store = MHPreferenceStore()
 
     private static var currentValues: CurrentValues {
         let boolValue = store.bool(for: boolKey)
@@ -268,7 +274,7 @@ struct PreferencesDemoView: View {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: Self.userDefaults,
             domainName: Constants.suiteName,
-            knownKeys: KnownStorageKey.allCases
+            knownKeys: KnownStorageDescriptor.allCases
         )
 
         if report.removedStorageKeys.isEmpty {

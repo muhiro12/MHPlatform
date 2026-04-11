@@ -3,21 +3,23 @@ import MHLogging
 import MHPreferences
 import Testing
 
-struct MHLogSnapshotStorageKeyTests {
+struct MHLogSnapshotStorageDescriptorTests {
     @Test
-    func snapshot_storage_key_can_participate_in_known_key_cleanup() throws {
-        let domainName = "MHLogSnapshotStorageKeyTests.\(UUID().uuidString)"
+    func snapshot_storage_descriptor_can_participate_in_known_key_cleanup() throws {
+        let domainName = "MHLogSnapshotStorageDescriptorTests.\(UUID().uuidString)"
         let userDefaults = try #require(UserDefaults(suiteName: domainName))
         userDefaults.removePersistentDomain(forName: domainName)
         defer {
             userDefaults.removePersistentDomain(forName: domainName)
         }
 
-        let currentKey = MHLogSnapshotStorageKey(
-            storageKey: "tests.logging.current"
+        let currentKey = MHLogSnapshotStorageDescriptor(
+            storageKey: "tests.logging.current",
+            defaultSelection: .suite(domainName)
         )
-        let previousKey = MHLogSnapshotStorageKey(
-            storageKey: "tests.logging.previous"
+        let previousKey = MHLogSnapshotStorageDescriptor(
+            storageKey: "tests.logging.previous",
+            defaultSelection: .suite(domainName)
         )
         userDefaults.set("current", forKey: currentKey.storageKey)
         userDefaults.set("previous", forKey: previousKey.storageKey)

@@ -3,8 +3,8 @@ import MHPreferences
 
 actor MHLogSessionSnapshotSink: MHLogSink {
     struct Seed {
-        let currentKey: MHCodablePreferenceKey<StoredSnapshot>
-        let previousKey: MHCodablePreferenceKey<StoredSnapshot>
+        let currentKey: MHCodablePreferenceDescriptor<StoredSnapshot>
+        let previousKey: MHCodablePreferenceDescriptor<StoredSnapshot>
         let currentEvents: [MHLogEvent]
         let previousEvents: [MHLogEvent]
     }
@@ -16,8 +16,8 @@ actor MHLogSessionSnapshotSink: MHLogSink {
 
     static let processSessionIdentifier = UUID()
 
-    private let currentKey: MHCodablePreferenceKey<StoredSnapshot>
-    private let previousKey: MHCodablePreferenceKey<StoredSnapshot>
+    private let currentKey: MHCodablePreferenceDescriptor<StoredSnapshot>
+    private let previousKey: MHCodablePreferenceDescriptor<StoredSnapshot>
     private let snapshotStore: MHPreferenceStore
     private let sessionIdentifier: UUID
 
@@ -38,15 +38,17 @@ actor MHLogSessionSnapshotSink: MHLogSink {
     }
 
     static func makeSeed(
-        snapshotStorageKeys: MHLogSnapshotStorageKeys,
+        snapshotStorageDescriptors: MHLogSnapshotStorageDescriptors,
         snapshotStore: MHPreferenceStore,
         sessionIdentifier: UUID
     ) -> Seed {
-        let currentKey = MHCodablePreferenceKey<StoredSnapshot>(
-            storageKey: snapshotStorageKeys.current.storageKey
+        let currentKey = MHCodablePreferenceDescriptor<StoredSnapshot>(
+            storageKey: snapshotStorageDescriptors.current.storageKey,
+            defaultSelection: snapshotStorageDescriptors.current.defaultSelection
         )
-        let previousKey = MHCodablePreferenceKey<StoredSnapshot>(
-            storageKey: snapshotStorageKeys.previous.storageKey
+        let previousKey = MHCodablePreferenceDescriptor<StoredSnapshot>(
+            storageKey: snapshotStorageDescriptors.previous.storageKey,
+            defaultSelection: snapshotStorageDescriptors.previous.defaultSelection
         )
 
         let storedCurrentSnapshot = snapshotStore.codable(for: currentKey)

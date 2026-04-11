@@ -103,10 +103,11 @@ struct MHAppRuntimeTests {
 
     @MainActor
     @Test
-    func preference_store_uses_configured_suite_name() {
+    func preference_store_uses_descriptor_default_selection() {
         let suiteName = "MHAppRuntimeTests.PreferenceStore.\(UUID().uuidString)"
-        let key = MHBoolPreferenceKey(
+        let descriptor = MHBoolPreferenceDescriptor(
             storageKey: "mhplatform.runtime.tests.suite",
+            defaultSelection: .suite(suiteName),
             default: false
         )
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {
@@ -120,13 +121,11 @@ struct MHAppRuntimeTests {
         }
 
         let runtime = MHAppRuntime(
-            runtimeOnly: .init(
-                preferencesDefaults: .suite(suiteName)
-            )
+            runtimeOnly: .init()
         )
-        runtime.preferenceStore.set(true, for: key)
+        runtime.preferenceStore.set(true, for: descriptor)
 
-        #expect(userDefaults.bool(forKey: key.storageKey))
+        #expect(userDefaults.bool(forKey: descriptor.storageKey))
     }
 
     @MainActor

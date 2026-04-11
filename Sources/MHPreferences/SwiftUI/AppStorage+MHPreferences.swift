@@ -3,263 +3,249 @@ import Foundation
 import SwiftUI
 
 public extension AppStorage {
-    /// Creates a boolean app-storage binding using a typed preference key.
+    /// Creates a boolean app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHBoolPreferenceKey,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: MHBoolPreferenceDescriptor
     ) where Value == Bool {
         self.init(
-            key,
-            store: selection.resolveUserDefaults()
+            descriptor,
+            store: descriptor.defaultSelection.resolveUserDefaults()
         )
     }
 
-    /// Creates a boolean app-storage binding using a typed preference key.
+    /// Creates a boolean app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHBoolPreferenceKey,
-        store: UserDefaults = .standard
+        _ descriptor: MHBoolPreferenceDescriptor,
+        store: UserDefaults
     ) where Value == Bool {
         self.init(
-            wrappedValue: key.defaultValue,
-            key.storageKey,
+            wrappedValue: descriptor.defaultValue,
+            descriptor.storageKey,
             store: store
         )
     }
 
-    /// Creates an integer app-storage binding using a typed preference key.
+    /// Creates an integer app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHIntPreferenceKey,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: MHIntPreferenceDescriptor
     ) where Value == Int {
         self.init(
-            key,
-            store: selection.resolveUserDefaults()
+            descriptor,
+            store: descriptor.defaultSelection.resolveUserDefaults()
         )
     }
 
-    /// Creates an integer app-storage binding using a typed preference key.
+    /// Creates an integer app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHIntPreferenceKey,
-        store: UserDefaults = .standard
+        _ descriptor: MHIntPreferenceDescriptor,
+        store: UserDefaults
     ) where Value == Int {
         self.init(
-            wrappedValue: key.defaultValue,
-            key.storageKey,
+            wrappedValue: descriptor.defaultValue,
+            descriptor.storageKey,
             store: store
         )
     }
 
-    /// Creates an optional-string app-storage binding using a typed preference key.
+    /// Creates an optional-string app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHStringPreferenceKey,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: MHStringPreferenceDescriptor
     ) where Value == String? {
         self.init(
-            key,
-            store: selection.resolveUserDefaults()
+            descriptor,
+            store: descriptor.defaultSelection.resolveUserDefaults()
         )
     }
 
-    /// Creates an optional-string app-storage binding using a typed preference key.
+    /// Creates an optional-string app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHStringPreferenceKey,
-        store: UserDefaults = .standard
+        _ descriptor: MHStringPreferenceDescriptor,
+        store: UserDefaults
     ) where Value == String? {
         self.init(
-            key.storageKey,
+            descriptor.storageKey,
             store: store
         )
     }
 
-    /// Creates a string app-storage binding using a typed preference key.
+    /// Creates a string app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHStringPreferenceKey,
-        default defaultValue: String,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: MHStringPreferenceDescriptor,
+        default defaultValue: String
     ) where Value == String {
         self.init(
-            key,
+            descriptor,
             default: defaultValue,
-            store: selection.resolveUserDefaults()
+            store: descriptor.defaultSelection.resolveUserDefaults()
         )
     }
 
-    /// Creates a string app-storage binding using a typed preference key.
+    /// Creates a string app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHStringPreferenceKey,
+        _ descriptor: MHStringPreferenceDescriptor,
         default defaultValue: String,
-        store: UserDefaults = .standard
+        store: UserDefaults
     ) where Value == String {
         self.init(
             wrappedValue: defaultValue,
-            key.storageKey,
+            descriptor.storageKey,
             store: store
         )
     }
 
-    /// Creates a raw-string app-storage binding using a typed preference key.
+    /// Creates a raw-string app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHStringPreferenceKey,
-        default defaultValue: Value,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: MHStringPreferenceDescriptor,
+        default defaultValue: Value
     ) where Value: RawRepresentable, Value.RawValue == String {
         self.init(
-            key,
+            descriptor,
             default: defaultValue,
-            store: selection.resolveUserDefaults()
+            store: descriptor.defaultSelection.resolveUserDefaults()
         )
     }
 
-    /// Creates a raw-string app-storage binding using a typed preference key.
+    /// Creates a raw-string app-storage binding using a typed preference descriptor.
     init(
-        _ key: MHStringPreferenceKey,
+        _ descriptor: MHStringPreferenceDescriptor,
         default defaultValue: Value,
-        store: UserDefaults = .standard
+        store: UserDefaults
     ) where Value: RawRepresentable, Value.RawValue == String {
         self.init(
             wrappedValue: defaultValue,
-            key.storageKey,
+            descriptor.storageKey,
             store: store
         )
     }
 
-    /// Creates a boolean app-storage binding using a representable typed key.
+    /// Creates a boolean app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHBoolPreferenceKeyRepresentable,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: some MHBoolPrefDescriptorRepresentable
     ) where Value == Bool {
         self.init(
-            key,
-            store: selection.resolveUserDefaults()
+            descriptor.preferenceDescriptor
         )
     }
 
-    /// Creates a boolean app-storage binding using a representable typed key.
+    /// Creates a boolean app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHBoolPreferenceKeyRepresentable,
-        store: UserDefaults = .standard
+        _ descriptor: some MHBoolPrefDescriptorRepresentable,
+        store: UserDefaults
     ) where Value == Bool {
         self.init(
-            key.preferenceKey,
+            descriptor.preferenceDescriptor,
             store: store
         )
     }
 
-    /// Creates an integer app-storage binding using a representable typed key.
+    /// Creates an integer app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHIntPreferenceKeyRepresentable,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: some MHIntPrefDescriptorRepresentable
     ) where Value == Int {
         self.init(
-            key,
-            store: selection.resolveUserDefaults()
+            descriptor.preferenceDescriptor(default: .zero)
         )
     }
 
-    /// Creates an integer app-storage binding using a representable typed key.
+    /// Creates an integer app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHIntPreferenceKeyRepresentable,
-        store: UserDefaults = .standard
+        _ descriptor: some MHIntPrefDescriptorRepresentable,
+        store: UserDefaults
     ) where Value == Int {
         self.init(
-            key.preferenceKey(default: .zero),
+            descriptor.preferenceDescriptor(default: .zero),
             store: store
         )
     }
 
-    /// Creates an optional-string app-storage binding using a representable typed key.
+    /// Creates an optional-string app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHStringPreferenceKeyRepresentable,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: some MHStringPrefDescriptorRepresentable
     ) where Value == String? {
         self.init(
-            key,
-            store: selection.resolveUserDefaults()
+            descriptor.preferenceDescriptor
         )
     }
 
-    /// Creates an optional-string app-storage binding using a representable typed key.
+    /// Creates an optional-string app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHStringPreferenceKeyRepresentable,
-        store: UserDefaults = .standard
+        _ descriptor: some MHStringPrefDescriptorRepresentable,
+        store: UserDefaults
     ) where Value == String? {
         self.init(
-            key.preferenceKey,
+            descriptor.preferenceDescriptor,
             store: store
         )
     }
 
-    /// Creates a string app-storage binding using a representable typed key.
+    /// Creates a string app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHStringPreferenceKeyRepresentable,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: some MHStringPrefDescriptorRepresentable
     ) where Value == String {
         self.init(
-            key,
-            store: selection.resolveUserDefaults()
+            descriptor.preferenceDescriptor,
+            default: ""
         )
     }
 
-    /// Creates a string app-storage binding using a representable typed key.
+    /// Creates a string app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHStringPreferenceKeyRepresentable,
-        store: UserDefaults = .standard
+        _ descriptor: some MHStringPrefDescriptorRepresentable,
+        store: UserDefaults
     ) where Value == String {
         self.init(
             wrappedValue: "",
-            key.preferenceKey.storageKey,
+            descriptor.preferenceDescriptor.storageKey,
             store: store
         )
     }
 
-    /// Creates a string app-storage binding using a representable typed key and an explicit default.
+    /// Creates a string app-storage binding using a representable typed descriptor and an explicit default.
     init(
-        _ key: some MHStringPreferenceKeyRepresentable,
-        default defaultValue: String,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: some MHStringPrefDescriptorRepresentable,
+        default defaultValue: String
     ) where Value == String {
         self.init(
-            key,
+            descriptor.preferenceDescriptor,
             default: defaultValue,
-            store: selection.resolveUserDefaults()
+            store: descriptor.preferenceDescriptor.defaultSelection.resolveUserDefaults()
         )
     }
 
-    /// Creates a string app-storage binding using a representable typed key and an explicit default.
+    /// Creates a string app-storage binding using a representable typed descriptor and an explicit default.
     init(
-        _ key: some MHStringPreferenceKeyRepresentable,
+        _ descriptor: some MHStringPrefDescriptorRepresentable,
         default defaultValue: String,
-        store: UserDefaults = .standard
+        store: UserDefaults
     ) where Value == String {
         self.init(
             wrappedValue: defaultValue,
-            key.preferenceKey.storageKey,
+            descriptor.preferenceDescriptor.storageKey,
             store: store
         )
     }
 
-    /// Creates a raw-string app-storage binding using a representable typed key.
+    /// Creates a raw-string app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHStringPreferenceKeyRepresentable,
-        default defaultValue: Value,
-        selection: MHUserDefaultsSelection = .standard
+        _ descriptor: some MHStringPrefDescriptorRepresentable,
+        default defaultValue: Value
     ) where Value: RawRepresentable, Value.RawValue == String {
         self.init(
-            key,
+            descriptor.preferenceDescriptor,
             default: defaultValue,
-            store: selection.resolveUserDefaults()
+            store: descriptor.preferenceDescriptor.defaultSelection.resolveUserDefaults()
         )
     }
 
-    /// Creates a raw-string app-storage binding using a representable typed key.
+    /// Creates a raw-string app-storage binding using a representable typed descriptor.
     init(
-        _ key: some MHStringPreferenceKeyRepresentable,
+        _ descriptor: some MHStringPrefDescriptorRepresentable,
         default defaultValue: Value,
-        store: UserDefaults = .standard
+        store: UserDefaults
     ) where Value: RawRepresentable, Value.RawValue == String {
         self.init(
             wrappedValue: defaultValue,
-            key.preferenceKey.storageKey,
+            descriptor.preferenceDescriptor.storageKey,
             store: store
         )
     }

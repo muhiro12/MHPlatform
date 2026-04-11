@@ -27,7 +27,7 @@ struct AppStorageBridgeTests {
         }
 
         init(
-            key: MHBoolPreferenceKey,
+            key: MHBoolPreferenceDescriptor,
             store: UserDefaults
         ) {
             _value = AppStorage(
@@ -37,12 +37,10 @@ struct AppStorageBridgeTests {
         }
 
         init(
-            key: MHBoolPreferenceKey,
-            selection: MHUserDefaultsSelection
+            key: MHBoolPreferenceDescriptor
         ) {
             _value = AppStorage(
-                key,
-                selection: selection
+                key
             )
         }
     }
@@ -60,7 +58,7 @@ struct AppStorageBridgeTests {
         }
 
         init(
-            key: MHIntPreferenceKey,
+            key: MHIntPreferenceDescriptor,
             store: UserDefaults
         ) {
             _value = AppStorage(
@@ -83,7 +81,7 @@ struct AppStorageBridgeTests {
         }
 
         init(
-            key: MHStringPreferenceKey,
+            key: MHStringPreferenceDescriptor,
             store: UserDefaults
         ) {
             _value = AppStorage(
@@ -106,7 +104,7 @@ struct AppStorageBridgeTests {
         }
 
         init(
-            key: MHStringPreferenceKey,
+            key: MHStringPreferenceDescriptor,
             default defaultValue: String,
             store: UserDefaults
         ) {
@@ -136,7 +134,7 @@ struct AppStorageBridgeTests {
         }
 
         init(
-            key: MHStringPreferenceKey,
+            key: MHStringPreferenceDescriptor,
             default defaultValue: DemoRawStringValue,
             store: UserDefaults
         ) {
@@ -221,13 +219,15 @@ struct AppStorageBridgeTests {
     }
 
     @Test
-    func selection_injection_is_respected() throws {
-        let suiteName = "selection-store"
+    func default_selection_is_respected() throws {
+        let suiteName = "default-selection-store"
         let userDefaults = try makeUserDefaults(suiteName: suiteName)
-        let key = makeBoolKey("selection-bool-key")
+        let key = makeBoolKey(
+            "selection-bool-key",
+            defaultSelection: .suite("  AppStorageBridgeTests.\(suiteName)\n")
+        )
         var harness = BoolHarness(
-            key: key,
-            selection: .suite("  AppStorageBridgeTests.\(suiteName)\n")
+            key: key
         )
 
         harness.wrappedValue = Constants.injectedBoolValue
@@ -281,26 +281,36 @@ private extension AppStorageBridgeTests {
 
     func makeBoolKey(
         _ name: String,
+        defaultSelection: MHUserDefaultsSelection = .standard,
         default defaultValue: Bool = false
-    ) -> MHBoolPreferenceKey {
+    ) -> MHBoolPreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            defaultSelection: defaultSelection,
             default: defaultValue
         )
     }
 
     func makeIntKey(
         _ name: String,
+        defaultSelection: MHUserDefaultsSelection = .standard,
         default defaultValue: Int = .zero
-    ) -> MHIntPreferenceKey {
+    ) -> MHIntPreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            defaultSelection: defaultSelection,
             default: defaultValue
         )
     }
 
-    func makeStringKey(_ name: String) -> MHStringPreferenceKey {
-        .init(storageKey: "\(Constants.storageKeyPrefix).\(name)")
+    func makeStringKey(
+        _ name: String,
+        defaultSelection: MHUserDefaultsSelection = .standard
+    ) -> MHStringPreferenceDescriptor {
+        .init(
+            storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            defaultSelection: defaultSelection
+        )
     }
 }
 #endif

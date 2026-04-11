@@ -180,6 +180,7 @@ Granular adoption:
 
 ```swift
 import MHDeepLinking
+import MHPreferences
 import MHRouteExecution
 ```
 
@@ -306,9 +307,7 @@ let routePipeline = MHAppRoutePipeline(
     try await applyRoute(route)
 }
 let bootstrap = MHAppRuntimeBootstrap(
-    runtimeOnlyConfiguration: .init(
-        preferencesDefaults: .suite("group.com.example.app")
-    ),
+    runtimeOnlyConfiguration: .init(),
     lifecyclePlan: .init(
         commonTasks: [
             .init(name: "syncSubscriptionState") {
@@ -351,9 +350,7 @@ For previews and tests that only need runtime injection, prefer:
 
 ```swift
 let bootstrap = MHAppRuntimeBootstrap(
-    runtimeOnlyConfiguration: .init(
-        preferencesDefaults: .suite("group.com.example.preview")
-    )
+    runtimeOnlyConfiguration: .init()
 )
 
 ContentView()
@@ -385,9 +382,14 @@ let codec = MHDeepLinkCodec<MyRoute>(
 )
 let routeInbox = MHObservableDeepLinkInbox()
 let notificationInbox = MHDeepLinkInbox()
+enum AppDefaults {
+    static let mainSelection: MHUserDefaultsSelection = .standard
+}
 let intentStore = MHDeepLinkStore(
-    selection: .standard,
-    key: "pendingIntentRouteURL"
+    key: .init(
+        storageKey: "pendingIntentRouteURL",
+        defaultSelection: AppDefaults.mainSelection
+    )
 )
 let handoffSources = MHDeepLinkSourceChain(
     intentStore,
@@ -614,7 +616,7 @@ let resetOutcome = await MHDestructiveResetService.run(
 
 ## MHPreferences
 
-`MHPreferences` provides typed preference keys with `UserDefaults` and `AppStorage` bridges.
+`MHPreferences` provides typed preference descriptors with `UserDefaults` and `AppStorage` bridges.
 
 Integration contract:
 [`MHPreferences`](Designs/Architecture/integration-contracts.md#mhpreferences)
@@ -622,21 +624,24 @@ Integration contract:
 ```swift
 import MHPreferences
 
-let store = MHPreferenceStore(
-    selection: .suite("group.com.example.app")
-)
-let key = MHBoolPreferenceKey(
+enum AppDefaults {
+    static let mainSelection: MHUserDefaultsSelection = .suite("group.com.example.app")
+}
+
+let store = MHPreferenceStore()
+let descriptor = MHBoolPreferenceDescriptor(
     storageKey: "app.preferences.notifications.enabled",
+    defaultSelection: AppDefaults.mainSelection,
     default: true
 )
-let isEnabled = store.bool(for: key)
-store.set(false, for: key)
+let isEnabled = store.bool(for: descriptor)
+store.set(false, for: descriptor)
 ```
 
 It also provides explicit unknown-key cleanup for caller-owned domains.
 
 ```swift
-enum AppDefaultsKey: CaseIterable, MHStorageKeyProtocol {
+enum AppDefaultsDescriptor: CaseIterable, MHStorageDescriptorProtocol {
     case notifications
     case pendingDeepLink
 
@@ -648,12 +653,16 @@ enum AppDefaultsKey: CaseIterable, MHStorageKeyProtocol {
             "app.pending-deeplink"
         }
     }
+
+    var defaultSelection: MHUserDefaultsSelection {
+        .suite("group.com.example.app")
+    }
 }
 
 let cleanupReport = MHUserDefaultsCleanupService.removeUnknownKeys(
     from: userDefaults,
     domainName: "group.com.example.app",
-    knownKeys: AppDefaultsKey.allCases
+    knownKeys: AppDefaultsDescriptor.allCases
 )
 ```
 
@@ -711,15 +720,16 @@ logger.info("App started")
 
 let logging = MHLoggingBootstrap(
     subsystem: "com.example.app",
-    snapshotStorageKeys: .init(
+    snapshotStorageDescriptors: .init(
         current: .init(
-            storageKey: "opaque.example.logging.current-session"
+            storageKey: "opaque.example.logging.current-session",
+            defaultSelection: .suite("group.com.example.app")
         ),
         previous: .init(
-            storageKey: "opaque.example.logging.previous-session"
+            storageKey: "opaque.example.logging.previous-session",
+            defaultSelection: .suite("group.com.example.app")
         )
-    ),
-    snapshotDefaults: .suite("group.com.example.app")
+    )
 )
 ```
 

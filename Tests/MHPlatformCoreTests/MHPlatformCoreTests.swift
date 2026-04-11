@@ -16,7 +16,7 @@ struct MHPlatformCoreTests {
             MHDestructiveResetEvent.self,
             MHPreferenceStore.self,
             MHUserDefaultsSelection.self,
-            MHRawStorageKey.self,
+            MHRawStorageDescriptor.self,
             MHUserDefaultsCleanupReport.self,
             MHUserDefaultsCleanupService.self,
             MHLogPolicy.self,

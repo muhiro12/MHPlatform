@@ -1,12 +1,8 @@
 import MHAppRuntime
-import MHPreferences
 import SwiftUI
 
 enum RuntimeOnlyConsumer {
     private enum Constants {
-        static let preferencesDefaults = MHUserDefaultsSelection.suite(
-            "fixture.runtime-only"
-        )
         static let startupTaskName = "runtimeOnlyStartup"
     }
 
@@ -14,7 +10,6 @@ enum RuntimeOnlyConsumer {
     static func makeBootstrap() -> MHAppRuntimeBootstrap {
         .init(
             runtimeOnlyConfiguration: .init(
-                preferencesDefaults: Constants.preferencesDefaults,
                 showsLicenses: false
             ),
             lifecyclePlan: .init(

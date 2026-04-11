@@ -18,9 +18,7 @@ public struct MHAppRuntimeDefaultsBundle {
 
     /// Creates package-owned preference and StoreKit runtime defaults.
     public init(configuration: MHAppConfiguration) {
-        preferenceStore = .init(
-            selection: configuration.preferencesDefaults
-        )
+        preferenceStore = .init()
 
         #if canImport(StoreKitWrapper)
         let normalizedSubscriptionProductIDs = Self.normalizeTextSet(

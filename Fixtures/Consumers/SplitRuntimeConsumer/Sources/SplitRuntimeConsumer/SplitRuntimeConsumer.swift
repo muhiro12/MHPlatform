@@ -2,15 +2,11 @@ import MHAppRuntime
 import MHAppRuntimeAds
 import MHAppRuntimeDefaults
 import MHAppRuntimeLicenses
-import MHPreferences
 import SwiftUI
 
 enum SplitRuntimeConsumer {
     private enum Constants {
         static let subscriptionProductID = "premium.monthly"
-        static let preferencesDefaults = MHUserDefaultsSelection.suite(
-            "fixture.split-runtime"
-        )
         static let startupTaskName = "splitRuntimeStartup"
     }
 
@@ -18,7 +14,6 @@ enum SplitRuntimeConsumer {
     static func makeBootstrap() -> MHAppRuntimeBootstrap {
         let configuration = MHAppConfiguration(
             subscriptionProductIDs: [Constants.subscriptionProductID],
-            preferencesDefaults: Constants.preferencesDefaults,
             showsLicenses: false
         )
         let defaultsBundle = MHAppRuntimeDefaultsBundle(

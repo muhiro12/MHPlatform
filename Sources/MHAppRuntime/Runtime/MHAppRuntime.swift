@@ -90,9 +90,7 @@ public final class MHAppRuntime {
     ) {
         self.init(
             configuration: configuration,
-            preferenceStore: .init(
-                selection: configuration.preferencesDefaults
-            ),
+            preferenceStore: .init(),
             startStore: { purchasedProductIDsDidSet in
                 purchasedProductIDsDidSet([])
             },

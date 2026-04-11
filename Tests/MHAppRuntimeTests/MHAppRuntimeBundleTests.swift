@@ -9,10 +9,11 @@ import Testing
 struct MHAppRuntimeBundleTests {
     @MainActor
     @Test
-    func defaults_bundle_uses_configured_suite_name() {
+    func defaults_bundle_uses_descriptor_default_selection() {
         let suiteName = "MHAppRuntimeTests.DefaultsBundle.\(UUID().uuidString)"
-        let key = MHBoolPreferenceKey(
+        let descriptor = MHBoolPreferenceDescriptor(
             storageKey: "mhplatform.runtime.tests.defaultsBundle",
+            defaultSelection: .suite(suiteName),
             default: false
         )
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {
@@ -26,13 +27,11 @@ struct MHAppRuntimeBundleTests {
         }
 
         let bundle = MHAppRuntimeDefaultsBundle(
-            configuration: .init(
-                preferencesDefaults: .suite(suiteName)
-            )
+            configuration: .init()
         )
-        bundle.preferenceStore.set(true, for: key)
+        bundle.preferenceStore.set(true, for: descriptor)
 
-        #expect(userDefaults.bool(forKey: key.storageKey))
+        #expect(userDefaults.bool(forKey: descriptor.storageKey))
     }
 
     @MainActor

@@ -2,13 +2,23 @@ import Foundation
 
 /// A typed `UserDefaults` adapter for primitive and `Codable` preferences.
 public struct MHPreferenceStore: @unchecked Sendable {
-    private let userDefaults: UserDefaults
+    private let userDefaults: UserDefaults?
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
 
+    /// Creates an unbound preference store that resolves defaults from each descriptor.
+    public init(
+        encoder: JSONEncoder = .init(),
+        decoder: JSONDecoder = .init()
+    ) {
+        self.userDefaults = nil
+        self.encoder = encoder
+        self.decoder = decoder
+    }
+
     /// Creates a preference store backed by the provided `UserDefaults`.
     public init(
-        userDefaults: UserDefaults = .standard,
+        userDefaults: UserDefaults,
         encoder: JSONEncoder = .init(),
         decoder: JSONDecoder = .init()
     ) {
@@ -17,64 +27,72 @@ public struct MHPreferenceStore: @unchecked Sendable {
         self.decoder = decoder
     }
 
-    /// Creates a preference store backed by the selected `UserDefaults`.
-    public init(
-        selection: MHUserDefaultsSelection,
-        encoder: JSONEncoder = .init(),
-        decoder: JSONDecoder = .init()
-    ) {
-        self.init(
-            userDefaults: selection.resolveUserDefaults(),
-            encoder: encoder,
-            decoder: decoder
-        )
-    }
+    /// Returns a boolean preference value or the descriptor default when unset.
+    public func bool(for descriptor: MHBoolPreferenceDescriptor) -> Bool {
+        let userDefaults = resolvedUserDefaults(for: descriptor)
 
-    /// Returns a boolean preference value or the key default when unset.
-    public func bool(for key: MHBoolPreferenceKey) -> Bool {
-        guard userDefaults.object(forKey: key.storageKey) != nil else {
-            return key.defaultValue
+        guard userDefaults.object(forKey: descriptor.storageKey) != nil else {
+            return descriptor.defaultValue
         }
-        return userDefaults.bool(forKey: key.storageKey)
+        return userDefaults.bool(forKey: descriptor.storageKey)
     }
 
     /// Stores a boolean preference value.
-    public func set(_ value: Bool, for key: MHBoolPreferenceKey) {
-        userDefaults.set(value, forKey: key.storageKey)
+    public func set(_ value: Bool, for descriptor: MHBoolPreferenceDescriptor) {
+        resolvedUserDefaults(for: descriptor).set(
+            value,
+            forKey: descriptor.storageKey
+        )
     }
 
-    /// Returns an integer preference value or the key default when unset.
-    public func int(for key: MHIntPreferenceKey) -> Int {
-        guard userDefaults.object(forKey: key.storageKey) != nil else {
-            return key.defaultValue
+    /// Returns an integer preference value or the descriptor default when unset.
+    public func int(for descriptor: MHIntPreferenceDescriptor) -> Int {
+        let userDefaults = resolvedUserDefaults(for: descriptor)
+
+        guard userDefaults.object(forKey: descriptor.storageKey) != nil else {
+            return descriptor.defaultValue
         }
-        return userDefaults.integer(forKey: key.storageKey)
+        return userDefaults.integer(forKey: descriptor.storageKey)
     }
 
     /// Stores an integer preference value.
-    public func set(_ value: Int, for key: MHIntPreferenceKey) {
-        userDefaults.set(value, forKey: key.storageKey)
+    public func set(_ value: Int, for descriptor: MHIntPreferenceDescriptor) {
+        resolvedUserDefaults(for: descriptor).set(
+            value,
+            forKey: descriptor.storageKey
+        )
     }
 
     /// Returns an optional string preference value.
-    public func string(for key: MHStringPreferenceKey) -> String? {
-        userDefaults.string(forKey: key.storageKey)
+    public func string(for descriptor: MHStringPreferenceDescriptor) -> String? {
+        resolvedUserDefaults(for: descriptor).string(
+            forKey: descriptor.storageKey
+        )
     }
 
     /// Stores or removes an optional string preference value.
-    public func set(_ value: String?, for key: MHStringPreferenceKey) {
+    public func set(
+        _ value: String?,
+        for descriptor: MHStringPreferenceDescriptor
+    ) {
+        let userDefaults = resolvedUserDefaults(for: descriptor)
+
         if let value {
-            userDefaults.set(value, forKey: key.storageKey)
+            userDefaults.set(value, forKey: descriptor.storageKey)
         } else {
-            userDefaults.removeObject(forKey: key.storageKey)
+            userDefaults.removeObject(forKey: descriptor.storageKey)
         }
     }
 
     /// Decodes a `Codable` preference value stored as `Data`.
     public func codable<Value: Codable & Sendable>(
-        for key: MHCodablePreferenceKey<Value>
+        for descriptor: MHCodablePreferenceDescriptor<Value>
     ) -> Value? {
-        guard let object = userDefaults.object(forKey: key.storageKey) else {
+        let userDefaults = resolvedUserDefaults(for: descriptor)
+
+        guard let object = userDefaults.object(
+            forKey: descriptor.storageKey
+        ) else {
             return nil
         }
         guard let data = object as? Data else {
@@ -86,10 +104,12 @@ public struct MHPreferenceStore: @unchecked Sendable {
     /// Encodes and stores a `Codable` preference value as `Data`.
     public func setCodable<Value: Codable & Sendable>(
         _ value: Value?,
-        for key: MHCodablePreferenceKey<Value>
+        for descriptor: MHCodablePreferenceDescriptor<Value>
     ) {
+        let userDefaults = resolvedUserDefaults(for: descriptor)
+
         guard let value else {
-            userDefaults.removeObject(forKey: key.storageKey)
+            userDefaults.removeObject(forKey: descriptor.storageKey)
             return
         }
 
@@ -97,16 +117,32 @@ public struct MHPreferenceStore: @unchecked Sendable {
             return
         }
 
-        userDefaults.set(encodedData, forKey: key.storageKey)
+        userDefaults.set(encodedData, forKey: descriptor.storageKey)
     }
 
-    /// Returns whether the supplied preference key currently has a stored value.
-    public func contains<Key: MHPreferenceKeyProtocol>(_ key: Key) -> Bool {
-        userDefaults.object(forKey: key.storageKey) != nil
+    /// Returns whether the supplied storage descriptor currently has a stored value.
+    public func contains<Descriptor: MHStorageDescriptorProtocol>(
+        _ descriptor: Descriptor
+    ) -> Bool {
+        resolvedUserDefaults(for: descriptor).object(
+            forKey: descriptor.storageKey
+        ) != nil
     }
 
-    /// Removes a value for the supplied preference key.
-    public func remove<Key: MHPreferenceKeyProtocol>(_ key: Key) {
-        userDefaults.removeObject(forKey: key.storageKey)
+    /// Removes a value for the supplied storage descriptor.
+    public func remove<Descriptor: MHStorageDescriptorProtocol>(
+        _ descriptor: Descriptor
+    ) {
+        resolvedUserDefaults(for: descriptor).removeObject(
+            forKey: descriptor.storageKey
+        )
+    }
+}
+
+private extension MHPreferenceStore {
+    func resolvedUserDefaults<Descriptor: MHStorageDescriptorProtocol>(
+        for descriptor: Descriptor
+    ) -> UserDefaults {
+        userDefaults ?? descriptor.defaultSelection.resolveUserDefaults()
     }
 }

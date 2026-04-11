@@ -85,9 +85,7 @@ import MHAppRuntime
 @MainActor
 final class RuntimeOnlyAssembly {
     let bootstrap = MHAppRuntimeBootstrap(
-        runtimeOnlyConfiguration: .init(
-            preferencesDefaults: .suite("group.com.example.runtime-only")
-        ),
+        runtimeOnlyConfiguration: .init(),
         lifecyclePlan: .init()
     )
 }
@@ -154,8 +152,7 @@ final class AppRootModel {
         }
         bootstrap = .init(
             configuration: .init(
-                subscriptionProductIDs: ["com.example.app.premium.monthly"],
-                preferencesDefaults: .suite("group.com.example.app")
+                subscriptionProductIDs: ["com.example.app.premium.monthly"]
             ),
             lifecyclePlan: .init(
                 startupTasks: [
@@ -407,14 +404,17 @@ final class AppLogging {
     let logger: MHLogger
 
     init() {
+        let mainSelection = MHUserDefaultsSelection.suite("group.com.example.app")
         logging = MHLoggingBootstrap(
             subsystem: "com.example.app",
-            snapshotStorageKeys: .init(
+            snapshotStorageDescriptors: .init(
                 current: .init(
-                    storageKey: "opaque.example.logging.current-session"
+                    storageKey: "opaque.example.logging.current-session",
+                    defaultSelection: mainSelection
                 ),
                 previous: .init(
-                    storageKey: "opaque.example.logging.previous-session"
+                    storageKey: "opaque.example.logging.previous-session",
+                    defaultSelection: mainSelection
                 )
             )
         )

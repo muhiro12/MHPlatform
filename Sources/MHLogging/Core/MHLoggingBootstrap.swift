@@ -40,20 +40,15 @@ public final class MHLoggingBootstrap {
         captureLevel: MHLogLevel? = nil,
         policy: MHLogPolicy? = nil,
         subsystem: String? = nil,
-        snapshotStorageKeys: MHLogSnapshotStorageKeys? = nil,
-        snapshotDefaults: MHUserDefaultsSelection = .standard,
+        snapshotStorageDescriptors: MHLogSnapshotStorageDescriptors? = nil,
         additionalSinks: [any MHLogSink] = []
     ) {
-        let snapshotStore = snapshotStorageKeys.map { _ in
-            MHPreferenceStore(selection: snapshotDefaults)
-        } ?? .init()
-
         self.init(
             captureLevel: captureLevel,
             policy: policy,
             subsystem: subsystem,
-            snapshotStorageKeys: snapshotStorageKeys,
-            snapshotStore: snapshotStore,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
+            snapshotStore: .init(),
             additionalSinks: additionalSinks
         )
     }
@@ -64,7 +59,7 @@ public final class MHLoggingBootstrap {
         captureLevel: MHLogLevel? = nil,
         policy: MHLogPolicy? = nil,
         subsystem: String? = nil,
-        snapshotStorageKeys: MHLogSnapshotStorageKeys? = nil,
+        snapshotStorageDescriptors: MHLogSnapshotStorageDescriptors? = nil,
         snapshotStore: MHPreferenceStore,
         additionalSinks: [any MHLogSink] = []
     ) {
@@ -72,7 +67,7 @@ public final class MHLoggingBootstrap {
             captureLevel: captureLevel,
             policy: policy,
             subsystem: subsystem,
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             additionalSinks: additionalSinks,
             sessionIdentifier: MHLogSessionSnapshotSink.processSessionIdentifier
@@ -84,7 +79,7 @@ public final class MHLoggingBootstrap {
         captureLevel: MHLogLevel?,
         policy: MHLogPolicy?,
         subsystem: String?,
-        snapshotStorageKeys: MHLogSnapshotStorageKeys?,
+        snapshotStorageDescriptors: MHLogSnapshotStorageDescriptors?,
         snapshotStore: MHPreferenceStore,
         additionalSinks: [any MHLogSink],
         sessionIdentifier: UUID
@@ -99,7 +94,7 @@ public final class MHLoggingBootstrap {
             policy: resolvedPolicy
         )
         let snapshotSeed = Self.makeSnapshotSeed(
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             sessionIdentifier: sessionIdentifier
         )
@@ -209,16 +204,16 @@ private extension MHLoggingBootstrap {
     }
 
     static func makeSnapshotSeed(
-        snapshotStorageKeys: MHLogSnapshotStorageKeys?,
+        snapshotStorageDescriptors: MHLogSnapshotStorageDescriptors?,
         snapshotStore: MHPreferenceStore,
         sessionIdentifier: UUID
     ) -> MHLogSessionSnapshotSink.Seed? {
-        guard let snapshotStorageKeys else {
+        guard let snapshotStorageDescriptors else {
             return nil
         }
 
         return MHLogSessionSnapshotSink.makeSeed(
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             sessionIdentifier: sessionIdentifier
         )

@@ -216,12 +216,13 @@ struct MHDeepLinkingTests {
     }
 
     @Test
-    func selection_store_consumes_value_once() throws {
+    func descriptor_store_consumes_value_once() throws {
         let suiteName = "MHDeepLinkStoreTests.suite"
-        let store = MHDeepLinkStore(
-            selection: .suite("  \(suiteName)\n"),
-            key: "pendingURL"
+        let descriptor = MHRawStorageDescriptor(
+            storageKey: "pendingURL",
+            defaultSelection: .suite("  \(suiteName)\n")
         )
+        let store = MHDeepLinkStore(key: descriptor)
         let userDefaults = try #require(UserDefaults(suiteName: suiteName))
         let url = try #require(URL(string: "mhplatform://item?id=suite"))
 

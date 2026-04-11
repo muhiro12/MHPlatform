@@ -168,10 +168,22 @@ struct MHPreferenceStoreTests {
 
     @Test
     func storage_key_is_the_public_contract() {
-        let boolKey = MHBoolPreferenceKey(storageKey: "opaque-bool")
-        let intKey = MHIntPreferenceKey(storageKey: "opaque-int")
-        let stringKey = MHStringPreferenceKey(storageKey: "opaque-string")
-        let codableKey = MHCodablePreferenceKey<DemoPayload>(storageKey: "opaque-codable")
+        let boolKey = MHBoolPreferenceDescriptor(
+            storageKey: "opaque-bool",
+            defaultSelection: .standard
+        )
+        let intKey = MHIntPreferenceDescriptor(
+            storageKey: "opaque-int",
+            defaultSelection: .standard
+        )
+        let stringKey = MHStringPreferenceDescriptor(
+            storageKey: "opaque-string",
+            defaultSelection: .standard
+        )
+        let codableKey = MHCodablePreferenceDescriptor<DemoPayload>(
+            storageKey: "opaque-codable",
+            defaultSelection: .standard
+        )
 
         #expect(boolKey.storageKey == "opaque-bool")
         #expect(intKey.storageKey == "opaque-int")
@@ -194,17 +206,18 @@ struct MHPreferenceStoreTests {
     }
 
     @Test
-    func selection_initializer_uses_selected_suite() throws {
+    func unbound_store_uses_descriptor_default_selection() throws {
         let suiteName = "MHPreferenceStoreTests.selection.\(UUID().uuidString)"
         let userDefaults = try #require(UserDefaults(suiteName: suiteName))
         userDefaults.removePersistentDomain(forName: suiteName)
         defer {
             userDefaults.removePersistentDomain(forName: suiteName)
         }
-        let store = MHPreferenceStore(
-            selection: .suite("  \(suiteName)\n")
+        let store = MHPreferenceStore()
+        let key = makeBoolKey(
+            "selection-key",
+            defaultSelection: .suite("  \(suiteName)\n")
         )
-        let key = makeBoolKey("selection-key")
 
         store.set(true, for: key)
 
@@ -225,31 +238,45 @@ struct MHPreferenceStoreTests {
 
     private func makeBoolKey(
         _ name: String,
+        defaultSelection: MHUserDefaultsSelection = .standard,
         default defaultValue: Bool = false
-    ) -> MHBoolPreferenceKey {
+    ) -> MHBoolPreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            defaultSelection: defaultSelection,
             default: defaultValue
         )
     }
 
     private func makeIntKey(
         _ name: String,
+        defaultSelection: MHUserDefaultsSelection = .standard,
         default defaultValue: Int = .zero
-    ) -> MHIntPreferenceKey {
+    ) -> MHIntPreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            defaultSelection: defaultSelection,
             default: defaultValue
         )
     }
 
-    private func makeStringKey(_ name: String) -> MHStringPreferenceKey {
-        .init(storageKey: "\(Constants.storageKeyPrefix).\(name)")
+    private func makeStringKey(
+        _ name: String,
+        defaultSelection: MHUserDefaultsSelection = .standard
+    ) -> MHStringPreferenceDescriptor {
+        .init(
+            storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            defaultSelection: defaultSelection
+        )
     }
 
     private func makeCodableKey(
-        _ name: String
-    ) -> MHCodablePreferenceKey<DemoPayload> {
-        .init(storageKey: "\(Constants.storageKeyPrefix).\(name)")
+        _ name: String,
+        defaultSelection: MHUserDefaultsSelection = .standard
+    ) -> MHCodablePreferenceDescriptor<DemoPayload> {
+        .init(
+            storageKey: "\(Constants.storageKeyPrefix).\(name)",
+            defaultSelection: defaultSelection
+        )
     }
 }

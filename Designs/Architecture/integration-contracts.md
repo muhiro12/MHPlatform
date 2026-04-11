@@ -23,7 +23,6 @@ This document is normative for integration design.
     - `subscriptionProductIDs`
     - `subscriptionGroupID`
     - `nativeAdUnitID`
-    - `preferencesDefaults`
     - `showsLicenses`
   - `MHPreferenceStore`
   - `startStore`
@@ -402,19 +401,19 @@ This document is normative for integration design.
 
 ### Required Inputs
 
-- Typed keys identified by `storageKey`:
-  - `MHBoolPreferenceKey`
-  - `MHIntPreferenceKey`
-  - `MHStringPreferenceKey`
-  - `MHCodablePreferenceKey`
-- Backing `UserDefaults`
-- Optional `MHUserDefaultsSelection` for declarative defaults resolution
+- Typed descriptors identified by `storageKey`:
+  - `MHBoolPreferenceDescriptor`
+  - `MHIntPreferenceDescriptor`
+  - `MHStringPreferenceDescriptor`
+  - `MHCodablePreferenceDescriptor`
+- Required `defaultSelection` on each descriptor
+- Backing `UserDefaults` only when explicit DI is desired
 
 ### Outputs
 
 - Typed reads/writes through `MHPreferenceStore`
 - Codable persistence as `Data` only
-- SwiftUI bridges via `AppStorage` initializers for primitive keys
+- SwiftUI bridges via `AppStorage` initializers for primitive descriptors
 - Unknown-key cleanup through `MHUserDefaultsCleanupService`
 
 ### Threading / Actor
@@ -432,7 +431,7 @@ This document is normative for integration design.
 - `storageKey` must be non-empty.
 - Codable values are encoded to `Data`; non-`Data` decode path returns `nil`.
 - Unknown-key cleanup uses caller-owned `knownKeys` only; the package does not
-  auto-discover app keys.
+  auto-discover app descriptors.
 - Unknown-key cleanup reads and writes persistent domains by explicit
   `domainName`.
 
@@ -497,8 +496,7 @@ This document is normative for integration design.
   `MHLoggerFactory`
 - Optional last-session snapshot bootstrap:
   - `MHLoggingBootstrap`
-  - `snapshotStorageKeys`
-  - `snapshotDefaults`
+  - `snapshotStorageDescriptors`
 - Logger call-site context:
   - `file` / `function` / `line`
   - `subsystem` / `category`

@@ -45,13 +45,13 @@ struct MHLoggingBootstrapTests {
         }
 
         let snapshotStore = MHPreferenceStore(userDefaults: userDefaults)
-        let snapshotStorageKeys = makeSnapshotStorageKeys(
+        let snapshotStorageDescriptors = makeSnapshotStorageDescriptors(
             baseStorageKey: "opaque.bootstrap.restore"
         )
         let sessionIdentifier = UUID()
 
         let firstBootstrap = makeBootstrap(
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             sessionIdentifier: sessionIdentifier
         )
@@ -62,7 +62,7 @@ struct MHLoggingBootstrapTests {
         await firstLogger.logImmediately(.warning, "keep-warning")
 
         let restoredBootstrap = makeBootstrap(
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             sessionIdentifier: sessionIdentifier
         )
@@ -86,12 +86,12 @@ struct MHLoggingBootstrapTests {
         }
 
         let snapshotStore = MHPreferenceStore(userDefaults: userDefaults)
-        let snapshotStorageKeys = makeSnapshotStorageKeys(
+        let snapshotStorageDescriptors = makeSnapshotStorageDescriptors(
             baseStorageKey: "opaque.bootstrap.clear"
         )
 
         let firstBootstrap = makeBootstrap(
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             sessionIdentifier: UUID()
         )
@@ -102,7 +102,7 @@ struct MHLoggingBootstrapTests {
         await firstLogger.logImmediately(.warning, "keep-warning")
 
         let secondBootstrap = makeBootstrap(
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             sessionIdentifier: UUID()
         )
@@ -115,7 +115,7 @@ struct MHLoggingBootstrapTests {
         await secondBootstrap.clear()
 
         let restoredBootstrap = makeBootstrap(
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             sessionIdentifier: UUID()
         )
@@ -126,22 +126,22 @@ struct MHLoggingBootstrapTests {
     }
 
     @Test
-    func bootstrap_snapshot_defaults_use_selected_suite() async throws {
-        let suiteName = "MHLoggingBootstrapTests.selection.\(UUID().uuidString)"
+    func bootstrap_snapshot_descriptors_use_default_selection() async throws {
+        let suiteName = "MHLoggingBootstrapTests.defaultSelection.\(UUID().uuidString)"
         let userDefaults = try #require(UserDefaults(suiteName: suiteName))
         userDefaults.removePersistentDomain(forName: suiteName)
         defer {
             userDefaults.removePersistentDomain(forName: suiteName)
         }
 
-        let snapshotStorageKeys = makeSnapshotStorageKeys(
-            baseStorageKey: "opaque.bootstrap.selection"
+        let snapshotStorageDescriptors = makeSnapshotStorageDescriptors(
+            baseStorageKey: "opaque.bootstrap.selection",
+            defaultSelection: .suite("  \(suiteName)\n")
         )
         let bootstrap = MHLoggingBootstrap(
             captureLevel: .warning,
             subsystem: "tests.bootstrap",
-            snapshotStorageKeys: snapshotStorageKeys,
-            snapshotDefaults: .suite("  \(suiteName)\n")
+            snapshotStorageDescriptors: snapshotStorageDescriptors
         )
         let logger = bootstrap.logger(
             category: "Selection",
@@ -151,8 +151,10 @@ struct MHLoggingBootstrapTests {
         await logger.logImmediately(.warning, "keep-warning")
 
         #expect(
-            userDefaults.object(forKey: snapshotStorageKeys.current.storageKey)
-                is Data
+            userDefaults.object(
+                forKey: snapshotStorageDescriptors.current.storageKey
+            )
+            is Data
         )
     }
 }
@@ -167,11 +169,11 @@ private extension MHLoggingBootstrapTests {
         }
 
         let snapshotStore = MHPreferenceStore(userDefaults: userDefaults)
-        let snapshotStorageKeys = makeSnapshotStorageKeys(
+        let snapshotStorageDescriptors = makeSnapshotStorageDescriptors(
             baseStorageKey: "opaque.bootstrap.promote"
         )
         let firstBootstrap = makeBootstrap(
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             sessionIdentifier: UUID()
         )
@@ -179,14 +181,14 @@ private extension MHLoggingBootstrapTests {
         await recordPromotionSeed(with: firstBootstrap, logger: firstLogger)
 
         let secondBootstrap = makeBootstrap(
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             sessionIdentifier: UUID()
         )
         await assertInitialPromotionState(of: secondBootstrap)
         let secondLogger = secondBootstrap.logger(category: "Promote", source: #fileID)
         let previousSnapshotBeforeWrite = userDefaults.object(
-            forKey: snapshotStorageKeys.previous.storageKey
+            forKey: snapshotStorageDescriptors.previous.storageKey
         ) as? Data
         await secondLogger.logImmediately(.warning, "current-warning")
 
@@ -204,12 +206,12 @@ private extension MHLoggingBootstrapTests {
         assertSnapshotStorage(
             in: userDefaults,
             previousSnapshotBeforeWrite: previousSnapshotBeforeWrite,
-            snapshotStorageKeys: snapshotStorageKeys
+            snapshotStorageDescriptors: snapshotStorageDescriptors
         )
     }
 
     func makeBootstrap(
-        snapshotStorageKeys: MHLogSnapshotStorageKeys,
+        snapshotStorageDescriptors: MHLogSnapshotStorageDescriptors,
         snapshotStore: MHPreferenceStore,
         sessionIdentifier: UUID
     ) -> MHLoggingBootstrap {
@@ -217,7 +219,7 @@ private extension MHLoggingBootstrapTests {
             captureLevel: .warning,
             policy: nil,
             subsystem: "tests.bootstrap",
-            snapshotStorageKeys: snapshotStorageKeys,
+            snapshotStorageDescriptors: snapshotStorageDescriptors,
             snapshotStore: snapshotStore,
             additionalSinks: [],
             sessionIdentifier: sessionIdentifier
@@ -266,28 +268,31 @@ private extension MHLoggingBootstrapTests {
         #expect(jsonLines.split(whereSeparator: \.isNewline).count == count)
     }
 
-    func makeSnapshotStorageKeys(
-        baseStorageKey: String
-    ) -> MHLogSnapshotStorageKeys {
+    func makeSnapshotStorageDescriptors(
+        baseStorageKey: String,
+        defaultSelection: MHUserDefaultsSelection = .standard
+    ) -> MHLogSnapshotStorageDescriptors {
         .init(
             current: .init(
-                storageKey: "\(baseStorageKey).current-session"
+                storageKey: "\(baseStorageKey).current-session",
+                defaultSelection: defaultSelection
             ),
             previous: .init(
-                storageKey: "\(baseStorageKey).previous-session"
+                storageKey: "\(baseStorageKey).previous-session",
+                defaultSelection: defaultSelection
             )
         )
     }
 
     func assertNoDerivedSnapshotKeys(
         in userDefaults: UserDefaults,
-        snapshotStorageKeys: MHLogSnapshotStorageKeys
+        snapshotStorageDescriptors: MHLogSnapshotStorageDescriptors
     ) {
         let derivedKeys = [
-            "\(snapshotStorageKeys.current.storageKey).current",
-            "\(snapshotStorageKeys.current.storageKey).previous",
-            "\(snapshotStorageKeys.previous.storageKey).current",
-            "\(snapshotStorageKeys.previous.storageKey).previous"
+            "\(snapshotStorageDescriptors.current.storageKey).current",
+            "\(snapshotStorageDescriptors.current.storageKey).previous",
+            "\(snapshotStorageDescriptors.previous.storageKey).current",
+            "\(snapshotStorageDescriptors.previous.storageKey).previous"
         ]
 
         for derivedKey in derivedKeys {
@@ -298,20 +303,22 @@ private extension MHLoggingBootstrapTests {
     func assertSnapshotStorage(
         in userDefaults: UserDefaults,
         previousSnapshotBeforeWrite: Data?,
-        snapshotStorageKeys: MHLogSnapshotStorageKeys
+        snapshotStorageDescriptors: MHLogSnapshotStorageDescriptors
     ) {
         let previousSnapshotAfterWrite = userDefaults.object(
-            forKey: snapshotStorageKeys.previous.storageKey
+            forKey: snapshotStorageDescriptors.previous.storageKey
         ) as? Data
 
         #expect(previousSnapshotBeforeWrite == previousSnapshotAfterWrite)
         #expect(
-            userDefaults.object(forKey: snapshotStorageKeys.current.storageKey)
-                != nil
+            userDefaults.object(
+                forKey: snapshotStorageDescriptors.current.storageKey
+            )
+            != nil
         )
         assertNoDerivedSnapshotKeys(
             in: userDefaults,
-            snapshotStorageKeys: snapshotStorageKeys
+            snapshotStorageDescriptors: snapshotStorageDescriptors
         )
     }
 }

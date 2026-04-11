@@ -3,11 +3,11 @@ import Foundation
 /// Removes unknown keys from a caller-selected `UserDefaults` domain.
 public enum MHUserDefaultsCleanupService {
     /// Prunes all keys not listed in `knownKeys` from the requested domain.
-    public static func removeUnknownKeys<Keys: Sequence>(
+    public static func removeUnknownKeys<Descriptors: Sequence>(
         from userDefaults: UserDefaults,
         domainName: String,
-        knownKeys: Keys
-    ) -> MHUserDefaultsCleanupReport where Keys.Element: MHStorageKeyProtocol {
+        knownKeys: Descriptors
+    ) -> MHUserDefaultsCleanupReport where Descriptors.Element: MHStorageDescriptorProtocol {
         removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
@@ -19,7 +19,7 @@ public enum MHUserDefaultsCleanupService {
     public static func removeUnknownKeys(
         from userDefaults: UserDefaults,
         domainName: String,
-        knownKeys: [any MHStorageKeyProtocol]
+        knownKeys: [any MHStorageDescriptorProtocol]
     ) -> MHUserDefaultsCleanupReport {
         removeUnknownKeys(
             from: userDefaults,
