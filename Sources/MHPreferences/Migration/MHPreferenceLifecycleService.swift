@@ -62,7 +62,7 @@ public enum MHPreferenceLifecycleService {
             let report = MHUserDefaultsCleanupService.removeUnknownKeys(
                 from: target.selection.resolveUserDefaults(),
                 domainName: target.domainName,
-                knownKeys: knownDescriptors(
+                knownDescriptors: knownDescriptors(
                     for: target,
                     descriptors: descriptors,
                     migrationStateDescriptor: migrationStateDescriptor,
@@ -130,13 +130,11 @@ private extension MHPreferenceLifecycleService {
         to targets: inout [CleanupTarget]
     ) {
         let target = CleanupTarget(
-            comparisonKey: comparisonKey(
-                for: selection,
+            comparisonKey: selection.normalizedComparisonKey(
                 standardDomainName: standardDomainName
             ),
             selection: selection,
-            domainName: domainName(
-                for: selection,
+            domainName: selection.persistentDomainName(
                 standardDomainName: standardDomainName
             )
         )
@@ -155,64 +153,17 @@ private extension MHPreferenceLifecycleService {
         standardDomainName: String?
     ) -> [any MHStorageDescriptorProtocol] {
         var result = descriptors.filter { descriptor in
-            comparisonKey(
-                for: descriptor.defaultSelection,
+            descriptor.defaultSelection.normalizedComparisonKey(
                 standardDomainName: standardDomainName
             ) == target.comparisonKey
         }
 
-        if comparisonKey(
-            for: migrationStateDescriptor.defaultSelection,
+        if migrationStateDescriptor.defaultSelection.normalizedComparisonKey(
             standardDomainName: standardDomainName
         ) == target.comparisonKey {
             result.append(migrationStateDescriptor)
         }
 
         return result
-    }
-
-    static func comparisonKey(
-        for selection: MHUserDefaultsSelection,
-        standardDomainName: String?
-    ) -> String {
-        switch selection {
-        case .standard:
-            "standard:\(standardDomainNameValue(standardDomainName))"
-        case let .suite(rawSuiteName):
-            "suite:\(normalizedSuiteName(rawSuiteName))"
-        }
-    }
-
-    static func domainName(
-        for selection: MHUserDefaultsSelection,
-        standardDomainName: String?
-    ) -> String {
-        switch selection {
-        case .standard:
-            standardDomainNameValue(standardDomainName)
-        case let .suite(rawSuiteName):
-            normalizedSuiteName(rawSuiteName)
-        }
-    }
-
-    static func normalizedSuiteName(
-        _ rawSuiteName: String
-    ) -> String {
-        let normalizedSuiteName = rawSuiteName.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-        precondition(normalizedSuiteName.isEmpty == false)
-        return normalizedSuiteName
-    }
-
-    static func standardDomainNameValue(
-        _ standardDomainName: String?
-    ) -> String {
-        let normalizedDomainName = (standardDomainName ?? .init())
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-        precondition(normalizedDomainName.isEmpty == false)
-        return normalizedDomainName
     }
 }

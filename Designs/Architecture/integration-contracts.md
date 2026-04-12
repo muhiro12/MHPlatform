@@ -440,7 +440,7 @@ This document is normative for integration design.
 
 - `storageKey` must be non-empty.
 - Codable values are encoded to `Data`; non-`Data` decode path returns `nil`.
-- Unknown-key cleanup uses caller-owned `knownKeys` only; the package does not
+- Unknown-key cleanup uses caller-owned `knownDescriptors` only; the package does not
   auto-discover app descriptors.
 - Unknown-key cleanup reads and writes persistent domains by explicit
   `domainName`.

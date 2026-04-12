@@ -37,7 +37,7 @@ struct MHUserDefaultsCleanupServiceTests {
     }
 
     @Test
-    func removeUnknownKeys_keeps_known_typed_keys_and_prunes_unknown_keys() throws {
+    func removeUnknownKeys_keeps_known_typed_descriptors_and_prunes_unknown_keys() throws {
         let domainName = makeDomainName(suffix: "typed-prune")
         let userDefaults = try makeSuiteUserDefaults(domainName: domainName)
         let boolKey = MHBoolPreferenceDescriptor(
@@ -69,7 +69,7 @@ struct MHUserDefaultsCleanupServiceTests {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
-            knownKeys: [boolKey, intKey, stringKey, codableKey]
+            knownDescriptors: [boolKey, intKey, stringKey, codableKey]
         )
 
         #expect(report.didRun)
@@ -82,7 +82,7 @@ struct MHUserDefaultsCleanupServiceTests {
     }
 
     @Test
-    func removeUnknownKeys_keeps_additional_raw_storage_keys() throws {
+    func removeUnknownKeys_keeps_additional_raw_storage_descriptors() throws {
         let domainName = makeDomainName(suffix: "raw-key")
         let userDefaults = try makeSuiteUserDefaults(domainName: domainName)
         let boolKey = MHBoolPreferenceDescriptor(
@@ -102,7 +102,7 @@ struct MHUserDefaultsCleanupServiceTests {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
-            knownKeys: [boolKey, rawKey]
+            knownDescriptors: [boolKey, rawKey]
         )
 
         #expect(report.removedStorageKeys == [Constants.unknownStorageKey])
@@ -112,7 +112,7 @@ struct MHUserDefaultsCleanupServiceTests {
     }
 
     @Test
-    func removeUnknownKeys_deduplicates_known_keys() throws {
+    func removeUnknownKeys_deduplicates_known_descriptors() throws {
         let domainName = makeDomainName(suffix: "dedupe")
         let userDefaults = try makeSuiteUserDefaults(domainName: domainName)
         let key = MHStringPreferenceDescriptor(
@@ -130,7 +130,7 @@ struct MHUserDefaultsCleanupServiceTests {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
-            knownKeys: [key, duplicateRawKey, key]
+            knownDescriptors: [key, duplicateRawKey, key]
         )
 
         #expect(report.removedStorageKeys == [Constants.unknownStorageKey])
@@ -145,7 +145,7 @@ struct MHUserDefaultsCleanupServiceTests {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
-            knownKeys: []
+            knownDescriptors: []
         )
 
         #expect(report.didRun)
@@ -176,7 +176,7 @@ struct MHUserDefaultsCleanupServiceTests {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
-            knownKeys: [rawKey]
+            knownDescriptors: [rawKey]
         )
 
         #expect(report.didRun)
@@ -208,7 +208,7 @@ struct MHUserDefaultsCleanupServiceTests {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
-            knownKeys: KnownStorageDescriptor.allCases
+            knownDescriptors: KnownStorageDescriptor.allCases
         )
 
         #expect(report.didRun)

@@ -274,7 +274,7 @@ struct PreferencesDemoView: View {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: Self.userDefaults,
             domainName: Constants.suiteName,
-            knownKeys: KnownStorageDescriptor.allCases
+            knownDescriptors: KnownStorageDescriptor.allCases
         )
 
         if report.removedStorageKeys.isEmpty {

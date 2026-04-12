@@ -18,7 +18,7 @@ public final class MHAppRuntime {
     /// Immutable app runtime configuration.
     public let configuration: MHAppConfiguration
 
-    /// Typed preferences helper backed by configured `UserDefaults`.
+    /// Typed preferences helper that resolves `UserDefaults` from descriptors or injected stores.
     public let preferenceStore: MHPreferenceStore
 
     /// Indicates whether startup side effects have already been triggered.

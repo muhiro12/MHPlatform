@@ -194,8 +194,8 @@ public extension AppStorage {
         store: UserDefaults
     ) where Value == String {
         self.init(
-            wrappedValue: "",
-            descriptor.preferenceDescriptor.storageKey,
+            descriptor.preferenceDescriptor,
+            default: "",
             store: store
         )
     }
@@ -207,8 +207,7 @@ public extension AppStorage {
     ) where Value == String {
         self.init(
             descriptor.preferenceDescriptor,
-            default: defaultValue,
-            store: descriptor.preferenceDescriptor.defaultSelection.resolveUserDefaults()
+            default: defaultValue
         )
     }
 
@@ -232,8 +231,7 @@ public extension AppStorage {
     ) where Value: RawRepresentable, Value.RawValue == String {
         self.init(
             descriptor.preferenceDescriptor,
-            default: defaultValue,
-            store: descriptor.preferenceDescriptor.defaultSelection.resolveUserDefaults()
+            default: defaultValue
         )
     }
 

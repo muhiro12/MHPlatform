@@ -5,7 +5,7 @@ import Testing
 
 struct MHLogSnapshotStorageDescriptorTests {
     @Test
-    func snapshot_storage_descriptor_can_participate_in_known_key_cleanup() throws {
+    func snapshot_storage_descriptor_can_participate_in_known_descriptor_cleanup() throws {
         let domainName = "MHLogSnapshotStorageDescriptorTests.\(UUID().uuidString)"
         let userDefaults = try #require(UserDefaults(suiteName: domainName))
         userDefaults.removePersistentDomain(forName: domainName)
@@ -28,7 +28,7 @@ struct MHLogSnapshotStorageDescriptorTests {
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
-            knownKeys: [currentKey, previousKey]
+            knownDescriptors: [currentKey, previousKey]
         )
 
         #expect(report.didRun)

@@ -20,6 +20,27 @@ private extension MHPreferenceMigrationServiceTests {
 
 extension MHPreferenceMigrationServiceTests {
     @Test
+    func move_step_ids_normalize_legacy_suite_names() {
+        let suiteName = "MHPreferenceMigrationServiceTests.normalized-suite"
+        let legacySource = MHLegacyStorageReference(
+            storageKey: "\(Constants.storageKeyPrefix).normalized-legacy",
+            selection: .suite("  \(suiteName)\n")
+        )
+        let target = makeBoolDescriptor(
+            "normalized-current",
+            defaultSelection: .suite(suiteName),
+            legacySources: [legacySource]
+        )
+
+        #expect(
+            target.migrationSteps().map(\.id)
+                == [
+                    "move.suite.\(suiteName).\(legacySource.storageKey).to.\(target.storageKey)"
+                ]
+        )
+    }
+
+    @Test
     func move_bool_uses_descriptor_default_selections_across_domains() async throws {
         let oldSuiteName = "MHPreferenceMigrationServiceTests.old.\(UUID().uuidString)"
         let newSuiteName = "MHPreferenceMigrationServiceTests.new.\(UUID().uuidString)"

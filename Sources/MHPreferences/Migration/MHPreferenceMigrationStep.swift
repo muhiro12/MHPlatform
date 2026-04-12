@@ -130,7 +130,7 @@ public struct MHPreferenceMigrationStep: Sendable {
             _ = MHUserDefaultsCleanupService.removeUnknownKeys(
                 from: sendableUserDefaults.userDefaults,
                 domainName: domainName,
-                knownKeys: cleanupDescriptors
+                knownDescriptors: cleanupDescriptors
             )
         }
     }
@@ -155,7 +155,7 @@ public struct MHPreferenceMigrationStep: Sendable {
             _ = MHUserDefaultsCleanupService.removeUnknownKeys(
                 from: sendableUserDefaults.userDefaults,
                 domainName: domainName,
-                knownKeys: cleanupDescriptors
+                knownDescriptors: cleanupDescriptors
             )
         }
     }
@@ -249,17 +249,6 @@ private extension MHLegacyStorageReference {
     func stepID(
         for targetStorageKey: String
     ) -> String {
-        "move.\(selection.stepIDComponent).\(storageKey).to.\(targetStorageKey)"
-    }
-}
-
-private extension MHUserDefaultsSelection {
-    var stepIDComponent: String {
-        switch self {
-        case .standard:
-            "standard"
-        case let .suite(suiteName):
-            "suite.\(suiteName)"
-        }
+        "move.\(selection.normalizedStepIDComponent).\(storageKey).to.\(targetStorageKey)"
     }
 }

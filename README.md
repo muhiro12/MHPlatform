@@ -662,7 +662,7 @@ enum AppDefaultsDescriptor: CaseIterable, MHStorageDescriptorProtocol {
 let cleanupReport = MHUserDefaultsCleanupService.removeUnknownKeys(
     from: userDefaults,
     domainName: "group.com.example.app",
-    knownKeys: AppDefaultsDescriptor.allCases
+    knownDescriptors: AppDefaultsDescriptor.allCases
 )
 ```
 
