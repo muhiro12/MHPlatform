@@ -3,18 +3,18 @@ import SwiftUI
 
 struct PreferencesDemoView: View {
     private enum Constants {
-        static let suiteName = "MHPlatformExample.PreferencesDemo"
-        static let defaultSelection = MHUserDefaultsSelection.suite(suiteName)
-        static let boolStorageKey = "mhplatform.example.preferences.bool"
-        static let intStorageKey = "mhplatform.example.preferences.int"
-        static let stringStorageKey = "mhplatform.example.preferences.string"
-        static let codableStorageKey = "mhplatform.example.preferences.codable"
-        static let obsoleteStorageKey = "mhplatform.example.preferences.legacy"
+        nonisolated static let suiteName = "MHPlatformExample.PreferencesDemo"
+        nonisolated static let defaultSelection = MHUserDefaultsSelection.suite(suiteName)
+        nonisolated static let boolStorageKey = "mhplatform.example.preferences.bool"
+        nonisolated static let intStorageKey = "mhplatform.example.preferences.int"
+        nonisolated static let stringStorageKey = "mhplatform.example.preferences.string"
+        nonisolated static let codableStorageKey = "mhplatform.example.preferences.codable"
+        nonisolated static let obsoleteStorageKey = "mhplatform.example.preferences.legacy"
 
-        static let defaultBoolValue = true
-        static let defaultIntValue = 5
-        static let intStepperRange = 0...100
-        static let rowSpacing = 6.0
+        nonisolated static let defaultBoolValue = true
+        nonisolated static let defaultIntValue = 5
+        nonisolated static let intStepperRange = 0...100
+        nonisolated static let rowSpacing = 6.0
     }
 
     nonisolated private struct DemoPreferencesPayload: Codable, Equatable, Sendable {

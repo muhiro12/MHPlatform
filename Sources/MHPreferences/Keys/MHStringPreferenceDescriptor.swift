@@ -9,13 +9,18 @@ public struct MHStringPreferenceDescriptor: Hashable, MHPreferenceDescriptorProt
     /// The default defaults selection used when no explicit store is injected.
     public let defaultSelection: MHUserDefaultsSelection
 
+    /// Legacy storage slots that should migrate into this descriptor.
+    public let legacySources: [MHLegacyStorageReference]
+
     /// Creates an optional-string preference descriptor.
     public init(
         storageKey: String,
-        defaultSelection: MHUserDefaultsSelection
+        defaultSelection: MHUserDefaultsSelection,
+        legacySources: [MHLegacyStorageReference] = []
     ) {
         precondition(storageKey.isEmpty == false)
         self.storageKey = storageKey
         self.defaultSelection = defaultSelection
+        self.legacySources = legacySources
     }
 }

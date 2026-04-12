@@ -9,6 +9,9 @@ public struct MHIntPreferenceDescriptor: Hashable, MHPreferenceDescriptorProtoco
     /// The default defaults selection used when no explicit store is injected.
     public let defaultSelection: MHUserDefaultsSelection
 
+    /// Legacy storage slots that should migrate into this descriptor.
+    public let legacySources: [MHLegacyStorageReference]
+
     /// The default value returned when the descriptor is not set.
     public let defaultValue: Int
 
@@ -16,11 +19,13 @@ public struct MHIntPreferenceDescriptor: Hashable, MHPreferenceDescriptorProtoco
     public init(
         storageKey: String,
         defaultSelection: MHUserDefaultsSelection,
+        legacySources: [MHLegacyStorageReference] = [],
         default defaultValue: Int = .zero
     ) {
         precondition(storageKey.isEmpty == false)
         self.storageKey = storageKey
         self.defaultSelection = defaultSelection
+        self.legacySources = legacySources
         self.defaultValue = defaultValue
     }
 }

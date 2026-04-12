@@ -415,6 +415,16 @@ This document is normative for integration design.
 - Codable persistence as `Data` only
 - SwiftUI bridges via `AppStorage` initializers for primitive descriptors
 - Unknown-key cleanup through `MHUserDefaultsCleanupService`
+- Ordered preference migration through:
+  - `MHLegacyStorageReference`
+  - `MHPreferenceLifecycleService`
+  - `MHPreferenceLifecycleOutcome`
+  - `MHPreferenceDomainCleanupReport`
+  - `MHPreferenceMigrationStep`
+  - `MHPreferenceMigrationService`
+  - `MHPreferenceMigrationStateDescriptor`
+  - `MHPreferenceMigrationOutcome`
+  - `MHPreferenceMigrationEvent`
 
 ### Threading / Actor
 
@@ -434,6 +444,17 @@ This document is normative for integration design.
   auto-discover app descriptors.
 - Unknown-key cleanup reads and writes persistent domains by explicit
   `domainName`.
+- Preference migration records completed step IDs in a caller-owned
+  `MHPreferenceMigrationStateDescriptor`.
+- Current typed descriptors may declare legacy storage slots through
+  `legacySources`.
+- `MHPreferenceLifecycleService` derives migration steps from the current
+  descriptor set, then prunes unknown keys from each touched domain.
+- The lifecycle service treats the caller-provided current descriptor set as
+  the persistence schema for cleanup; legacy sources are migrated first and are
+  then eligible for removal.
+- Built-in move steps read from `MHLegacyStorageReference` and only write when
+  the destination descriptor is still empty.
 
 ## MHPersistenceMaintenance
 

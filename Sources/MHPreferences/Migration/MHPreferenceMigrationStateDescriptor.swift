@@ -1,0 +1,27 @@
+/// Storage descriptor used to record completed preference-migration step identifiers.
+public struct MHPreferenceMigrationStateDescriptor: Hashable, MHStorageDescriptorProtocol, Sendable {
+    /// Fully composed storage key name used by `UserDefaults`.
+    public let storageKey: String
+
+    /// The default defaults selection used when no explicit store is injected.
+    public let defaultSelection: MHUserDefaultsSelection
+
+    /// Creates a migration-state storage descriptor.
+    public init(
+        storageKey: String,
+        defaultSelection: MHUserDefaultsSelection
+    ) {
+        precondition(storageKey.isEmpty == false)
+        self.storageKey = storageKey
+        self.defaultSelection = defaultSelection
+    }
+}
+
+extension MHPreferenceMigrationStateDescriptor {
+    var completedStepIDsDescriptor: MHCodablePreferenceDescriptor<[String]> {
+        .init(
+            storageKey: storageKey,
+            defaultSelection: defaultSelection
+        )
+    }
+}

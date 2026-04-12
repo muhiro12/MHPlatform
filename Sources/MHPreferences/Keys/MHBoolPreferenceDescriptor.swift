@@ -9,6 +9,9 @@ public struct MHBoolPreferenceDescriptor: Hashable, MHPreferenceDescriptorProtoc
     /// The default defaults selection used when no explicit store is injected.
     public let defaultSelection: MHUserDefaultsSelection
 
+    /// Legacy storage slots that should migrate into this descriptor.
+    public let legacySources: [MHLegacyStorageReference]
+
     /// The default value returned when the descriptor is not set.
     public let defaultValue: Bool
 
@@ -16,11 +19,13 @@ public struct MHBoolPreferenceDescriptor: Hashable, MHPreferenceDescriptorProtoc
     public init(
         storageKey: String,
         defaultSelection: MHUserDefaultsSelection,
+        legacySources: [MHLegacyStorageReference] = [],
         default defaultValue: Bool = false
     ) {
         precondition(storageKey.isEmpty == false)
         self.storageKey = storageKey
         self.defaultSelection = defaultSelection
+        self.legacySources = legacySources
         self.defaultValue = defaultValue
     }
 }

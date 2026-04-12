@@ -669,6 +669,102 @@ let cleanupReport = MHUserDefaultsCleanupService.removeUnknownKeys(
 Use this API from app startup or a settings maintenance action when you want to
 prune stale `UserDefaults` values that no longer belong to the current key set.
 
+It also provides a launch-time lifecycle service for moving values between keys
+or stores before SwiftUI starts reading the current descriptors. Current
+descriptors can declare legacy storage slots directly, and the app can register
+its full current descriptor set with an enum.
+
+```swift
+enum AppDefaults {
+    static let legacySelection: MHUserDefaultsSelection = .standard
+    static let mainSelection: MHUserDefaultsSelection = .suite("group.com.example.app")
+}
+
+let migrationState = MHPreferenceMigrationStateDescriptor(
+    storageKey: "app.preferences.migration-state",
+    defaultSelection: AppDefaults.mainSelection
+)
+
+enum AppStringPreference {
+    case displayName
+
+    var descriptor: MHStringPreferenceDescriptor {
+        switch self {
+        case .displayName:
+            .init(
+                storageKey: "app.preferences.display-name",
+                defaultSelection: AppDefaults.mainSelection,
+                legacySources: [
+                    .init(
+                        storageKey: "legacy.display-name",
+                        selection: AppDefaults.legacySelection
+                    )
+                ]
+            )
+        }
+    }
+}
+
+enum AppBoolPreference {
+    case notificationsEnabled
+
+    var descriptor: MHBoolPreferenceDescriptor {
+        switch self {
+        case .notificationsEnabled:
+            .init(
+                storageKey: "app.preferences.notifications.enabled",
+                defaultSelection: AppDefaults.mainSelection,
+                default: true
+            )
+        }
+    }
+}
+
+enum AppPreferenceDescriptorRegistry: CaseIterable, MHStorageDescriptorProtocol {
+    case displayName
+    case notificationsEnabled
+
+    var storageKey: String {
+        switch self {
+        case .displayName:
+            AppStringPreference.displayName.descriptor.storageKey
+        case .notificationsEnabled:
+            AppBoolPreference.notificationsEnabled.descriptor.storageKey
+        }
+    }
+
+    var defaultSelection: MHUserDefaultsSelection {
+        switch self {
+        case .displayName:
+            AppStringPreference.displayName.descriptor.defaultSelection
+        case .notificationsEnabled:
+            AppBoolPreference.notificationsEnabled.descriptor.defaultSelection
+        }
+    }
+
+    func migrationSteps(
+        store: MHPreferenceStore
+    ) -> [MHPreferenceMigrationStep] {
+        switch self {
+        case .displayName:
+            AppStringPreference.displayName.descriptor.migrationSteps(
+                store: store
+            )
+        case .notificationsEnabled:
+            AppBoolPreference.notificationsEnabled.descriptor.migrationSteps(
+                store: store
+            )
+        }
+    }
+}
+
+let lifecycleOutcome = await MHPreferenceLifecycleService.run(
+    descriptors: AppPreferenceDescriptorRegistry.allCases,
+    migrationStateDescriptor: migrationState,
+    standardDomainName: Bundle.main.bundleIdentifier
+)
+```
+
 ## MHReviewPolicy
 
 `MHReviewPolicy` provides review-request lottery policy plus a higher-level flow shell with runtime and mutation wiring.

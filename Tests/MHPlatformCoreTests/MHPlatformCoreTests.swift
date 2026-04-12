@@ -19,12 +19,15 @@ struct MHPlatformCoreTests {
             MHRawStorageDescriptor.self,
             MHUserDefaultsCleanupReport.self,
             MHUserDefaultsCleanupService.self,
+            MHPreferenceDomainCleanupReport.self,
+            MHPreferenceLifecycleOutcome.self,
+            MHPreferenceLifecycleService.self,
             MHLogPolicy.self,
             MHLoggerFactory.self,
             MHLogRuntimeState.self,
             MHLoggingBootstrap.self
         ]
 
-        #expect(exportedCoreSafeTypes.count == 18)
+        #expect(exportedCoreSafeTypes.count == 21)
     }
 }
