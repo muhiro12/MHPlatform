@@ -11,5 +11,5 @@ script_directory=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 repository_root=$(cd "$script_directory/../.." && pwd)
 cd "$repository_root"
 
-echo "Running legacy verify wrapper..."
+echo "Running pre-push verification..."
 bash "$repository_root/ci_scripts/tasks/verify_task_completion.sh"

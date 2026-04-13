@@ -929,7 +929,6 @@ It includes cross-module demos for:
 
 - Xcode 16 or later with the iOS 18, macOS 15, and watchOS 11 SDKs installed
 - `swiftlint` for repository verify and strict lint runs
-- `pre-commit` for the full `verify.sh` entrypoint
 
 ## Setup
 
@@ -943,15 +942,14 @@ It includes cross-module demos for:
 Use the helper scripts in `ci_scripts/tasks/` as needed. For full local verification:
 
 ```sh
-bash ci_scripts/tasks/verify.sh
+bash ci_scripts/tasks/verify_task_completion.sh
 ```
 
-`verify.sh` always runs the full repository verification set, even on a clean
-checkout. Use `run_required_builds.sh` when you only want required checks based
-on local package changes:
+Use `verify_repository_state.sh` when you only want required checks based on
+local package changes:
 
 ```sh
-bash ci_scripts/tasks/run_required_builds.sh
+bash ci_scripts/tasks/verify_repository_state.sh
 ```
 
 If you only need the package and example app build:
@@ -966,10 +964,10 @@ If you only need Swift package tests:
 bash ci_scripts/tasks/test_shared_library.sh
 ```
 
-If you only need pre-commit hooks:
+If you want an optional local push hook:
 
 ```sh
-bash ci_scripts/tasks/pre_commit.sh
+bash ci_scripts/tasks/verify_pre_push.sh
 ```
 
 ## CI Artifact Layout

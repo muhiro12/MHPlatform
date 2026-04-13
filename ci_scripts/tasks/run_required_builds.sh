@@ -87,11 +87,6 @@ trap 'finalize_run_artifacts "$?"' EXIT
 
 log_command "$0" "$@"
 
-should_run_pre_commit=false
-if [[ "${CI_RUN_ENABLE_PRE_COMMIT:-0}" == "1" || "${CI_RUN_ENABLE_PRE_COMMIT:-}" == "true" ]]; then
-  should_run_pre_commit=true
-fi
-
 should_force_all=false
 if [[ "${CI_RUN_FORCE_ALL:-0}" == "1" || "${CI_RUN_FORCE_ALL:-}" == "true" ]]; then
   should_force_all=true
@@ -143,13 +138,6 @@ check_log_for_local_warnings() {
   return 0
 }
 
-if $should_run_pre_commit; then
-  run_step \
-    "pre_commit" \
-    "Run pre-commit hooks" \
-    bash "$repository_root/ci_scripts/tasks/pre_commit.sh"
-fi
-
 needs_swiftlint=false
 needs_package_build=false
 needs_package_tests=false
@@ -173,11 +161,7 @@ else
 
   if [[ -z "$changed_files" ]]; then
     echo "No local changes detected."
-    if $should_run_pre_commit; then
-      run_note="pre-commit completed. No local changes detected. Build/test steps were skipped."
-    else
-      run_note="No local changes detected. Build/test steps were skipped."
-    fi
+    run_note="No local changes detected. Build/test steps were skipped."
     exit 0
   fi
 
@@ -199,11 +183,7 @@ else
 
   if ! $needs_swiftlint && ! $needs_package_build && ! $needs_package_tests && ! $needs_consumer_fixtures; then
     echo "No package verification inputs changed."
-    if $should_run_pre_commit; then
-      run_note="pre-commit completed. No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
-    else
-      run_note="No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
-    fi
+    run_note="No changes under Sources/, Tests/, Example/, Package.swift, Package.resolved, or .swiftlint.yml. Build/test steps were skipped."
     exit 0
   fi
 
