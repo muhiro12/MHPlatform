@@ -2,7 +2,8 @@
 
 This note summarizes current product-selection rules for MHPlatform consumers.
 `1.x` is treated as beta, so adopters should follow the current public surface
-instead of expecting upgrade-specific compatibility layers inside MHPlatform.
+instead of expecting upgrade-specific compatibility layers or historical
+fallback shells inside MHPlatform.
 
 ## Consumer Rules
 
@@ -102,4 +103,5 @@ They are not part of the minimum runtime/bootstrap baseline.
 ## Out Of Scope For This Run
 
 - Editing downstream app repositories
-- Preserving upgrade-specific compatibility layers inside MHPlatform
+- Preserving upgrade-specific compatibility layers or historical fallback shells
+  inside MHPlatform

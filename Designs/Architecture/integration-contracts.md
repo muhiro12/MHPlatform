@@ -405,7 +405,10 @@ This document is normative for integration design.
   - `MHBoolPreferenceDescriptor`
   - `MHIntPreferenceDescriptor`
   - `MHStringPreferenceDescriptor`
+  - `MHDatePreferenceDescriptor`
   - `MHCodablePreferenceDescriptor`
+- Optional concrete key namespace root:
+  - `MHPreferenceKeys`
 - Required `defaultSelection` on each descriptor
 - Backing `UserDefaults` only when explicit DI is desired
 
@@ -413,7 +416,11 @@ This document is normative for integration design.
 
 - Typed reads/writes through `MHPreferenceStore`
 - Codable persistence as `Data` only
-- SwiftUI bridges via `AppStorage` initializers for primitive descriptors
+- SwiftUI bridges via:
+  - `AppStorage` initializers for primitive and `Date` descriptors
+  - `AppStorage` key-path initializers rooted at `MHPreferenceKeys`
+  - `MHOptionalCodablePreference`
+  - `MHCodablePreference`
 - Unknown-key cleanup through `MHUserDefaultsCleanupService`
 - Ordered preference migration through:
   - `MHLegacyStorageReference`
@@ -440,6 +447,13 @@ This document is normative for integration design.
 
 - `storageKey` must be non-empty.
 - Codable values are encoded to `Data`; non-`Data` decode path returns `nil`.
+- `MHPreferenceKeys` is a concrete app-extended namespace for key-path-based
+  access such as `\.notificationsEnabled`.
+- Direct descriptor-based access remains supported; concrete descriptor
+  `AppStorage` overloads can infer the property type without an explicit type
+  annotation.
+- `.notificationsEnabled`-style shorthand aliases are app-local sugar only;
+  the package does not auto-generate descriptor statics.
 - Unknown-key cleanup uses caller-owned `knownDescriptors` only; the package does not
   auto-discover app descriptors.
 - Unknown-key cleanup reads and writes persistent domains by explicit
@@ -460,22 +474,40 @@ This document is normative for integration design.
 
 ### Required Inputs
 
+- `MHStoreRelocationPlan`
+- Optional file manager override
+- Optional relocation validation hook:
+  - `validateRelocatedStore(currentStoreURL, copiedFileNames)`
 - Destructive reset steps (`[MHDestructiveResetStep]`)
 
 ### Outputs
 
+- `MHStoreRelocationOutcome`
+- `MHLegacyStoreCleanupOutcome`
 - `MHDestructiveResetOutcome`
 - `MHDestructiveResetEvent` stream via callback
 
 ### Threading / Actor
 
+- Relocation/cleanup are synchronous file operations.
 - Destructive reset orchestration is async and sequential.
 - Caller owns actor hops for UI updates.
 
 ### Intended Call Sites
 
+- Startup relocation gate before `ModelContainer`/`NSPersistentContainer`
+  bootstrap
 - User-triggered maintenance/reset workflow
 - Developer/debug reset workflow
+
+### Ownership Rules (Normative)
+
+- Validation logic belongs to client app.
+- When validation throws after copy:
+  - copied current-store files are rolled back by the relocation service.
+- The package only relocates caller-addressed store files and matching sibling
+  sidecars; it does not infer app schema, container startup, or cleanup timing.
+- Legacy cleanup timing remains app-owned.
 
 ## MHReviewPolicy
 

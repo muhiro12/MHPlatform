@@ -14,18 +14,27 @@ struct MHPlatformTests {
             MHNotificationPayload.self,
             MHRouteExecutionOutcome<Int>.self,
             MHObservableRouteInbox<Int>.self,
+            MHStoreRelocationPlan.self,
+            MHStoreRelocationSkipReason.self,
+            MHStoreRelocationOutcome.self,
+            MHLegacyStoreCleanupOutcome.self,
+            MHStoreRelocationService.self,
             MHDestructiveResetStep.self,
             MHDestructiveResetService.self,
             MHDestructiveResetOutcome.self,
             MHDestructiveResetEvent.self,
             MHPreferenceStore.self,
+            MHPreferenceKeys.self,
             MHUserDefaultsSelection.self,
             MHRawStorageDescriptor.self,
+            MHDatePreferenceDescriptor.self,
             MHUserDefaultsCleanupReport.self,
             MHUserDefaultsCleanupService.self,
             MHPreferenceDomainCleanupReport.self,
             MHPreferenceLifecycleOutcome.self,
             MHPreferenceLifecycleService.self,
+            MHOptionalCodablePreference<String>.self,
+            MHCodablePreference<String>.self,
             MHLogPolicy.self,
             MHLoggerFactory.self,
             MHLogRuntimeState.self,
@@ -42,7 +51,7 @@ struct MHPlatformTests {
             coreSurface +
             optionalShellSurface
 
-        #expect(exportedTypes.count == 27)
+        #expect(exportedTypes.count == 36)
     }
 
     @MainActor

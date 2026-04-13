@@ -5,7 +5,7 @@ import Testing
 
 struct MHPreferenceMigrationServiceTests {}
 
-private extension MHPreferenceMigrationServiceTests {
+extension MHPreferenceMigrationServiceTests {
     enum Constants {
         static let storageKeyPrefix = "tests.preference-migration"
     }
@@ -291,7 +291,7 @@ extension MHPreferenceMigrationServiceTests {
     }
 }
 
-private extension MHPreferenceMigrationServiceTests {
+extension MHPreferenceMigrationServiceTests {
     func completedStepIDs(
         for descriptor: MHCodablePreferenceDescriptor<[String]>,
         in userDefaults: UserDefaults

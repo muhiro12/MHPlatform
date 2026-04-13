@@ -9,7 +9,7 @@ explicit composition. The default consumer pillars are `MHPlatform` and
 adoption. The current 1.x beta baseline focuses on runtime startup, deep-link
 handling, route execution, deterministic notification planning,
 post-mutation side-effect orchestration, logging, preferences, and
-destructive reset orchestration.
+store-file relocation plus destructive reset orchestration.
 
 Minimum supported platforms:
 - iOS 18.0+
@@ -20,8 +20,10 @@ Minimum supported platforms:
 
 - `1.x` is treated as beta. Public APIs may change while the shared surface is
   still being shaped.
-- MHPlatform does not keep app-upgrade fallback paths, compatibility layers, or
-  migration helpers solely to ease SDK updates during `1.x`.
+- MHPlatform does not keep app-upgrade fallback paths, compatibility aliases,
+  or historical shell support solely to ease SDK updates during `1.x`.
+- Caller-owned relocation or migration primitives that operate on the app's
+  current configuration remain in scope when schema policy stays in the app.
 - Adopters should follow the current documentation and current public surface on
   each update.
 
@@ -596,14 +598,32 @@ queue inspection.
 
 ## MHPersistenceMaintenance
 
-`MHPersistenceMaintenance` provides ordered destructive reset orchestration for
-app-owned persistence cleanup flows.
+`MHPersistenceMaintenance` provides store-file relocation primitives and
+ordered destructive reset orchestration for app-owned persistence cleanup
+flows.
 
 Integration contract:
 [`MHPersistenceMaintenance`](Designs/Architecture/integration-contracts.md#mhpersistencemaintenance)
 
 ```swift
 import MHPersistenceMaintenance
+import SwiftData
+
+let currentConfiguration = ModelConfiguration(url: currentStoreURL)
+let relocationPlan = MHStoreRelocationPlan(
+    legacyStoreURL: legacyStoreURL,
+    currentStoreURL: currentConfiguration.url
+)
+
+let relocationOutcome = try MHStoreRelocationService.relocateIfNeeded(
+    plan: relocationPlan
+) { relocatedStoreURL, _ in
+    let validationConfiguration = ModelConfiguration(url: relocatedStoreURL)
+    _ = try ModelContainer(
+        for: AppRecord.self,
+        configurations: validationConfiguration
+    )
+}
 
 let resetOutcome = await MHDestructiveResetService.run(
     steps: [
@@ -614,29 +634,83 @@ let resetOutcome = await MHDestructiveResetService.run(
 )
 ```
 
+The app chooses legacy/current store URLs, validates that the relocated store
+opens with the current schema, and decides when legacy files should be removed.
+
 ## MHPreferences
 
-`MHPreferences` provides typed preference descriptors with `UserDefaults` and `AppStorage` bridges.
+`MHPreferences` provides typed preference descriptors, a concrete
+`MHPreferenceKeys` namespace, `UserDefaults`/`AppStorage` bridges for
+primitive and `Date` values, and dedicated SwiftUI wrappers for `Codable`
+values.
 
 Integration contract:
 [`MHPreferences`](Designs/Architecture/integration-contracts.md#mhpreferences)
 
 ```swift
 import MHPreferences
+import SwiftUI
 
 enum AppDefaults {
     static let mainSelection: MHUserDefaultsSelection = .suite("group.com.example.app")
 }
 
+struct UserProfile: Codable, Equatable, Sendable {
+    let displayName: String
+    let launchCount: Int
+}
+
+extension MHPreferenceKeys {
+    var notificationsEnabled: MHBoolPreferenceDescriptor {
+        .init(
+            storageKey: "app.preferences.notifications.enabled",
+            defaultSelection: AppDefaults.mainSelection,
+            default: true
+        )
+    }
+
+    var displayName: MHStringPreferenceDescriptor {
+        .init(
+            storageKey: "app.preferences.display-name",
+            defaultSelection: AppDefaults.mainSelection
+        )
+    }
+
+    var lastSeenAt: MHDatePreferenceDescriptor {
+        .init(
+            storageKey: "app.preferences.last-seen-at",
+            defaultSelection: AppDefaults.mainSelection
+        )
+    }
+
+    var userProfile: MHCodablePreferenceDescriptor<UserProfile> {
+        .init(
+            storageKey: "app.preferences.user-profile",
+            defaultSelection: AppDefaults.mainSelection
+        )
+    }
+}
+
 let store = MHPreferenceStore()
-let descriptor = MHBoolPreferenceDescriptor(
-    storageKey: "app.preferences.notifications.enabled",
-    defaultSelection: AppDefaults.mainSelection,
-    default: true
-)
-let isEnabled = store.bool(for: descriptor)
-store.set(false, for: descriptor)
+let isEnabled = store.bool(for: \.notificationsEnabled)
+store.set(false, for: \.notificationsEnabled)
+
+struct SettingsView: View {
+    @AppStorage(\.notificationsEnabled) private var notificationsEnabled
+    @AppStorage(\.displayName, default: "") private var displayName
+    @AppStorage(\.lastSeenAt) private var lastSeenAt
+    @MHCodablePreference(
+        \.userProfile,
+        default: .init(displayName: "", launchCount: 0)
+    )
+    private var userProfile: UserProfile
+}
 ```
+
+`@AppStorage(descriptor)` remains available, and concrete descriptor overloads
+still allow the property type to be inferred without spelling it explicitly.
+Apps that want `.notificationsEnabled` shorthand can add a manual static alias
+on the descriptor type; MHPlatform does not auto-generate those aliases.
 
 It also provides explicit unknown-key cleanup for caller-owned domains.
 

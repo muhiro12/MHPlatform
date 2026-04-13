@@ -3,7 +3,7 @@ import MHPreferences
 import Testing
 
 struct MHPreferenceStoreTests {
-    private enum Constants {
+    enum Constants {
         static let storageKeyPrefix = "tests.preference-store"
 
         static let trueDefault = true
@@ -11,6 +11,7 @@ struct MHPreferenceStoreTests {
         static let defaultIntValue = 20
         static let persistedIntValue = 7
         static let zeroValue = 0
+        static let persistedDateValue = Date(timeIntervalSinceReferenceDate: 8)
 
         static let invalidDataByte0: UInt8 = 0x00
         static let invalidDataByte1: UInt8 = 0xFF
@@ -144,6 +145,7 @@ struct MHPreferenceStoreTests {
         let boolKey = makeBoolKey("remove-bool")
         let intKey = makeIntKey("remove-int")
         let stringKey = makeStringKey("remove-string")
+        let dateKey = makeDateKey("remove-date")
         let codableKey = makeCodableKey("remove-codable")
         let payload = DemoPayload(
             title: "payload",
@@ -153,16 +155,19 @@ struct MHPreferenceStoreTests {
         store.set(Constants.trueDefault, for: boolKey)
         store.set(Constants.persistedIntValue, for: intKey)
         store.set("value", for: stringKey)
+        store.set(Constants.persistedDateValue, for: dateKey)
         store.setCodable(payload, for: codableKey)
 
         store.remove(boolKey)
         store.remove(intKey)
         store.remove(stringKey)
+        store.remove(dateKey)
         store.remove(codableKey)
 
         #expect(userDefaults.object(forKey: boolKey.storageKey) == nil)
         #expect(userDefaults.object(forKey: intKey.storageKey) == nil)
         #expect(userDefaults.object(forKey: stringKey.storageKey) == nil)
+        #expect(userDefaults.object(forKey: dateKey.storageKey) == nil)
         #expect(userDefaults.object(forKey: codableKey.storageKey) == nil)
     }
 
@@ -180,6 +185,10 @@ struct MHPreferenceStoreTests {
             storageKey: "opaque-string",
             defaultSelection: .standard
         )
+        let dateKey = MHDatePreferenceDescriptor(
+            storageKey: "opaque-date",
+            defaultSelection: .standard
+        )
         let codableKey = MHCodablePreferenceDescriptor<DemoPayload>(
             storageKey: "opaque-codable",
             defaultSelection: .standard
@@ -188,6 +197,7 @@ struct MHPreferenceStoreTests {
         #expect(boolKey.storageKey == "opaque-bool")
         #expect(intKey.storageKey == "opaque-int")
         #expect(stringKey.storageKey == "opaque-string")
+        #expect(dateKey.storageKey == "opaque-date")
         #expect(codableKey.storageKey == "opaque-codable")
     }
 
@@ -224,7 +234,7 @@ struct MHPreferenceStoreTests {
         #expect(userDefaults.bool(forKey: key.storageKey))
     }
 
-    private func makeStore(
+    func makeStore(
         suiteName: String
     ) throws -> (MHPreferenceStore, UserDefaults) {
         let resolvedSuiteName = "MHPreferenceStoreTests.\(suiteName)"
@@ -236,7 +246,7 @@ struct MHPreferenceStoreTests {
         return (store, userDefaults)
     }
 
-    private func makeBoolKey(
+    func makeBoolKey(
         _ name: String,
         defaultSelection: MHUserDefaultsSelection = .standard,
         default defaultValue: Bool = false
@@ -248,7 +258,7 @@ struct MHPreferenceStoreTests {
         )
     }
 
-    private func makeIntKey(
+    func makeIntKey(
         _ name: String,
         defaultSelection: MHUserDefaultsSelection = .standard,
         default defaultValue: Int = .zero
@@ -260,7 +270,7 @@ struct MHPreferenceStoreTests {
         )
     }
 
-    private func makeStringKey(
+    func makeStringKey(
         _ name: String,
         defaultSelection: MHUserDefaultsSelection = .standard
     ) -> MHStringPreferenceDescriptor {

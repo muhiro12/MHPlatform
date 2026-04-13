@@ -88,6 +88,29 @@ public struct MHPreferenceMigrationStep: Sendable {
         }
     }
 
+    /// Moves an optional-date value from a legacy storage slot when the destination is still empty.
+    public static func move(
+        id: String,
+        from source: MHLegacyStorageReference,
+        to target: MHDatePreferenceDescriptor,
+        store: MHPreferenceStore = .init()
+    ) -> Self {
+        let sourceDescriptor = MHDatePreferenceDescriptor(
+            storageKey: source.storageKey,
+            defaultSelection: source.selection
+        )
+        return makeMoveStep(id: id) {
+            guard store.contains(sourceDescriptor) else {
+                return
+            }
+            let value = store.date(for: sourceDescriptor)
+            store.set(value, for: target)
+            store.remove(sourceDescriptor)
+        } targetCheck: {
+            store.contains(target)
+        }
+    }
+
     /// Moves a codable value from a legacy storage slot when the destination is still empty.
     public static func move<Value: Codable & Sendable>(
         id: String,
@@ -214,6 +237,22 @@ public extension MHIntPreferenceDescriptor {
 }
 
 public extension MHStringPreferenceDescriptor {
+    /// Builds move steps for all legacy storage slots declared on this descriptor.
+    func migrationSteps(
+        store: MHPreferenceStore = .init()
+    ) -> [MHPreferenceMigrationStep] {
+        legacySources.map { source in
+            .move(
+                id: source.stepID(for: storageKey),
+                from: source,
+                to: self,
+                store: store
+            )
+        }
+    }
+}
+
+public extension MHDatePreferenceDescriptor {
     /// Builds move steps for all legacy storage slots declared on this descriptor.
     func migrationSteps(
         store: MHPreferenceStore = .init()

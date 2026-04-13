@@ -5,182 +5,90 @@ import SwiftUI
 import Testing
 
 struct AppStorageBridgeTests {
-    private enum Constants {
-        static let storageKeyPrefix = "tests.app-storage"
+    @Test
+    func direct_descriptor_initializer_supports_type_inference() throws {
+        try AppStorageBridgeTestSupport.clearPersistentDomain(
+            named: AppStorageBridgeHarnesses.TypeInferenceHarness.boolSuiteName
+        )
+        try AppStorageBridgeTestSupport.clearPersistentDomain(
+            named: AppStorageBridgeHarnesses.TypeInferenceHarness.intSuiteName
+        )
+        try AppStorageBridgeTestSupport.clearPersistentDomain(
+            named: AppStorageBridgeHarnesses.TypeInferenceHarness.stringSuiteName
+        )
+        try AppStorageBridgeTestSupport.clearPersistentDomain(
+            named: AppStorageBridgeHarnesses.TypeInferenceHarness.requiredStringSuiteName
+        )
+        try AppStorageBridgeTestSupport.clearPersistentDomain(
+            named: AppStorageBridgeHarnesses.TypeInferenceHarness.rawStringSuiteName
+        )
+        try AppStorageBridgeTestSupport.clearPersistentDomain(
+            named: AppStorageBridgeHarnesses.TypeInferenceHarness.dateSuiteName
+        )
 
-        static let boolDefaultValue = true
-        static let intDefaultValue = 30
-        static let intStoredValue = 12
-        static let injectedBoolValue = true
-    }
+        let harness = AppStorageBridgeHarnesses.TypeInferenceHarness()
 
-    private struct BoolHarness {
-        @AppStorage private var value: Bool
-
-        var wrappedValue: Bool {
-            get {
-                value
-            }
-            set {
-                value = newValue
-            }
-        }
-
-        init(
-            key: MHBoolPreferenceDescriptor,
-            store: UserDefaults
-        ) {
-            _value = AppStorage(
-                key,
-                store: store
-            )
-        }
-
-        init(
-            key: MHBoolPreferenceDescriptor
-        ) {
-            _value = AppStorage(
-                key
-            )
-        }
-    }
-
-    private struct IntHarness {
-        @AppStorage private var value: Int
-
-        var wrappedValue: Int {
-            get {
-                value
-            }
-            set {
-                value = newValue
-            }
-        }
-
-        init(
-            key: MHIntPreferenceDescriptor,
-            store: UserDefaults
-        ) {
-            _value = AppStorage(
-                key,
-                store: store
-            )
-        }
-    }
-
-    private struct StringHarness {
-        @AppStorage private var value: String?
-
-        var wrappedValue: String? {
-            get {
-                value
-            }
-            set {
-                value = newValue
-            }
-        }
-
-        init(
-            key: MHStringPreferenceDescriptor,
-            store: UserDefaults
-        ) {
-            _value = AppStorage(
-                key,
-                store: store
-            )
-        }
-    }
-
-    private struct RequiredStringHarness {
-        @AppStorage private var value: String
-
-        var wrappedValue: String {
-            get {
-                value
-            }
-            set {
-                value = newValue
-            }
-        }
-
-        init(
-            key: MHStringPreferenceDescriptor,
-            default defaultValue: String,
-            store: UserDefaults
-        ) {
-            _value = AppStorage(
-                key,
-                default: defaultValue,
-                store: store
-            )
-        }
-    }
-
-    private enum DemoRawStringValue: String {
-        case first
-        case second
-    }
-
-    private struct RawStringHarness {
-        @AppStorage private var value: DemoRawStringValue
-
-        var wrappedValue: DemoRawStringValue {
-            get {
-                value
-            }
-            set {
-                value = newValue
-            }
-        }
-
-        init(
-            key: MHStringPreferenceDescriptor,
-            default defaultValue: DemoRawStringValue,
-            store: UserDefaults
-        ) {
-            _value = AppStorage(
-                key,
-                default: defaultValue,
-                store: store
-            )
-        }
+        #expect(
+            harness.snapshot.boolValue
+                == AppStorageBridgeTestSupport.Constants.boolDefaultValue
+        )
+        #expect(
+            harness.snapshot.intValue
+                == AppStorageBridgeTestSupport.Constants.intDefaultValue
+        )
+        #expect(harness.snapshot.stringValue == nil)
+        #expect(harness.snapshot.requiredStringValue == "fallback")
+        #expect(harness.snapshot.rawStringValue == .first)
+        #expect(harness.snapshot.dateValue == nil)
     }
 
     @Test
     func bool_bridge_uses_default_value() throws {
-        let userDefaults = try makeUserDefaults(suiteName: "bool-default")
-        let key = makeBoolKey(
-            "bool-default-key",
-            default: Constants.boolDefaultValue
+        let userDefaults = try AppStorageBridgeTestSupport.makeUserDefaults(
+            suiteName: "bool-default"
         )
-        let harness = BoolHarness(
+        let key = AppStorageBridgeTestSupport.makeBoolKey(
+            "bool-default-key",
+            default: AppStorageBridgeTestSupport.Constants.boolDefaultValue
+        )
+        let harness = AppStorageBridgeHarnesses.BoolHarness(
             key: key,
             store: userDefaults
         )
 
-        #expect(harness.wrappedValue == Constants.boolDefaultValue)
+        #expect(
+            harness.wrappedValue
+                == AppStorageBridgeTestSupport.Constants.boolDefaultValue
+        )
     }
 
     @Test
     func int_bridge_uses_default_value() throws {
-        let userDefaults = try makeUserDefaults(suiteName: "int-default")
-        let key = makeIntKey(
-            "int-default-key",
-            default: Constants.intDefaultValue
+        let userDefaults = try AppStorageBridgeTestSupport.makeUserDefaults(
+            suiteName: "int-default"
         )
-        let harness = IntHarness(
+        let key = AppStorageBridgeTestSupport.makeIntKey(
+            "int-default-key",
+            default: AppStorageBridgeTestSupport.Constants.intDefaultValue
+        )
+        let harness = AppStorageBridgeHarnesses.IntHarness(
             key: key,
             store: userDefaults
         )
 
-        #expect(harness.wrappedValue == Constants.intDefaultValue)
+        #expect(
+            harness.wrappedValue
+                == AppStorageBridgeTestSupport.Constants.intDefaultValue
+        )
     }
 
     @Test
     func string_bridge_round_trips_and_removes_nil() throws {
-        let userDefaults = try makeUserDefaults(suiteName: "string-roundtrip")
-        let key = makeStringKey("string-roundtrip-key")
-        var harness = StringHarness(
+        let userDefaults = try AppStorageBridgeTestSupport.makeUserDefaults(
+            suiteName: "string-roundtrip"
+        )
+        let key = AppStorageBridgeTestSupport.makeStringKey("string-roundtrip-key")
+        var harness = AppStorageBridgeHarnesses.StringHarness(
             key: key,
             store: userDefaults
         )
@@ -196,50 +104,65 @@ struct AppStorageBridgeTests {
 
     @Test
     func store_injection_is_respected() throws {
-        let userDefaults = try makeUserDefaults(suiteName: "injected-store")
-        let key = makeBoolKey("injected-store-key")
-        var boolHarness = BoolHarness(
+        let userDefaults = try AppStorageBridgeTestSupport.makeUserDefaults(
+            suiteName: "injected-store"
+        )
+        let key = AppStorageBridgeTestSupport.makeBoolKey("injected-store-key")
+        var boolHarness = AppStorageBridgeHarnesses.BoolHarness(
             key: key,
             store: userDefaults
         )
-        let intKey = makeIntKey(
+        let intKey = AppStorageBridgeTestSupport.makeIntKey(
             "injected-int-key",
-            default: Constants.intDefaultValue
+            default: AppStorageBridgeTestSupport.Constants.intDefaultValue
         )
-        var intHarness = IntHarness(
+        var intHarness = AppStorageBridgeHarnesses.IntHarness(
             key: intKey,
             store: userDefaults
         )
 
-        boolHarness.wrappedValue = Constants.injectedBoolValue
-        intHarness.wrappedValue = Constants.intStoredValue
+        boolHarness.wrappedValue = AppStorageBridgeTestSupport.Constants.injectedBoolValue
+        intHarness.wrappedValue = AppStorageBridgeTestSupport.Constants.intStoredValue
 
-        #expect(userDefaults.bool(forKey: key.storageKey) == Constants.injectedBoolValue)
-        #expect(userDefaults.integer(forKey: intKey.storageKey) == Constants.intStoredValue)
+        #expect(
+            userDefaults.bool(forKey: key.storageKey)
+                == AppStorageBridgeTestSupport.Constants.injectedBoolValue
+        )
+        #expect(
+            userDefaults.integer(forKey: intKey.storageKey)
+                == AppStorageBridgeTestSupport.Constants.intStoredValue
+        )
     }
 
     @Test
     func default_selection_is_respected() throws {
         let suiteName = "default-selection-store"
-        let userDefaults = try makeUserDefaults(suiteName: suiteName)
-        let key = makeBoolKey(
+        let userDefaults = try AppStorageBridgeTestSupport.makeUserDefaults(
+            suiteName: suiteName
+        )
+        let key = AppStorageBridgeTestSupport.makeBoolKey(
             "selection-bool-key",
             defaultSelection: .suite("  AppStorageBridgeTests.\(suiteName)\n")
         )
-        var harness = BoolHarness(
+        var harness = AppStorageBridgeHarnesses.BoolHarness(
             key: key
         )
 
-        harness.wrappedValue = Constants.injectedBoolValue
+        harness.wrappedValue = AppStorageBridgeTestSupport.Constants.injectedBoolValue
 
-        #expect(userDefaults.bool(forKey: key.storageKey) == Constants.injectedBoolValue)
+        #expect(
+            userDefaults.bool(forKey: key.storageKey)
+                == AppStorageBridgeTestSupport.Constants.injectedBoolValue
+        )
     }
 
     @Test
     func string_bridge_with_default_uses_default_then_round_trips() throws {
-        let userDefaults = try makeUserDefaults(suiteName: "required-string")
-        let key = makeStringKey("required-string-key")
-        var harness = RequiredStringHarness(
+        let userDefaults = try AppStorageBridgeTestSupport.makeUserDefaults(
+            suiteName: "required-string"
+        )
+        let key = AppStorageBridgeTestSupport.makeStringKey("required-string-key")
+        var harness = AppStorageBridgeHarnesses.RequiredStringHarness(
             key: key,
             default: "fallback",
             store: userDefaults
@@ -253,10 +176,12 @@ struct AppStorageBridgeTests {
 
     @Test
     func raw_string_bridge_round_trips_existing_storage() throws {
-        let userDefaults = try makeUserDefaults(suiteName: "raw-string")
-        let key = makeStringKey("raw-string-key")
+        let userDefaults = try AppStorageBridgeTestSupport.makeUserDefaults(
+            suiteName: "raw-string"
+        )
+        let key = AppStorageBridgeTestSupport.makeStringKey("raw-string-key")
         userDefaults.set("second", forKey: key.storageKey)
-        var harness = RawStringHarness(
+        var harness = AppStorageBridgeHarnesses.RawStringHarness(
             key: key,
             default: .first,
             store: userDefaults
@@ -265,52 +190,33 @@ struct AppStorageBridgeTests {
         #expect(harness.wrappedValue == .second)
 
         harness.wrappedValue = .first
-        #expect(userDefaults.string(forKey: key.storageKey) == DemoRawStringValue.first.rawValue)
-    }
-}
-
-private extension AppStorageBridgeTests {
-    func makeUserDefaults(suiteName: String) throws -> UserDefaults {
-        let resolvedSuiteName = "AppStorageBridgeTests.\(suiteName)"
-        let userDefaults = try #require(
-            UserDefaults(suiteName: resolvedSuiteName)
-        )
-        userDefaults.removePersistentDomain(forName: resolvedSuiteName)
-        return userDefaults
-    }
-
-    func makeBoolKey(
-        _ name: String,
-        defaultSelection: MHUserDefaultsSelection = .standard,
-        default defaultValue: Bool = false
-    ) -> MHBoolPreferenceDescriptor {
-        .init(
-            storageKey: "\(Constants.storageKeyPrefix).\(name)",
-            defaultSelection: defaultSelection,
-            default: defaultValue
+        #expect(
+            userDefaults.string(forKey: key.storageKey)
+                == AppStorageBridgeHarnesses.DemoRawStringValue.first.rawValue
         )
     }
 
-    func makeIntKey(
-        _ name: String,
-        defaultSelection: MHUserDefaultsSelection = .standard,
-        default defaultValue: Int = .zero
-    ) -> MHIntPreferenceDescriptor {
-        .init(
-            storageKey: "\(Constants.storageKeyPrefix).\(name)",
-            defaultSelection: defaultSelection,
-            default: defaultValue
+    @Test
+    func date_bridge_round_trips_and_removes_nil() throws {
+        let userDefaults = try AppStorageBridgeTestSupport.makeUserDefaults(
+            suiteName: "date-roundtrip"
         )
-    }
+        let key = AppStorageBridgeTestSupport.makeDateKey("date-roundtrip-key")
+        var harness = AppStorageBridgeHarnesses.DateHarness(
+            key: key,
+            store: userDefaults
+        )
 
-    func makeStringKey(
-        _ name: String,
-        defaultSelection: MHUserDefaultsSelection = .standard
-    ) -> MHStringPreferenceDescriptor {
-        .init(
-            storageKey: "\(Constants.storageKeyPrefix).\(name)",
-            defaultSelection: defaultSelection
+        #expect(harness.wrappedValue == nil)
+
+        harness.wrappedValue = AppStorageBridgeTestSupport.Constants.directDateValue
+        #expect(
+            userDefaults.object(forKey: key.storageKey) as? Date
+                == AppStorageBridgeTestSupport.Constants.directDateValue
         )
+
+        harness.wrappedValue = nil
+        #expect(userDefaults.object(forKey: key.storageKey) == nil)
     }
 }
 #endif

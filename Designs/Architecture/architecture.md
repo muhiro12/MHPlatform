@@ -209,11 +209,15 @@ Integration contract:
 Integration contract:
 [`MHPersistenceMaintenance`](integration-contracts.md#mhpersistencemaintenance)
 
+- Owns store-file relocation and legacy cleanup primitives:
+  `MHStoreRelocationPlan`, `MHStoreRelocationSkipReason`,
+  `MHStoreRelocationOutcome`, `MHLegacyStoreCleanupOutcome`,
+  `MHStoreRelocationService`
 - Owns ordered destructive-reset orchestration primitives:
   `MHDestructiveResetStep`, `MHDestructiveResetService`,
   `MHDestructiveResetOutcome`, `MHDestructiveResetEvent`
-- Does not own app-specific persistence model types, startup migration logic,
-  or data-deletion policy decisions
+- Does not own app-specific persistence model types, schema migration plans,
+  startup timing policy, validation policy, or data-deletion policy decisions
 
 ### `MHPreferences`
 

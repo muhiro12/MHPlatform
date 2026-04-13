@@ -118,6 +118,52 @@ public extension AppStorage {
         )
     }
 
+    /// Creates an optional-date app-storage binding using a typed preference descriptor.
+    init(
+        _ descriptor: MHDatePreferenceDescriptor
+    ) where Value == Date? {
+        self.init(
+            descriptor,
+            store: descriptor.defaultSelection.resolveUserDefaults()
+        )
+    }
+
+    /// Creates an optional-date app-storage binding using a typed preference descriptor.
+    init(
+        _ descriptor: MHDatePreferenceDescriptor,
+        store: UserDefaults
+    ) where Value == Date? {
+        self.init(
+            descriptor.storageKey,
+            store: store
+        )
+    }
+
+    /// Creates a date app-storage binding using a typed preference descriptor.
+    init(
+        _ descriptor: MHDatePreferenceDescriptor,
+        default defaultValue: Date
+    ) where Value == Date {
+        self.init(
+            descriptor,
+            default: defaultValue,
+            store: descriptor.defaultSelection.resolveUserDefaults()
+        )
+    }
+
+    /// Creates a date app-storage binding using a typed preference descriptor.
+    init(
+        _ descriptor: MHDatePreferenceDescriptor,
+        default defaultValue: Date,
+        store: UserDefaults
+    ) where Value == Date {
+        self.init(
+            wrappedValue: defaultValue,
+            descriptor.storageKey,
+            store: store
+        )
+    }
+
     /// Creates a boolean app-storage binding using a representable typed descriptor.
     init(
         _ descriptor: some MHBoolPrefDescriptorRepresentable

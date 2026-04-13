@@ -42,7 +42,7 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 | Notification planning | deterministic candidate -> plan transforms | UN scheduling policy and app-specific copy |
 | Notification payload routing | payload codec + response route resolving + optional bridge helpers | App notification-center adoption strategy |
 | Mutation orchestration | retry/cancel/event/outcome primitive | Domain mutation meaning and business validation |
-| Persistence maintenance | destructive reset orchestration | App-specific schema validation and data rules |
+| Persistence maintenance | store-file relocation + destructive reset orchestration | App-specific schema validation, startup timing, and data rules |
 | Preferences | typed keys + AppStorage bridges + codable-as-Data | Feature semantics for each key |
 | Review request policy | lottery + delayed request orchestration | Product timing/eligibility strategy |
 
@@ -67,6 +67,8 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 
 - `1.x` is treated as beta, so breaking changes are acceptable while the public
   surface is still being shaped.
-- API coherence is prioritized over temporary compatibility aliases and
-  SDK-update migration helpers.
+- API coherence is prioritized over temporary compatibility aliases, historical
+  fallback shells, and SDK-update helpers that only preserve old SDK surface.
+- Caller-owned persistence relocation primitives remain in scope when current
+  schema and validation policy stay in the app.
 - Documentation in `Designs/Architecture` is the source of integration truth.
