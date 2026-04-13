@@ -24,27 +24,27 @@ extension MHPreferenceStoreTests {
     }
 
     @Test
-    func key_namespace_overloads_round_trip_supported_value_types() throws {
-        let (store, userDefaults) = try makeStore(suiteName: "key-namespace")
-        let expectedProfile = MHPreferenceKeysTestSupport.DemoCodablePreferenceValue(
+    func descriptor_namespace_overloads_round_trip_supported_value_types() throws {
+        let (store, userDefaults) = try makeStore(suiteName: "descriptor-namespace")
+        let expectedProfile = MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue(
             title: "profile",
             count: Constants.persistedIntValue
         )
 
-        store.set(false, for: \MHPreferenceKeys.hasSeenOnboarding)
-        store.set(Constants.persistedIntValue, for: \MHPreferenceKeys.launchCount)
-        store.set("display-name", for: \MHPreferenceKeys.displayName)
-        store.set(Constants.persistedDateValue, for: \MHPreferenceKeys.lastSeenAt)
-        store.setCodable(expectedProfile, for: \MHPreferenceKeys.userProfile)
+        store.set(false, for: \MHPreferenceDescriptors.hasSeenOnboarding)
+        store.set(Constants.persistedIntValue, for: \MHPreferenceDescriptors.launchCount)
+        store.set("display-name", for: \MHPreferenceDescriptors.displayName)
+        store.set(Constants.persistedDateValue, for: \MHPreferenceDescriptors.lastSeenAt)
+        store.setCodable(expectedProfile, for: \MHPreferenceDescriptors.userProfile)
 
-        #expect(store.bool(for: \MHPreferenceKeys.hasSeenOnboarding) == false)
-        #expect(store.int(for: \MHPreferenceKeys.launchCount) == Constants.persistedIntValue)
-        #expect(store.string(for: \MHPreferenceKeys.displayName) == "display-name")
-        #expect(store.date(for: \MHPreferenceKeys.lastSeenAt) == Constants.persistedDateValue)
-        #expect(store.codable(for: \MHPreferenceKeys.userProfile) == expectedProfile)
+        #expect(store.bool(for: \MHPreferenceDescriptors.hasSeenOnboarding) == false)
+        #expect(store.int(for: \MHPreferenceDescriptors.launchCount) == Constants.persistedIntValue)
+        #expect(store.string(for: \MHPreferenceDescriptors.displayName) == "display-name")
+        #expect(store.date(for: \MHPreferenceDescriptors.lastSeenAt) == Constants.persistedDateValue)
+        #expect(store.codable(for: \MHPreferenceDescriptors.userProfile) == expectedProfile)
         #expect(
             userDefaults.object(
-                forKey: MHPreferenceKeys().lastSeenAt.storageKey
+                forKey: MHPreferenceDescriptors().lastSeenAt.storageKey
             ) as? Date == Constants.persistedDateValue
         )
     }

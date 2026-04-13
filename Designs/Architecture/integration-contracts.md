@@ -407,8 +407,8 @@ This document is normative for integration design.
   - `MHStringPreferenceDescriptor`
   - `MHDatePreferenceDescriptor`
   - `MHCodablePreferenceDescriptor`
-- Optional concrete key namespace root:
-  - `MHPreferenceKeys`
+- Optional concrete descriptor namespace root:
+  - `MHPreferenceDescriptors`
 - Required `defaultSelection` on each descriptor
 - Backing `UserDefaults` only when explicit DI is desired
 
@@ -416,9 +416,9 @@ This document is normative for integration design.
 
 - Typed reads/writes through `MHPreferenceStore`
 - Codable persistence as `Data` only
-- SwiftUI bridges via:
+- SwiftUI wrappers via:
   - `AppStorage` initializers for primitive and `Date` descriptors
-  - `AppStorage` key-path initializers rooted at `MHPreferenceKeys`
+  - `AppStorage` key-path initializers rooted at `MHPreferenceDescriptors`
   - `MHOptionalCodablePreference`
   - `MHCodablePreference`
 - Unknown-key cleanup through `MHUserDefaultsCleanupService`
@@ -442,16 +442,21 @@ This document is normative for integration design.
 
 - Feature flags and settings
 - Lightweight app boot configuration
+- SwiftUI wrappers only when the caller is already in a SwiftUI surface
 
 ### Storage Rules (Normative)
 
 - `storageKey` must be non-empty.
 - Codable values are encoded to `Data`; non-`Data` decode path returns `nil`.
-- `MHPreferenceKeys` is a concrete app-extended namespace for key-path-based
-  access such as `\.notificationsEnabled`.
+- `MHPreferenceStore` is the canonical non-SwiftUI access path for preference
+  reads, writes, migration, and cleanup.
+- `MHPreferenceDescriptors` is a concrete app-extended namespace for
+  key-path-based descriptor access such as `\.notificationsEnabled`.
 - Direct descriptor-based access remains supported; concrete descriptor
   `AppStorage` overloads can infer the property type without an explicit type
   annotation.
+- `AppStorage`, `MHCodablePreference`, and `MHOptionalCodablePreference` are
+  SwiftUI wrappers over the same `UserDefaults`-backed descriptors.
 - `.notificationsEnabled`-style shorthand aliases are app-local sugar only;
   the package does not auto-generate descriptor statics.
 - Unknown-key cleanup uses caller-owned `knownDescriptors` only; the package does not

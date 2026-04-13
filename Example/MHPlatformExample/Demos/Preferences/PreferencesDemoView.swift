@@ -22,15 +22,15 @@ struct PreferencesDemoView: View {
         var storageKey: String {
             switch self {
             case .bool:
-                MHPreferenceKeys().hasSeenOnboarding.storageKey
+                MHPreferenceDescriptors().hasSeenOnboarding.storageKey
             case .int:
-                MHPreferenceKeys().launchCount.storageKey
+                MHPreferenceDescriptors().launchCount.storageKey
             case .string:
-                MHPreferenceKeys().displayName.storageKey
+                MHPreferenceDescriptors().displayName.storageKey
             case .date:
-                MHPreferenceKeys().lastSeenAt.storageKey
+                MHPreferenceDescriptors().lastSeenAt.storageKey
             case .codable:
-                MHPreferenceKeys().userProfile.storageKey
+                MHPreferenceDescriptors().userProfile.storageKey
             }
         }
 
@@ -59,7 +59,7 @@ struct PreferencesDemoView: View {
     private var lastSeenAt
 
     @MHCodablePreference(
-        \MHPreferenceKeys.userProfile,
+        \MHPreferenceDescriptors.userProfile,
         default: .init(title: "", count: Constants.defaultIntValue)
     )
     private var userProfile: PreferencesDemoPayload
@@ -82,24 +82,24 @@ struct PreferencesDemoView: View {
     private var primitiveSection: some View {
         Section("Primitive Values") {
             Toggle(
-                "Bool (\(MHPreferenceKeys().hasSeenOnboarding.storageKey))",
+                "Bool (\(MHPreferenceDescriptors().hasSeenOnboarding.storageKey))",
                 isOn: $hasSeenOnboarding
             )
 
             Stepper(
-                "Int (\(MHPreferenceKeys().launchCount.storageKey)): \(launchCount)",
+                "Int (\(MHPreferenceDescriptors().launchCount.storageKey)): \(launchCount)",
                 value: $launchCount,
                 in: Constants.intStepperRange
             )
 
             TextField(
-                "String (\(MHPreferenceKeys().displayName.storageKey))",
+                "String (\(MHPreferenceDescriptors().displayName.storageKey))",
                 text: $displayName
             )
             .autocorrectionDisabled()
 
             DatePicker(
-                "Date (\(MHPreferenceKeys().lastSeenAt.storageKey))",
+                "Date (\(MHPreferenceDescriptors().lastSeenAt.storageKey))",
                 selection: lastSeenAtBinding,
                 displayedComponents: [.date, .hourAndMinute]
             )
@@ -143,16 +143,16 @@ struct PreferencesDemoView: View {
     private var rawStorageSection: some View {
         Section("Raw Storage") {
             LabeledContent("Bool exists") {
-                Text(containsKey(MHPreferenceKeys().hasSeenOnboarding.storageKey) ? "true" : "false")
+                Text(containsKey(MHPreferenceDescriptors().hasSeenOnboarding.storageKey) ? "true" : "false")
             }
             LabeledContent("Int exists") {
-                Text(containsKey(MHPreferenceKeys().launchCount.storageKey) ? "true" : "false")
+                Text(containsKey(MHPreferenceDescriptors().launchCount.storageKey) ? "true" : "false")
             }
             LabeledContent("String exists") {
-                Text(containsKey(MHPreferenceKeys().displayName.storageKey) ? "true" : "false")
+                Text(containsKey(MHPreferenceDescriptors().displayName.storageKey) ? "true" : "false")
             }
             LabeledContent("Date exists") {
-                Text(containsKey(MHPreferenceKeys().lastSeenAt.storageKey) ? "true" : "false")
+                Text(containsKey(MHPreferenceDescriptors().lastSeenAt.storageKey) ? "true" : "false")
             }
             LabeledContent("Codable") {
                 Text(codableStorageStatus)
@@ -217,7 +217,7 @@ private extension PreferencesDemoView {
 
     var codableStorageStatus: String {
         guard let rawObject = Self.userDefaults.object(
-            forKey: MHPreferenceKeys().userProfile.storageKey
+            forKey: MHPreferenceDescriptors().userProfile.storageKey
         ) else {
             return "No value"
         }
@@ -232,7 +232,7 @@ private extension PreferencesDemoView {
     }
 
     func resetKeys() {
-        let keys = MHPreferenceKeys()
+        let keys = MHPreferenceDescriptors()
         Self.store.remove(keys.hasSeenOnboarding)
         Self.store.remove(keys.launchCount)
         Self.store.remove(keys.displayName)
@@ -266,7 +266,7 @@ private extension PreferencesDemoView {
     }
 }
 
-private extension MHPreferenceKeys {
+private extension MHPreferenceDescriptors {
     nonisolated var hasSeenOnboarding: MHBoolPreferenceDescriptor {
         .init(
             storageKey: "mhplatform.example.preferences.bool",

@@ -1,6 +1,6 @@
 import Foundation
 
-/// A typed `UserDefaults` adapter for primitive and `Codable` preferences.
+/// The canonical non-SwiftUI access path for `UserDefaults`-backed preferences.
 public struct MHPreferenceStore: @unchecked Sendable {
     private let userDefaults: UserDefaults?
     private let encoder: JSONEncoder
@@ -141,79 +141,79 @@ public struct MHPreferenceStore: @unchecked Sendable {
         userDefaults.set(encodedData, forKey: descriptor.storageKey)
     }
 
-    /// Returns a boolean preference value from a key namespace.
+    /// Returns a boolean preference value from a descriptor namespace.
     public func bool(
-        for keyPath: KeyPath<MHPreferenceKeys, MHBoolPreferenceDescriptor>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHBoolPreferenceDescriptor>
     ) -> Bool {
-        bool(for: MHPreferenceKeys()[keyPath: keyPath])
+        bool(for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
-    /// Stores a boolean preference value into a key namespace.
+    /// Stores a boolean preference value into a descriptor namespace.
     public func set(
         _ value: Bool,
-        for keyPath: KeyPath<MHPreferenceKeys, MHBoolPreferenceDescriptor>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHBoolPreferenceDescriptor>
     ) {
-        set(value, for: MHPreferenceKeys()[keyPath: keyPath])
+        set(value, for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
-    /// Returns an integer preference value from a key namespace.
+    /// Returns an integer preference value from a descriptor namespace.
     public func int(
-        for keyPath: KeyPath<MHPreferenceKeys, MHIntPreferenceDescriptor>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHIntPreferenceDescriptor>
     ) -> Int {
-        int(for: MHPreferenceKeys()[keyPath: keyPath])
+        int(for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
-    /// Stores an integer preference value into a key namespace.
+    /// Stores an integer preference value into a descriptor namespace.
     public func set(
         _ value: Int,
-        for keyPath: KeyPath<MHPreferenceKeys, MHIntPreferenceDescriptor>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHIntPreferenceDescriptor>
     ) {
-        set(value, for: MHPreferenceKeys()[keyPath: keyPath])
+        set(value, for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
-    /// Returns an optional string preference value from a key namespace.
+    /// Returns an optional string preference value from a descriptor namespace.
     public func string(
-        for keyPath: KeyPath<MHPreferenceKeys, MHStringPreferenceDescriptor>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHStringPreferenceDescriptor>
     ) -> String? {
-        string(for: MHPreferenceKeys()[keyPath: keyPath])
+        string(for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
-    /// Stores or removes an optional string preference value into a key namespace.
+    /// Stores or removes an optional string preference value into a descriptor namespace.
     public func set(
         _ value: String?,
-        for keyPath: KeyPath<MHPreferenceKeys, MHStringPreferenceDescriptor>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHStringPreferenceDescriptor>
     ) {
-        set(value, for: MHPreferenceKeys()[keyPath: keyPath])
+        set(value, for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
-    /// Returns an optional date preference value from a key namespace.
+    /// Returns an optional date preference value from a descriptor namespace.
     public func date(
-        for keyPath: KeyPath<MHPreferenceKeys, MHDatePreferenceDescriptor>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHDatePreferenceDescriptor>
     ) -> Date? {
-        date(for: MHPreferenceKeys()[keyPath: keyPath])
+        date(for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
-    /// Stores or removes an optional date preference value into a key namespace.
+    /// Stores or removes an optional date preference value into a descriptor namespace.
     public func set(
         _ value: Date?,
-        for keyPath: KeyPath<MHPreferenceKeys, MHDatePreferenceDescriptor>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHDatePreferenceDescriptor>
     ) {
-        set(value, for: MHPreferenceKeys()[keyPath: keyPath])
+        set(value, for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
-    /// Decodes a `Codable` preference value from a key namespace.
+    /// Decodes a `Codable` preference value from a descriptor namespace.
     public func codable<Value: Codable & Sendable>(
-        for keyPath: KeyPath<MHPreferenceKeys, MHCodablePreferenceDescriptor<Value>>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHCodablePreferenceDescriptor<Value>>
     ) -> Value? {
-        codable(for: MHPreferenceKeys()[keyPath: keyPath])
+        codable(for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
-    /// Encodes and stores a `Codable` preference value into a key namespace.
+    /// Encodes and stores a `Codable` preference value into a descriptor namespace.
     public func setCodable<Value: Codable & Sendable>(
         _ value: Value?,
-        for keyPath: KeyPath<MHPreferenceKeys, MHCodablePreferenceDescriptor<Value>>
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHCodablePreferenceDescriptor<Value>>
     ) {
-        setCodable(value, for: MHPreferenceKeys()[keyPath: keyPath])
+        setCodable(value, for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
     /// Returns whether the supplied storage descriptor currently has a stored value.

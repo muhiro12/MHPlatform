@@ -2,7 +2,7 @@
 import Foundation
 import SwiftUI
 
-/// A SwiftUI bridge for optional codable preferences backed by `AppStorage`.
+/// A SwiftUI wrapper that uses `AppStorage` to bridge an optional `UserDefaults`-backed codable preference.
 @propertyWrapper
 public struct MHOptionalCodablePreference<Value: Codable & Sendable>: DynamicProperty {
     @AppStorage private var storedData: Data?
@@ -30,12 +30,26 @@ public struct MHOptionalCodablePreference<Value: Codable & Sendable>: DynamicPro
     }
 
     public var projectedValue: Binding<Value?> {
-        .init(
+        let encoder = self.encoder
+        let decoder = self.decoder
+        let storedDataBinding = self.$storedData
+
+        return .init(
             get: {
-                wrappedValue
+                guard let storedData = storedDataBinding.wrappedValue else {
+                    return nil
+                }
+                return try? decoder.decode(Value.self, from: storedData)
             },
             set: { newValue in
-                wrappedValue = newValue
+                guard let newValue else {
+                    storedDataBinding.wrappedValue = nil
+                    return
+                }
+                guard let encodedData = try? encoder.encode(newValue) else {
+                    return
+                }
+                storedDataBinding.wrappedValue = encodedData
             }
         )
     }
@@ -55,15 +69,15 @@ public struct MHOptionalCodablePreference<Value: Codable & Sendable>: DynamicPro
         )
     }
 
-    /// Creates an optional codable preference bridge using the key namespace.
+    /// Creates an optional codable preference bridge using the descriptor namespace.
     public init(
-        _ keyPath: KeyPath<MHPreferenceKeys, MHCodablePreferenceDescriptor<Value>>,
+        _ keyPath: KeyPath<MHPreferenceDescriptors, MHCodablePreferenceDescriptor<Value>>,
         store: UserDefaults? = nil,
         encoder: JSONEncoder = .init(),
         decoder: JSONDecoder = .init()
     ) {
         self.init(
-            MHPreferenceKeys()[keyPath: keyPath],
+            MHPreferenceDescriptors()[keyPath: keyPath],
             store: store,
             encoder: encoder,
             decoder: decoder

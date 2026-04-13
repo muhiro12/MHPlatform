@@ -43,7 +43,7 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 | Notification payload routing | payload codec + response route resolving + optional bridge helpers | App notification-center adoption strategy |
 | Mutation orchestration | retry/cancel/event/outcome primitive | Domain mutation meaning and business validation |
 | Persistence maintenance | store-file relocation + destructive reset orchestration | App-specific schema validation, startup timing, and data rules |
-| Preferences | typed keys + AppStorage bridges + codable-as-Data | Feature semantics for each key |
+| Preferences | typed preference descriptors + `UserDefaults`-backed store + AppStorage wrappers + codable-as-Data | Feature semantics for each key |
 | Review request policy | lottery + delayed request orchestration | Product timing/eligibility strategy |
 
 ## Decision Matrix

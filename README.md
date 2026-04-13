@@ -639,10 +639,10 @@ opens with the current schema, and decides when legacy files should be removed.
 
 ## MHPreferences
 
-`MHPreferences` provides typed preference descriptors, a concrete
-`MHPreferenceKeys` namespace, `UserDefaults`/`AppStorage` bridges for
-primitive and `Date` values, and dedicated SwiftUI wrappers for `Codable`
-values.
+`MHPreferences` provides a typed preference layer backed by `UserDefaults`.
+`MHPreferenceStore` is the canonical non-SwiftUI access path, while SwiftUI
+integration is layered on top through `AppStorage` wrappers for primitive and
+`Date` values plus dedicated codable wrappers.
 
 Integration contract:
 [`MHPreferences`](Designs/Architecture/integration-contracts.md#mhpreferences)
@@ -660,7 +660,7 @@ struct UserProfile: Codable, Equatable, Sendable {
     let launchCount: Int
 }
 
-extension MHPreferenceKeys {
+extension MHPreferenceDescriptors {
     var notificationsEnabled: MHBoolPreferenceDescriptor {
         .init(
             storageKey: "app.preferences.notifications.enabled",
@@ -707,6 +707,11 @@ struct SettingsView: View {
 }
 ```
 
+Use `MHPreferenceStore` for app logic, migration, cleanup, and other
+non-SwiftUI access. In SwiftUI views, use `@AppStorage(...)`,
+`@MHCodablePreference(...)`, or `@MHOptionalCodablePreference(...)` as wrappers
+over the same `UserDefaults`-backed descriptors.
+
 `@AppStorage(descriptor)` remains available, and concrete descriptor overloads
 still allow the property type to be inferred without spelling it explicitly.
 Apps that want `.notificationsEnabled` shorthand can add a manual static alias
@@ -741,12 +746,13 @@ let cleanupReport = MHUserDefaultsCleanupService.removeUnknownKeys(
 ```
 
 Use this API from app startup or a settings maintenance action when you want to
-prune stale `UserDefaults` values that no longer belong to the current key set.
+prune stale `UserDefaults` values that no longer belong to the current
+descriptor set.
 
-It also provides a launch-time lifecycle service for moving values between keys
-or stores before SwiftUI starts reading the current descriptors. Current
-descriptors can declare legacy storage slots directly, and the app can register
-its full current descriptor set with an enum.
+It also provides a launch-time lifecycle service for moving values between
+`UserDefaults` keys or domains before SwiftUI starts reading the current
+descriptors. Current descriptors can declare legacy storage slots directly, and
+the app can register its full current descriptor set with an enum.
 
 ```swift
 enum AppDefaults {

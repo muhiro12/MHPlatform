@@ -107,7 +107,7 @@ struct AppStorageKeyPathBridgeTests {
         harness.wrappedValue = Constants.storedDateValue
         #expect(
             userDefaults.object(
-                forKey: MHPreferenceKeys().lastSeenAt.storageKey
+                forKey: MHPreferenceDescriptors().lastSeenAt.storageKey
             ) as? Date == Constants.storedDateValue
         )
     }
@@ -115,7 +115,7 @@ struct AppStorageKeyPathBridgeTests {
     @Test
     func app_local_static_alias_supports_shorthand() throws {
         try clearPersistentDomain(
-            named: MHPreferenceKeysTestSupport.boolSuiteName
+            named: MHPreferenceDescriptorsTestSupport.boolSuiteName
         )
 
         let harness = AliasHarness()
@@ -126,10 +126,10 @@ struct AppStorageKeyPathBridgeTests {
 
 private extension AppStorageKeyPathBridgeTests {
     func clearDefaultSelectionDomains() throws {
-        try clearPersistentDomain(named: MHPreferenceKeysTestSupport.boolSuiteName)
-        try clearPersistentDomain(named: MHPreferenceKeysTestSupport.intSuiteName)
-        try clearPersistentDomain(named: MHPreferenceKeysTestSupport.stringSuiteName)
-        try clearPersistentDomain(named: MHPreferenceKeysTestSupport.dateSuiteName)
+        try clearPersistentDomain(named: MHPreferenceDescriptorsTestSupport.boolSuiteName)
+        try clearPersistentDomain(named: MHPreferenceDescriptorsTestSupport.intSuiteName)
+        try clearPersistentDomain(named: MHPreferenceDescriptorsTestSupport.stringSuiteName)
+        try clearPersistentDomain(named: MHPreferenceDescriptorsTestSupport.dateSuiteName)
     }
 
     func clearPersistentDomain(named suiteName: String) throws {
@@ -149,7 +149,7 @@ private extension AppStorageKeyPathBridgeTests {
 
 private extension MHBoolPreferenceDescriptor {
     static var hasSeenOnboarding: Self {
-        MHPreferenceKeys().hasSeenOnboarding
+        MHPreferenceDescriptors().hasSeenOnboarding
     }
 }
 #endif

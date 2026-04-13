@@ -10,9 +10,9 @@ struct MHCodablePreferenceTests {
     }
 
     private struct OptionalDescriptorHarness {
-        @MHOptionalCodablePreference private var value: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue?
+        @MHOptionalCodablePreference private var value: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue?
 
-        var wrappedValue: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue? {
+        var wrappedValue: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue? {
             get {
                 value
             }
@@ -21,12 +21,12 @@ struct MHCodablePreferenceTests {
             }
         }
 
-        var binding: Binding<MHPreferenceKeysTestSupport.DemoCodablePreferenceValue?> {
+        var binding: Binding<MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue?> {
             $value
         }
 
         init(
-            descriptor: MHCodablePreferenceDescriptor<MHPreferenceKeysTestSupport.DemoCodablePreferenceValue>,
+            descriptor: MHCodablePreferenceDescriptor<MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue>,
             store: UserDefaults
         ) {
             _value = MHOptionalCodablePreference(
@@ -37,9 +37,9 @@ struct MHCodablePreferenceTests {
     }
 
     private struct OptionalKeyPathHarness {
-        @MHOptionalCodablePreference private var value: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue?
+        @MHOptionalCodablePreference private var value: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue?
 
-        var wrappedValue: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue? {
+        var wrappedValue: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue? {
             get {
                 value
             }
@@ -48,7 +48,7 @@ struct MHCodablePreferenceTests {
             }
         }
 
-        var binding: Binding<MHPreferenceKeysTestSupport.DemoCodablePreferenceValue?> {
+        var binding: Binding<MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue?> {
             $value
         }
 
@@ -61,9 +61,9 @@ struct MHCodablePreferenceTests {
     }
 
     private struct RequiredDescriptorHarness {
-        @MHCodablePreference private var value: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue
+        @MHCodablePreference private var value: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue
 
-        var wrappedValue: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue {
+        var wrappedValue: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue {
             get {
                 value
             }
@@ -73,8 +73,8 @@ struct MHCodablePreferenceTests {
         }
 
         init(
-            descriptor: MHCodablePreferenceDescriptor<MHPreferenceKeysTestSupport.DemoCodablePreferenceValue>,
-            default defaultValue: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue,
+            descriptor: MHCodablePreferenceDescriptor<MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue>,
+            default defaultValue: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue,
             store: UserDefaults
         ) {
             _value = MHCodablePreference(
@@ -86,9 +86,9 @@ struct MHCodablePreferenceTests {
     }
 
     private struct RequiredKeyPathHarness {
-        @MHCodablePreference private var value: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue
+        @MHCodablePreference private var value: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue
 
-        var wrappedValue: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue {
+        var wrappedValue: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue {
             get {
                 value
             }
@@ -97,12 +97,12 @@ struct MHCodablePreferenceTests {
             }
         }
 
-        var binding: Binding<MHPreferenceKeysTestSupport.DemoCodablePreferenceValue> {
+        var binding: Binding<MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue> {
             $value
         }
 
         init(
-            default defaultValue: MHPreferenceKeysTestSupport.DemoCodablePreferenceValue,
+            default defaultValue: MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue,
             store: UserDefaults
         ) {
             _value = MHCodablePreference(
@@ -113,11 +113,11 @@ struct MHCodablePreferenceTests {
         }
     }
 
-    private let defaultValue = MHPreferenceKeysTestSupport.DemoCodablePreferenceValue(
+    private let defaultValue = MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue(
         title: "default",
         count: 1
     )
-    private let storedValue = MHPreferenceKeysTestSupport.DemoCodablePreferenceValue(
+    private let storedValue = MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue(
         title: "stored",
         count: 4
     )
@@ -126,7 +126,7 @@ struct MHCodablePreferenceTests {
     func optional_descriptor_bridge_round_trips_and_removes_nil() throws {
         let userDefaults = try makeUserDefaults(suiteName: "optional-direct")
         var harness = OptionalDescriptorHarness(
-            descriptor: MHPreferenceKeys().userProfile,
+            descriptor: MHPreferenceDescriptors().userProfile,
             store: userDefaults
         )
 
@@ -138,7 +138,7 @@ struct MHCodablePreferenceTests {
         harness.wrappedValue = nil
         #expect(
             userDefaults.object(
-                forKey: MHPreferenceKeys().userProfile.storageKey
+                forKey: MHPreferenceDescriptors().userProfile.storageKey
             ) == nil
         )
     }
@@ -159,10 +159,10 @@ struct MHCodablePreferenceTests {
         let userDefaults = try makeUserDefaults(suiteName: "optional-invalid")
         userDefaults.set(
             Constants.invalidData,
-            forKey: MHPreferenceKeys().userProfile.storageKey
+            forKey: MHPreferenceDescriptors().userProfile.storageKey
         )
         let harness = OptionalDescriptorHarness(
-            descriptor: MHPreferenceKeys().userProfile,
+            descriptor: MHPreferenceDescriptors().userProfile,
             store: userDefaults
         )
 
@@ -173,7 +173,7 @@ struct MHCodablePreferenceTests {
     func required_descriptor_bridge_uses_default_when_storage_is_missing_or_invalid() throws {
         let userDefaults = try makeUserDefaults(suiteName: "required-direct")
         let harness = RequiredDescriptorHarness(
-            descriptor: MHPreferenceKeys().userProfile,
+            descriptor: MHPreferenceDescriptors().userProfile,
             default: defaultValue,
             store: userDefaults
         )
@@ -182,11 +182,11 @@ struct MHCodablePreferenceTests {
 
         userDefaults.set(
             Constants.invalidData,
-            forKey: MHPreferenceKeys().userProfile.storageKey
+            forKey: MHPreferenceDescriptors().userProfile.storageKey
         )
 
         let invalidHarness = RequiredDescriptorHarness(
-            descriptor: MHPreferenceKeys().userProfile,
+            descriptor: MHPreferenceDescriptors().userProfile,
             default: defaultValue,
             store: userDefaults
         )
@@ -233,9 +233,9 @@ private extension MHCodablePreferenceTests {
 
     func readStoredValue(
         from userDefaults: UserDefaults
-    ) -> MHPreferenceKeysTestSupport.DemoCodablePreferenceValue? {
+    ) -> MHPreferenceDescriptorsTestSupport.DemoCodablePreferenceValue? {
         MHPreferenceStore(userDefaults: userDefaults).codable(
-            for: MHPreferenceKeys().userProfile
+            for: MHPreferenceDescriptors().userProfile
         )
     }
 }

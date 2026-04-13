@@ -224,8 +224,8 @@ Integration contract:
 Integration contract:
 [`MHPreferences`](integration-contracts.md#mhpreferences)
 
-- Owns typed preference keys and `UserDefaults` read/write primitives
-- Owns `AppStorage` bridge initializers for primitive preference keys
+- Owns typed preference descriptors and `UserDefaults`-backed store primitives
+- Owns SwiftUI wrappers built on `AppStorage` for primitive and `Date` descriptors
 - Stores codable values as `Data` without legacy string-format fallback
 - Does not define app-specific preference key names or policy
 

@@ -164,7 +164,7 @@ Problem:
 Both apps have lightweight preference helpers, but they encode settings in different ways and with different abstractions.
 
 Why now:
-Implemented in this phase as `MHPreferences` to provide typed keys, `UserDefaults` storage, codable `Data` persistence, and `AppStorage` bridges.
+Implemented in this phase as `MHPreferences` to provide typed preference descriptors, `UserDefaults`-backed persistence, codable `Data` storage, and SwiftUI wrappers built on `AppStorage`.
 
 Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/AppStorageCodable.swift`
@@ -175,10 +175,11 @@ Recommended module:
 `MHPreferences` (implemented)
 
 Minimal API sketch:
-- `MHPreferenceKeyProtocol`
-- `MHBoolPreferenceKey`, `MHIntPreferenceKey`, `MHStringPreferenceKey`, `MHCodablePreferenceKey`
+- `MHPreferenceDescriptorProtocol`
+- `MHBoolPreferenceDescriptor`, `MHIntPreferenceDescriptor`, `MHStringPreferenceDescriptor`, `MHCodablePreferenceDescriptor`
 - `MHPreferenceStore`
-- `AppStorage` bridge initializers
+- `MHPreferenceDescriptors`
+- `AppStorage` wrapper initializers
 
 ExampleApp validation:
 `PreferencesDemoView` demonstrates bool/int/string/codable read-write-reset and raw stored value inspection.

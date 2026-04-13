@@ -20,7 +20,7 @@ struct MHPlatformCoreTests {
             MHDestructiveResetOutcome.self,
             MHDestructiveResetEvent.self,
             MHPreferenceStore.self,
-            MHPreferenceKeys.self,
+            MHPreferenceDescriptors.self,
             MHUserDefaultsSelection.self,
             MHRawStorageDescriptor.self,
             MHDatePreferenceDescriptor.self,

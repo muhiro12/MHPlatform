@@ -2,7 +2,7 @@
 import Foundation
 import SwiftUI
 
-/// A SwiftUI bridge for required codable preferences backed by `AppStorage`.
+/// A SwiftUI wrapper that uses `AppStorage` to bridge a `UserDefaults`-backed codable preference.
 @propertyWrapper
 public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
     @AppStorage private var storedData: Data?
@@ -27,12 +27,23 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
     }
 
     public var projectedValue: Binding<Value> {
-        .init(
+        let defaultValue = self.defaultValue
+        let encoder = self.encoder
+        let decoder = self.decoder
+        let storedDataBinding = self.$storedData
+
+        return .init(
             get: {
-                wrappedValue
+                guard let storedData = storedDataBinding.wrappedValue else {
+                    return defaultValue
+                }
+                return (try? decoder.decode(Value.self, from: storedData)) ?? defaultValue
             },
             set: { newValue in
-                wrappedValue = newValue
+                guard let encodedData = try? encoder.encode(newValue) else {
+                    return
+                }
+                storedDataBinding.wrappedValue = encodedData
             }
         )
     }
@@ -54,16 +65,16 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
         )
     }
 
-    /// Creates a codable preference bridge using the key namespace.
+    /// Creates a codable preference bridge using the descriptor namespace.
     public init(
-        _ keyPath: KeyPath<MHPreferenceKeys, MHCodablePreferenceDescriptor<Value>>,
+        _ keyPath: KeyPath<MHPreferenceDescriptors, MHCodablePreferenceDescriptor<Value>>,
         default defaultValue: Value,
         store: UserDefaults? = nil,
         encoder: JSONEncoder = .init(),
         decoder: JSONDecoder = .init()
     ) {
         self.init(
-            MHPreferenceKeys()[keyPath: keyPath],
+            MHPreferenceDescriptors()[keyPath: keyPath],
             default: defaultValue,
             store: store,
             encoder: encoder,
