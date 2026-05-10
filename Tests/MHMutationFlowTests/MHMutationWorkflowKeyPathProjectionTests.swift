@@ -91,6 +91,35 @@ struct MHMutationWorkflowKeyPathProjectionTests {
     }
 
     @Test
+    func runThrowing_projects_value_and_follow_up_from_operation_carrier() async throws {
+        let recorder = Recorder()
+        let adapter = Self.followUpAdapter(recorder: recorder)
+
+        let result = try await MHMutationWorkflow.runThrowing(
+            name: "saveWrappedDraft",
+            operation: { () -> WrappedValue in
+                .init(
+                    value: "saved",
+                    followUp: .init(
+                        reloadWidgets: true,
+                        synchronizeNotifications: false
+                    )
+                )
+            },
+            adapter: adapter,
+            projection: .valueAndFollowUp(
+                value: \.value,
+                followUp: \.followUp
+            )
+        )
+
+        #expect(result == "saved")
+        #expect(await recorder.allValues() == [
+            "reloadWidgets"
+        ])
+    }
+
+    @Test
     func runThrowing_key_path_projection_maps_operation_failure_with_custom_description() async {
         let operationErrorDescription: @Sendable (any Error) -> String = { _ in
             "displayable failure"

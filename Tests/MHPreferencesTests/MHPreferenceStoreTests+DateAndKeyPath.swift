@@ -49,6 +49,45 @@ extension MHPreferenceStoreTests {
         )
     }
 
+    @Test
+    func descriptor_namespace_read_default_overloads_use_supplied_defaults() throws {
+        let (store, _) = try makeStore(suiteName: "descriptor-namespace-defaults")
+
+        #expect(
+            store.int(
+                for: \MHPreferenceDescriptors.launchCount,
+                default: Constants.readDefaultIntValue
+            ) == Constants.readDefaultIntValue
+        )
+        #expect(
+            store.string(
+                for: \MHPreferenceDescriptors.displayName,
+                default: Constants.readDefaultStringValue
+            ) == Constants.readDefaultStringValue
+        )
+    }
+
+    @Test
+    func descriptor_namespace_read_default_overloads_preserve_stored_values() throws {
+        let (store, _) = try makeStore(suiteName: "descriptor-namespace-stored-defaults")
+
+        store.set(Constants.zeroValue, for: \MHPreferenceDescriptors.launchCount)
+        store.set("", for: \MHPreferenceDescriptors.displayName)
+
+        #expect(
+            store.int(
+                for: \MHPreferenceDescriptors.launchCount,
+                default: Constants.readDefaultIntValue
+            ) == Constants.zeroValue
+        )
+        #expect(
+            store.string(
+                for: \MHPreferenceDescriptors.displayName,
+                default: Constants.readDefaultStringValue
+            ).isEmpty
+        )
+    }
+
     func makeDateKey(
         _ name: String,
         defaultSelection: MHUserDefaultsSelection = .standard

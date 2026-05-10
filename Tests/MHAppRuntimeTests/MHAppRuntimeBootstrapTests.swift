@@ -120,13 +120,13 @@ struct MHAppRuntimeBootstrapTests {
         }
         let task = routePipeline.task(name: "drainPendingRoutes")
 
-        await task.run()
+        await task.run(runtime: makeRuntime())
 
         #expect(await firstSource.consumeCountValue() == 1)
         #expect(await secondSource.consumeCountValue() == 0)
         #expect(await routeRecorder.values() == ["apply:12"])
 
-        await task.run()
+        await task.run(runtime: makeRuntime())
 
         #expect(await secondSource.consumeCountValue() == 1)
         #expect(await routeRecorder.values() == [
@@ -168,6 +168,30 @@ struct MHAppRuntimeBootstrapTests {
             "startup.loadConfig",
             "active.refresh"
         ])
+    }
+
+    @MainActor
+    @Test
+    func runtime_aware_task_receives_lifecycle_runtime() async {
+        var observedPremiumStatuses = [MHPremiumStatus]()
+        let runtime = makeRuntime { purchasedProductIDsDidSet in
+            purchasedProductIDsDidSet(["premium.monthly"])
+        }
+        let lifecyclePlan = MHAppRuntimeLifecyclePlan(
+            startupTasks: [
+                .runtime(name: "syncSubscriptionState") { runtime in
+                    observedPremiumStatuses.append(runtime.premiumStatus)
+                }
+            ]
+        )
+        let lifecycle = MHAppRuntimeLifecycle(
+            runtime: runtime,
+            plan: lifecyclePlan
+        )
+
+        await lifecycle.handleInitialAppearance()
+
+        #expect(observedPremiumStatuses == [.active])
     }
 
     @MainActor

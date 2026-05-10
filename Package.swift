@@ -73,6 +73,10 @@ let package = Package(
             targets: ["MHMutationFlow"]
         ),
         .library(
+            name: "MHMutationLogging",
+            targets: ["MHMutationLogging"]
+        ),
+        .library(
             name: "MHReviewPolicy",
             targets: ["MHReviewPolicy"]
         ),
@@ -107,6 +111,7 @@ let package = Package(
                 "MHAppRuntimeDefaults",
                 "MHAppRuntimeLicenses",
                 "MHMutationFlow",
+                "MHMutationLogging",
                 "MHPlatformCore",
                 "MHReviewPolicy"
             ]
@@ -179,6 +184,13 @@ let package = Package(
         ),
         .target(
             name: "MHMutationFlow"
+        ),
+        .target(
+            name: "MHMutationLogging",
+            dependencies: [
+                "MHLogging",
+                "MHMutationFlow"
+            ]
         ),
         .target(
             name: "MHRouteExecution",
@@ -264,6 +276,14 @@ let package = Package(
         .testTarget(
             name: "MHMutationFlowTests",
             dependencies: ["MHMutationFlow"]
+        ),
+        .testTarget(
+            name: "MHMutationLoggingTests",
+            dependencies: [
+                "MHLogging",
+                "MHMutationFlow",
+                "MHMutationLogging"
+            ]
         ),
         .testTarget(
             name: "MHRouteExecutionTests",

@@ -124,7 +124,8 @@ Advanced composition surfaces:
 - concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
   `MHPreferences`
-- opt-in workflow shells: `MHMutationFlow`, `MHReviewPolicy`
+- opt-in workflow shells: `MHMutationFlow`, `MHMutationLogging`,
+  `MHReviewPolicy`
 
 Full app umbrella adoption:
 
@@ -526,10 +527,12 @@ operation value should be returned unchanged and only the adapter input is
 fixed. Projection strategies keep adapter input and result shaping explicit
 with `.identity`, `.fixedAdapterValue(_:)`, `.keyPaths(adapterValue:resultValue:)`, and
 `.closures(afterSuccess:returning:)`. When an app already owns a combined
-success carrier, `MHMutationProjection` still works with a `.keyPaths`
-strategy. Add `onEvent:` to `MHMutationRunner` or
-`MHMutationWorkflow.runThrowing` when the app wants ordered mutation
-callbacks without storing an `AsyncStream`.
+success carrier, use `.valueAndFollowUp(value:followUp:)` to return the app
+value while routing app-owned follow-up metadata into the adapter. Add
+`onEvent:` to `MHMutationRunner` or `MHMutationWorkflow.runThrowing` when the
+app wants ordered mutation callbacks without storing an `AsyncStream`. Apps
+that want the standard logger bridge can pass
+`MHMutationWorkflowLogger(logger: logger).onEvent()` from `MHMutationLogging`.
 
 ## MHRouteExecution
 
@@ -693,6 +696,7 @@ extension MHPreferenceDescriptors {
 
 let store = MHPreferenceStore()
 let isEnabled = store.bool(for: \.notificationsEnabled)
+let displayName = store.string(for: \.displayName, default: "")
 store.set(false, for: \.notificationsEnabled)
 
 struct SettingsView: View {
@@ -872,9 +876,9 @@ in the app layer.
 ## MHLogging
 
 `MHLogging` provides a structured logging surface with in-memory query support,
-optional last-session snapshot storage, and reusable console UI. `MHLoggerFactory` is a thin helper
-for app-owned logger setup; it does not move runtime wiring or policy decisions
-into MHPlatform.
+optional last-session snapshot storage, reusable console UI, and small metadata
+helpers. `MHLoggerFactory` is a thin helper for app-owned logger setup; it does
+not move runtime wiring or policy decisions into MHPlatform.
 
 Integration contract:
 [`MHLogging`](Designs/Architecture/integration-contracts.md#mhlogging)
@@ -893,6 +897,13 @@ let logger = loggerFactory.logger(
     source: #fileID
 )
 logger.info("App started")
+logger.info(
+    "Subscription refreshed",
+    metadata: MHLogMetadata.merge(
+        MHLogMetadata.bool("isPremium", true),
+        MHLogMetadata.count("productCount", 2)
+    )
+)
 
 let logging = MHLoggingBootstrap(
     subsystem: "com.example.app",

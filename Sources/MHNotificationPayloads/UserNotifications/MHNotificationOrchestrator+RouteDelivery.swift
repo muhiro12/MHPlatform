@@ -37,7 +37,6 @@ public extension MHNotificationOrchestrator {
     }
 
     /// Resolves a route URL, applies app-specific fallback policy, and delivers it.
-    @preconcurrency
     static func deliverRouteURL(
         payload: MHNotificationPayload?,
         response: MHNotificationResponseContext,
@@ -60,7 +59,6 @@ public extension MHNotificationOrchestrator {
 
     /// Resolves a route URL, applies app-specific fallback policy, and stores it
     /// in a pending deep-link destination.
-    @preconcurrency
     static func deliverRouteURL<Destination: MHDeepLinkURLDestination>(
         payload: MHNotificationPayload?,
         response: MHNotificationResponseContext,
@@ -82,7 +80,6 @@ public extension MHNotificationOrchestrator {
     }
 
     /// Resolves a route URL, applies app-specific fallback policy, and delivers it.
-    @preconcurrency
     static func deliverRouteURL(
         userInfo: sending [AnyHashable: Any],
         actionIdentifier: String,
@@ -111,7 +108,6 @@ public extension MHNotificationOrchestrator {
 
     /// Resolves a route URL, applies app-specific fallback policy, and stores it
     /// in a pending deep-link destination.
-    @preconcurrency
     static func deliverRouteURL<Destination: MHDeepLinkURLDestination>(
         userInfo: sending [AnyHashable: Any],
         actionIdentifier: String,
@@ -139,7 +135,6 @@ public extension MHNotificationOrchestrator {
     }
 
     /// Resolves a route URL and returns the delivery outcome without performing delivery.
-    @preconcurrency
     static func routeDeliveryOutcome(
         userInfo: [AnyHashable: Any],
         actionIdentifier: String,
@@ -163,7 +158,6 @@ public extension MHNotificationOrchestrator {
     }
 
     /// Delivers a previously resolved route delivery outcome.
-    @preconcurrency
     static func deliverRouteURL(
         _ outcome: MHNotificationRouteDeliveryOutcome,
         deliver: @MainActor @Sendable (URL?) async -> Void,
@@ -178,7 +172,6 @@ public extension MHNotificationOrchestrator {
 
     /// Delivers a previously resolved route delivery outcome into a pending
     /// deep-link destination.
-    @preconcurrency
     static func deliverRouteURL<Destination: MHDeepLinkURLDestination>(
         _ outcome: MHNotificationRouteDeliveryOutcome,
         destination: Destination,

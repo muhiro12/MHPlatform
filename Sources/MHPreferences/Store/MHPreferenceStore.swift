@@ -55,6 +55,19 @@ public struct MHPreferenceStore: @unchecked Sendable {
         return userDefaults.integer(forKey: descriptor.storageKey)
     }
 
+    /// Returns an integer preference value or the supplied default when unset.
+    public func int(
+        for descriptor: MHIntPreferenceDescriptor,
+        default defaultValue: Int
+    ) -> Int {
+        let userDefaults = resolvedUserDefaults(for: descriptor)
+
+        guard userDefaults.object(forKey: descriptor.storageKey) != nil else {
+            return defaultValue
+        }
+        return userDefaults.integer(forKey: descriptor.storageKey)
+    }
+
     /// Stores an integer preference value.
     public func set(_ value: Int, for descriptor: MHIntPreferenceDescriptor) {
         resolvedUserDefaults(for: descriptor).set(
@@ -68,6 +81,14 @@ public struct MHPreferenceStore: @unchecked Sendable {
         resolvedUserDefaults(for: descriptor).string(
             forKey: descriptor.storageKey
         )
+    }
+
+    /// Returns a string preference value or the supplied default when unset.
+    public func string(
+        for descriptor: MHStringPreferenceDescriptor,
+        default defaultValue: String
+    ) -> String {
+        string(for: descriptor) ?? defaultValue
     }
 
     /// Stores or removes an optional string preference value.
@@ -163,6 +184,18 @@ public struct MHPreferenceStore: @unchecked Sendable {
         int(for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 
+    /// Returns an integer preference value from a descriptor namespace, or the
+    /// supplied default when unset.
+    public func int(
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHIntPreferenceDescriptor>,
+        default defaultValue: Int
+    ) -> Int {
+        int(
+            for: MHPreferenceDescriptors()[keyPath: keyPath],
+            default: defaultValue
+        )
+    }
+
     /// Stores an integer preference value into a descriptor namespace.
     public func set(
         _ value: Int,
@@ -176,6 +209,18 @@ public struct MHPreferenceStore: @unchecked Sendable {
         for keyPath: KeyPath<MHPreferenceDescriptors, MHStringPreferenceDescriptor>
     ) -> String? {
         string(for: MHPreferenceDescriptors()[keyPath: keyPath])
+    }
+
+    /// Returns a string preference value from a descriptor namespace, or the
+    /// supplied default when unset.
+    public func string(
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHStringPreferenceDescriptor>,
+        default defaultValue: String
+    ) -> String {
+        string(
+            for: MHPreferenceDescriptors()[keyPath: keyPath],
+            default: defaultValue
+        )
     }
 
     /// Stores or removes an optional string preference value into a descriptor namespace.

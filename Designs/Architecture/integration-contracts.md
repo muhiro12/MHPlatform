@@ -268,9 +268,12 @@ This document is normative for integration design.
     emit adapter input and return value directly
   - closure-based `afterSuccess` / `returning`
   - key-path-based `adapterValue` / `resultValue`
+  - semantic `value` / `followUp` key paths when an app-owned carrier returns
+    value data and follow-up signals together
 - Optional adapter composition through `MHMutationAdapter.appending(_:)`
 - Optional inline observability through `onEvent` on `MHMutationRunner` and
   `MHMutationWorkflow.runThrowing`
+- Optional logger bridge through `MHMutationLogging`
 - Optional injected sleep for deterministic retry testing (`MHMutationRunner.Sleep`)
 
 ### Outputs
@@ -279,8 +282,12 @@ This document is normative for integration design.
   - `MHMutationWorkflow.runThrowing`
     - `projection:` entry for explicit adapter/result shaping
     - `adapterValue:` convenience for fixed adapter input with unchanged result
+    - `.valueAndFollowUp(value:followUp:)` projection helper for app-owned
+      value + follow-up carriers
   - `MHMutationWorkflowConfiguration`
   - `MHMutationWorkflowError`
+- Logger bridge:
+  - `MHMutationWorkflowLogger`
 - `MHMutationRun<Value>` (from `start`):
   - `events: AsyncStream<MHMutationEvent<Value>>`
   - `outcome: Task<MHMutationOutcome<Value>, Never>`
@@ -299,6 +306,8 @@ This document is normative for integration design.
   failure into a throwing app-facing shell.
 - Events are emitted on runner execution context.
 - UI observers must explicitly bridge to `MainActor`.
+- `MHMutationWorkflowLogger` is a bridge over synchronous `onEvent` callbacks;
+  it records through `MHLogger` without making mutation schema app-global.
 
 ### Intended Call Sites
 
@@ -313,6 +322,8 @@ This document is normative for integration design.
   without external value stores
 - Mutation services that return an app-owned carrier value and only need
   key-path projection into adapter input and result value
+- Mutation services that want standard requested/completed/failed/cancelled
+  logging without app-local event switch boilerplate
 - Retriable network + local side-effect flows
 - Outcome-driven app side effects (review policy, analytics, etc.)
 
@@ -552,6 +563,8 @@ This document is normative for integration design.
 - Log store sinks (`[MHLogSink]`)
 - Optional thin setup helper:
   `MHLoggerFactory`
+- Optional metadata helper:
+  `MHLogMetadata`
 - Optional last-session snapshot bootstrap:
   - `MHLoggingBootstrap`
   - `snapshotStorageDescriptors`
@@ -574,6 +587,8 @@ This document is normative for integration design.
   - `MHOSLogSink`
 - Thin logger setup helper:
   `MHLoggerFactory`
+- Metadata dictionary helper:
+  `MHLogMetadata`
 - Reusable console UI:
   - `MHLogConsoleView`
 

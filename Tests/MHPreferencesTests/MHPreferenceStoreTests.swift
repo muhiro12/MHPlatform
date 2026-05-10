@@ -9,6 +9,8 @@ struct MHPreferenceStoreTests {
         static let trueDefault = true
         static let falseDefault = false
         static let defaultIntValue = 20
+        static let readDefaultIntValue = 9
+        static let readDefaultStringValue = "JPY"
         static let persistedIntValue = 7
         static let zeroValue = 0
         static let persistedDateValue = Date(timeIntervalSinceReferenceDate: 8)

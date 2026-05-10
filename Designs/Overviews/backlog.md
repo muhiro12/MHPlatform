@@ -2,10 +2,19 @@
 
 This backlog is derived from concrete duplication found in `Incomes/` and `Cookle/`. Evidence paths are workspace-root relative and remain read-only references.
 
-Current remaining priority after this phase:
-1. No remaining P0/P1 shared-infrastructure extractions are queued.
+## Current
 
-## P0. Deep link URL grammar is duplicated
+No remaining P0/P1 shared-infrastructure extractions are queued.
+New requests should continue to pass the cross-app reusable infrastructure
+test before they are added here.
+
+## Implemented Extraction History
+
+The entries below are retained as implementation history and source evidence.
+Their original priority labels describe the extraction priority at the time,
+not current unfinished work.
+
+### P0. Deep link URL grammar is duplicated
 
 Problem:
 Both apps independently build and parse custom-scheme and universal-link URLs, including path-prefix stripping and query handling.
@@ -31,7 +40,7 @@ Minimal API sketch:
 ExampleApp validation:
 Build sample routes, parse sample URLs, and verify custom/universal round-trips.
 
-## P0. Pending route handoff is duplicated
+### P0. Pending route handoff is duplicated
 
 Problem:
 Both apps persist or queue a pending URL so that intents or notifications can open the main app later.
@@ -55,7 +64,7 @@ Minimal API sketch:
 ExampleApp validation:
 Store a pending URL, consume it once, and show that the second consume returns `nil`.
 
-## P0. Deterministic reminder scheduling is duplicated
+### P0. Deterministic reminder scheduling is duplicated
 
 Problem:
 Incomes computes due-date reminders and Cookle computes daily suggestions with separate deterministic planners.
@@ -79,7 +88,7 @@ Minimal API sketch:
 ExampleApp validation:
 Show stable reminder and suggestion schedules from fixed sample data and a fixed reference date.
 
-## P0. Post-mutation side-effect orchestration is duplicated
+### P0. Post-mutation side-effect orchestration is duplicated
 
 Problem:
 Mutation entrypoints in both apps mix primary save logic with widget reloads, notification sync, review requests, and cancellation concerns.
@@ -106,7 +115,7 @@ Minimal API sketch:
 ExampleApp validation:
 Run a sample mutation with retry, side-effect failure, and cancellation toggles.
 
-## P1. Notification payload routing core was implemented
+### P1. Notification payload routing core was implemented
 
 Status:
 Implemented in this phase as `MHNotificationPayloads` (routing core + orchestration adapter).
@@ -134,7 +143,7 @@ Remaining work:
 ExampleApp validation:
 `NotificationPayloadsDemoView` demonstrates both Incomes-style and Cookle-style payload scenarios plus simulated orchestration flow.
 
-## P1. Route execution decoupling adapter was implemented
+### P1. Route execution decoupling adapter was implemented
 
 Status:
 Implemented in this phase as `MHRouteExecution`.
@@ -158,7 +167,7 @@ Remaining work:
 ExampleApp validation:
 `RouteExecutionDemoView` demonstrates readiness changes, pending route handling, explicit pending application, and failure logging.
 
-## P1. Preferences and storage codecs are inconsistent
+### P1. Preferences and storage codecs are inconsistent
 
 Problem:
 Both apps have lightweight preference helpers, but they encode settings in different ways and with different abstractions.
@@ -184,7 +193,7 @@ Minimal API sketch:
 ExampleApp validation:
 `PreferencesDemoView` demonstrates bool/int/string/codable read-write-reset and raw stored value inspection.
 
-## P2. Persistence destructive reset orchestration is implemented
+### P2. Persistence destructive reset orchestration is implemented
 
 Status:
 Implemented in this phase as `MHPersistenceMaintenance`.
@@ -206,7 +215,7 @@ ExampleApp validation:
 `PersistenceMaintenanceDemoView` demonstrates reset event flow with temporary
 sandbox files.
 
-## P2. Review request policy unification was implemented
+### P2. Review request policy unification was implemented
 
 Status:
 Implemented in this phase as `MHReviewPolicy`.
@@ -230,7 +239,7 @@ Remaining work:
 ExampleApp validation:
 `ReviewPolicyDemoView` demonstrates policy evaluation and requester outcomes.
 
-## P2. Lightweight logging policy unification was implemented
+### P2. Lightweight logging policy unification was implemented
 
 Status:
 Implemented in this phase as `MHLogging`.
@@ -253,3 +262,10 @@ Remaining work:
 
 ExampleApp validation:
 `LoggingDemoView` demonstrates sample emission, in-app filtering, and JSONL export flow.
+
+## Historical / Out Of Scope
+
+- App-specific notification copy templates, attachments, route meanings, review
+  eligibility, and domain mutation schemas remain in adopting apps.
+- AppIntents-specific module extraction is not queued until repeated
+  cross-app, non-domain infrastructure is proven.

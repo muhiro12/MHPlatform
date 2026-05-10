@@ -54,7 +54,7 @@ public final class MHAppRuntimeLifecycle {
 private extension MHAppRuntimeLifecycle {
     func runTasks(_ tasks: [MHAppRuntimeTask]) async {
         for task in tasks {
-            await task.run()
+            await task.run(runtime: runtime)
         }
     }
 }

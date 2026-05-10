@@ -43,6 +43,18 @@ public struct MHMutationProjectionStrategy<
         }
     }
 
+    /// Projects a successful operation carrier into an app-owned return value
+    /// and an app-owned follow-up signal.
+    public static func valueAndFollowUp(
+        value: KeyPath<OperationValue, ResultValue>,
+        followUp: KeyPath<OperationValue, AdapterValue>
+    ) -> Self {
+        keyPaths(
+            adapterValue: followUp,
+            resultValue: value
+        )
+    }
+
     @preconcurrency
     public static func closures(
         afterSuccess: @escaping @MainActor @Sendable (OperationValue) -> AdapterValue,
