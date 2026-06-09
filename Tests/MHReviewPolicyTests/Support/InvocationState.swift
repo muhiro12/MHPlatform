@@ -8,40 +8,55 @@ final class InvocationState: @unchecked Sendable {
 
     func recordRandomCall() {
         lock.lock()
+        defer {
+            lock.unlock()
+        }
+
         randomCallCount += 1
-        lock.unlock()
     }
 
     func recordSleepCall() {
         lock.lock()
+        defer {
+            lock.unlock()
+        }
+
         sleepCallCount += 1
-        lock.unlock()
     }
 
     func recordEvent(_ event: String) {
         lock.lock()
+        defer {
+            lock.unlock()
+        }
+
         events.append(event)
-        lock.unlock()
     }
 
     func randomCallCountValue() -> Int {
         lock.lock()
-        let snapshot = randomCallCount
-        lock.unlock()
-        return snapshot
+        defer {
+            lock.unlock()
+        }
+
+        return randomCallCount
     }
 
     func sleepCallCountValue() -> Int {
         lock.lock()
-        let snapshot = sleepCallCount
-        lock.unlock()
-        return snapshot
+        defer {
+            lock.unlock()
+        }
+
+        return sleepCallCount
     }
 
     func eventsValue() -> [String] {
         lock.lock()
-        let snapshot = events
-        lock.unlock()
-        return snapshot
+        defer {
+            lock.unlock()
+        }
+
+        return events
     }
 }

@@ -6,14 +6,19 @@ final class LockedTraceRecorder: @unchecked Sendable {
 
     func record(_ value: String) {
         lock.lock()
+        defer {
+            lock.unlock()
+        }
+
         storedValues.append(value)
-        lock.unlock()
     }
 
     func values() -> [String] {
         lock.lock()
-        let currentValues = storedValues
-        lock.unlock()
-        return currentValues
+        defer {
+            lock.unlock()
+        }
+
+        return storedValues
     }
 }

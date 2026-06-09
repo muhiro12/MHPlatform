@@ -21,15 +21,20 @@ enum MutationAdapterFixtures {
 
         func increment() {
             lock.lock()
+            defer {
+                lock.unlock()
+            }
+
             value += 1
-            lock.unlock()
         }
 
         func count() -> Int {
             lock.lock()
-            let currentValue = value
-            lock.unlock()
-            return currentValue
+            defer {
+                lock.unlock()
+            }
+
+            return value
         }
     }
 

@@ -6,9 +6,11 @@ final class LockedCounter: @unchecked Sendable {
 
     func increment() -> Int {
         lock.lock()
+        defer {
+            lock.unlock()
+        }
+
         value += 1
-        let currentValue = value
-        lock.unlock()
-        return currentValue
+        return value
     }
 }

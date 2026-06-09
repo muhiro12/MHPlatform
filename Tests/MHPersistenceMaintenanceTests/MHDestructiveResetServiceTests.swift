@@ -175,8 +175,11 @@ private extension MHDestructiveResetServiceTests {
 
         func append(_ entry: String) {
             lock.lock()
+            defer {
+                lock.unlock()
+            }
+
             entries.append(entry)
-            lock.unlock()
         }
 
         func snapshot() -> [String] {

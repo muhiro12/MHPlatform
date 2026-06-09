@@ -14,8 +14,11 @@ final class MHMutationEventTraceRecorder<Value: Sendable>: @unchecked Sendable {
 
     func record(_ event: MHMutationEvent<Value>) {
         lock.lock()
+        defer {
+            lock.unlock()
+        }
+
         traces.append(traceBuilder(event))
-        lock.unlock()
     }
 
     func all() -> [String] {

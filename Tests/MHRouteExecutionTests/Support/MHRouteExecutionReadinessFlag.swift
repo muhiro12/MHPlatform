@@ -6,9 +6,11 @@ final class MHRouteExecutionReadinessFlag: @unchecked Sendable {
 
     var value: Bool {
         lock.lock()
-        let result = readiness
-        lock.unlock()
-        return result
+        defer {
+            lock.unlock()
+        }
+
+        return readiness
     }
 
     init(initialValue: Bool) {
@@ -17,7 +19,10 @@ final class MHRouteExecutionReadinessFlag: @unchecked Sendable {
 
     func set(_ isReady: Bool) {
         lock.lock()
+        defer {
+            lock.unlock()
+        }
+
         readiness = isReady
-        lock.unlock()
     }
 }
