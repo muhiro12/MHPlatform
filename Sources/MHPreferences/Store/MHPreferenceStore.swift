@@ -5,6 +5,7 @@ public struct MHPreferenceStore: @unchecked Sendable {
     private let userDefaults: UserDefaults?
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
+    private let codingLock = NSLock()
 
     /// Creates an unbound preference store that resolves defaults from each descriptor.
     public init(
@@ -140,7 +141,9 @@ public struct MHPreferenceStore: @unchecked Sendable {
         guard let data = object as? Data else {
             return nil
         }
-        return try? decoder.decode(Value.self, from: data)
+        return codingLock.withLock {
+            try? decoder.decode(Value.self, from: data)
+        }
     }
 
     /// Encodes and stores a `Codable` preference value as `Data`.
@@ -155,7 +158,9 @@ public struct MHPreferenceStore: @unchecked Sendable {
             return
         }
 
-        guard let encodedData = try? encoder.encode(value) else {
+        guard let encodedData = codingLock.withLock({
+            try? encoder.encode(value)
+        }) else {
             return
         }
 
@@ -285,5 +290,18 @@ private extension MHPreferenceStore {
         for descriptor: Descriptor
     ) -> UserDefaults {
         userDefaults ?? descriptor.defaultSelection.resolveUserDefaults()
+    }
+}
+
+private extension NSLock {
+    func withLock<Value>(
+        _ body: () -> Value
+    ) -> Value {
+        lock()
+        defer {
+            unlock()
+        }
+
+        return body()
     }
 }

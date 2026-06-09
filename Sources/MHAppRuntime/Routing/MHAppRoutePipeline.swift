@@ -211,7 +211,21 @@ public extension MHAppRoutePipeline where Route: MHDeepLinkRoute {
 
 private extension MHAppRoutePipeline {
     final class ParseFailureBox: @unchecked Sendable {
-        var url: URL?
+        private let lock = NSLock()
+        private var storedURL: URL?
+
+        var url: URL? {
+            get {
+                lock.withLock {
+                    storedURL
+                }
+            }
+            set {
+                lock.withLock {
+                    storedURL = newValue
+                }
+            }
+        }
     }
 
     static var defaultFailureLoggerFactory: MHLoggerFactory {
@@ -243,5 +257,18 @@ private extension MHAppRoutePipeline {
             ]
         )
         onFailure?(error)
+    }
+}
+
+private extension NSLock {
+    func withLock<Value>(
+        _ body: () -> Value
+    ) -> Value {
+        lock()
+        defer {
+            unlock()
+        }
+
+        return body()
     }
 }
