@@ -34,6 +34,7 @@ public actor MHLogStore {
         }
 
         bufferedEvents.append(event)
+        sortBufferedEvents()
         trimIfNeeded()
 
         for sink in sinks {
@@ -92,6 +93,12 @@ private extension MHLogStore {
         }
 
         return level >= policy.minimumLevel
+    }
+
+    func sortBufferedEvents() {
+        bufferedEvents.sort { lhs, rhs in
+            lhs.timestamp < rhs.timestamp
+        }
     }
 
     func trimIfNeeded() {

@@ -115,6 +115,22 @@ struct MHLogStoreTests {
     }
 
     @Test
+    func record_preserves_chronological_order() async {
+        let policy = MHLogPolicy(
+            minimumLevel: .debug,
+            maximumInMemoryEvents: 20
+        )
+        let store = MHLogStore(policy: policy)
+
+        await store.record(makeEvent(index: 3, level: .error))
+        await store.record(makeEvent(index: 1, level: .info))
+        await store.record(makeEvent(index: 2, level: .warning))
+
+        let events = await store.events()
+        #expect(events.map(\.message) == ["message-1", "message-2", "message-3"])
+    }
+
+    @Test
     func seed_deduplicates_and_preserves_chronological_order() async {
         let policy = MHLogPolicy(
             minimumLevel: .debug,
