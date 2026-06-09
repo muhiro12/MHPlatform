@@ -49,4 +49,13 @@ struct MHUserDefaultsSelectionTests {
 
         #expect(userDefaults.string(forKey: Constants.storageKey) == "kept")
     }
+
+    @Test
+    func invalid_suite_selection_returns_nil() {
+        let resolvedUserDefaults = MHUserDefaultsSelection
+            .suite("  \n")
+            .makeUserDefaults()
+
+        #expect(resolvedUserDefaults == nil)
+    }
 }

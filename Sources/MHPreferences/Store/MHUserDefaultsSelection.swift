@@ -8,20 +8,27 @@ public enum MHUserDefaultsSelection: Hashable, Sendable {
     /// Uses an explicitly named suite-backed defaults domain.
     case suite(String)
 
-    /// Resolves the selected `UserDefaults` instance.
-    public func resolveUserDefaults() -> UserDefaults {
+    /// Resolves the selected `UserDefaults` instance when the selection is valid.
+    public func makeUserDefaults() -> UserDefaults? {
         switch self {
         case .standard:
             return .standard
         case let .suite(rawSuiteName):
-            guard let userDefaults = UserDefaults(
-                suiteName: normalizedSuiteName(rawSuiteName)
-            ) else {
-                preconditionFailure()
+            guard let suiteName = optionalNormalizedSuiteName(rawSuiteName) else {
+                return nil
             }
 
-            return userDefaults
+            return UserDefaults(suiteName: suiteName)
         }
+    }
+
+    /// Resolves the selected `UserDefaults` instance.
+    public func resolveUserDefaults() -> UserDefaults {
+        guard let userDefaults = makeUserDefaults() else {
+            preconditionFailure("Invalid UserDefaults selection: \(self)")
+        }
+
+        return userDefaults
     }
 }
 
@@ -31,7 +38,7 @@ extension MHUserDefaultsSelection {
         case .standard:
             "standard"
         case let .suite(rawSuiteName):
-            "suite.\(normalizedSuiteName(rawSuiteName))"
+            "suite.\(requiredNormalizedSuiteName(rawSuiteName))"
         }
     }
 
@@ -40,11 +47,9 @@ extension MHUserDefaultsSelection {
     ) -> String {
         switch self {
         case .standard:
-            normalizedDomainName(
-                standardDomainName ?? .init()
-            )
+            requiredNormalizedDomainName(standardDomainName ?? .init())
         case let .suite(rawSuiteName):
-            normalizedSuiteName(rawSuiteName)
+            requiredNormalizedSuiteName(rawSuiteName)
         }
     }
 
@@ -61,19 +66,38 @@ extension MHUserDefaultsSelection {
 }
 
 private extension MHUserDefaultsSelection {
-    func normalizedSuiteName(
+    func optionalNormalizedSuiteName(
         _ rawSuiteName: String
-    ) -> String {
-        normalizedDomainName(rawSuiteName)
+    ) -> String? {
+        optionalNormalizedDomainName(rawSuiteName)
     }
 
-    func normalizedDomainName(
-        _ rawDomainName: String
+    func requiredNormalizedSuiteName(
+        _ rawSuiteName: String
     ) -> String {
+        requiredNormalizedDomainName(rawSuiteName)
+    }
+
+    func optionalNormalizedDomainName(
+        _ rawDomainName: String
+    ) -> String? {
         let normalizedDomainName = rawDomainName.trimmingCharacters(
             in: .whitespacesAndNewlines
         )
-        precondition(normalizedDomainName.isEmpty == false)
+        guard normalizedDomainName.isEmpty == false else {
+            return nil
+        }
+
+        return normalizedDomainName
+    }
+
+    func requiredNormalizedDomainName(
+        _ rawDomainName: String
+    ) -> String {
+        guard let normalizedDomainName = optionalNormalizedDomainName(rawDomainName) else {
+            preconditionFailure("UserDefaults domain name must not be empty")
+        }
+
         return normalizedDomainName
     }
 }
