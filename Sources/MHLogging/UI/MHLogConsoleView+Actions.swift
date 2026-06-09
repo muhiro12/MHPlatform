@@ -117,9 +117,9 @@ extension MHLogConsoleView {
         #endif
     }
 
-    func makeExportFilename() -> String {
+    package func makeExportFilename(date: Date = .init()) -> String {
         let formatter = ISO8601DateFormatter()
-        let timestamp = formatter.string(from: .init())
+        let timestamp = formatter.string(from: date)
             .replacingOccurrences(of: ":", with: "-")
         return "\(Constants.exportBaseName)-\(timestamp).jsonl"
     }
