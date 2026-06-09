@@ -34,9 +34,11 @@ struct MHPlatformCoreTests {
             MHLogPolicy.self,
             MHLoggerFactory.self,
             MHLogRuntimeState.self,
-            MHLoggingBootstrap.self
+            MHLoggingBootstrap.self,
+            MHPersistentIdentifierCodec.self,
+            MHPersistentIdentifierCodecError.self
         ]
 
-        #expect(exportedCoreSafeTypes.count == 30)
+        #expect(exportedCoreSafeTypes.count == 32)
     }
 }

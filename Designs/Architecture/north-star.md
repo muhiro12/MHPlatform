@@ -44,6 +44,7 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 | Mutation orchestration | retry/cancel/event/outcome primitive | Domain mutation meaning and business validation |
 | Persistence maintenance | store-file relocation + destructive reset orchestration | App-specific schema validation, startup timing, and data rules |
 | Preferences | typed preference descriptors + `UserDefaults`-backed store + AppStorage wrappers + codable-as-Data | Feature semantics for each key |
+| Platform utilities | non-UI Foundation helpers + stable `PersistentIdentifier` coding + direct `ModelContext` descriptor conveniences | SwiftUI layout/image/color helpers, model deletion policy, repositories, persistence facades |
 | Review request policy | lottery + delayed request orchestration | Product timing/eligibility strategy |
 
 ## Decision Matrix

@@ -9,7 +9,9 @@ explicit composition. The default consumer pillars are `MHPlatform` and
 adoption. The current 1.x beta baseline focuses on runtime startup, deep-link
 handling, route execution, deterministic notification planning,
 post-mutation side-effect orchestration, logging, preferences, and
-store-file relocation plus destructive reset orchestration.
+store-file relocation plus destructive reset orchestration, plus small
+Foundation and SwiftData utilities that let app packages avoid a separate
+SwiftUtilities dependency for non-UI helpers.
 
 Minimum supported platforms:
 - iOS 18.0+
@@ -68,7 +70,7 @@ Normative consumer matrix:
 | --- | --- | --- | --- |
 | Full-platform app target (`FooApp`, `FooWatch`) | `MHPlatform` | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Split runtime bundles unless custom composition is intentional |
 | Advanced runtime/bootstrap app target | `MHAppRuntime` | `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`, `MHMutationFlow`, `MHReviewPolicy`, concrete core modules | Pulling `MHPlatform` only to reach bootstrap helpers when the narrower runtime surface is intentional |
-| Shared logic package / shared library | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance` | `MHPlatform`, `MHAppRuntime`, `MHReviewPolicy` |
+| Shared logic package / shared library | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance`, `MHPlatformUtilities` | `MHPlatform`, `MHAppRuntime`, `MHReviewPolicy` |
 | Optional shell adopter | Keep current product and add the specific shell | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Treating route, review, or mutation shells as mandatory |
 
 Use [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md) as the
@@ -124,7 +126,7 @@ Advanced composition surfaces:
   `MHAppRuntimeLicenses`
 - concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
-  `MHPreferences`
+  `MHPreferences`, `MHPlatformUtilities`
 - opt-in workflow shells: `MHMutationFlow`, `MHMutationLogging`,
   `MHReviewPolicy`
 
@@ -171,9 +173,10 @@ let logger = MHLoggerFactory.osLogDefault.logger(
 
 `MHPlatformCore` is the recommended umbrella for shared packages. It re-exports
 `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`, `MHNotificationPayloads`,
-`MHRouteExecution`, `MHPersistenceMaintenance`, and `MHPreferences` without
-pulling in `MHAppRuntime` or third-party runtime adapters. Shared packages
-should stop here or move to granular concrete modules.
+`MHRouteExecution`, `MHPersistenceMaintenance`, `MHPreferences`, and
+`MHPlatformUtilities` without pulling in `MHAppRuntime` or third-party runtime
+adapters. Shared packages should stop here or move to granular concrete
+modules.
 
 Granular adoption:
 
@@ -208,6 +211,28 @@ through the umbrella `MHPlatform` module.
 For a package-owned end-to-end reference, see
 `Tests/MHPlatformIntegrationTests/MHPlatformIntegrationTests.swift`.
 
+Utilities support:
+
+`MHPlatformUtilities` provides small non-domain helpers that are safe for
+shared packages and app targets. It is re-exported by `MHPlatformCore`, and
+therefore also by the full `MHPlatform` umbrella.
+
+Integration contract:
+[`MHPlatformUtilities`](Designs/Architecture/integration-contracts.md#mhplatformutilities)
+
+```swift
+import MHPlatformCore
+
+let hasItems = items.isNotEmpty
+let displayDate = Date.now.stringValue(.yyyyMMMd)
+let stableID = try model.persistentModelID.base64Encoded()
+```
+
+The module intentionally excludes SwiftUI view modifiers, layout scales, image
+helpers, color generation, close-button components, and
+`PersistentModel.delete()`. Those are either UI-package concerns or app-owned
+persistence-policy choices.
+
 Optional shell rule:
 
 - Route, review, and mutation shells are optional.
@@ -240,6 +265,11 @@ Optional shell rule:
   inbox helpers, `MHLoggerFactory`, `MHMutationAdapter` composition, and
   `MHMutationWorkflow`. These reduce app-side boilerplate without moving
   route enums, effect models, or concrete side effects into MHPlatform.
+- `MHPlatformUtilities` now carries non-UI SwiftUtilities replacements that
+  fit the shared platform foundation: collection, optional, date, calendar,
+  number, string normalization, `PersistentIdentifier` coding, and thin
+  `ModelContext` fetch conveniences. UI, image, color, layout, and close-button
+  helpers remain outside MHPlatform and should be evaluated in MHUI.
 
 Recommended starting paths:
 
@@ -249,6 +279,7 @@ Recommended starting paths:
 - app root assembly shell: `MHAppRuntimeBootstrap`
 - explicit runtime defaults: `MHAppRuntimeDefaults`, `MHAppRuntimeAds`,
   `MHAppRuntimeLicenses`
+- shared non-UI utilities: `MHPlatformUtilities`
 - preview/test runtime injection: `View.mhAppRuntimeEnvironment(_:)`
 - route root wiring: `MHAppRoutePipeline`
 - route handoff into app-owned navigation state: `MHObservableRouteInbox`

@@ -24,6 +24,10 @@ let package = Package(
             name: "MHPlatformCore",
             targets: ["MHPlatformCore"]
         ),
+        .library(
+            name: "MHPlatformUtilities",
+            targets: ["MHPlatformUtilities"]
+        ),
 
         // Advanced runtime composition bundles.
         .library(
@@ -121,6 +125,7 @@ let package = Package(
             dependencies: [
                 "MHDeepLinking",
                 "MHLogging",
+                "MHPlatformUtilities",
                 "MHNotificationPlans",
                 "MHNotificationPayloads",
                 "MHRouteExecution",
@@ -203,6 +208,9 @@ let package = Package(
             name: "MHPersistenceMaintenance"
         ),
         .target(
+            name: "MHPlatformUtilities"
+        ),
+        .target(
             name: "MHPreferences"
         ),
 
@@ -238,6 +246,10 @@ let package = Package(
         .testTarget(
             name: "MHPlatformCoreTests",
             dependencies: ["MHPlatformCore"]
+        ),
+        .testTarget(
+            name: "MHPlatformUtilitiesTests",
+            dependencies: ["MHPlatformUtilities"]
         ),
 
         // Runtime and module behavior tests.

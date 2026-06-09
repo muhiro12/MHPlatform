@@ -3,5 +3,6 @@
 @_exported import MHNotificationPayloads
 @_exported import MHNotificationPlans
 @_exported import MHPersistenceMaintenance
+@_exported import MHPlatformUtilities
 @_exported import MHPreferences
 @_exported import MHRouteExecution

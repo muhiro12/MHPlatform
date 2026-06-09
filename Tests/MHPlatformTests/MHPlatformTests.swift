@@ -38,7 +38,9 @@ struct MHPlatformTests {
             MHLogPolicy.self,
             MHLoggerFactory.self,
             MHLogRuntimeState.self,
-            MHLoggingBootstrap.self
+            MHLoggingBootstrap.self,
+            MHPersistentIdentifierCodec.self,
+            MHPersistentIdentifierCodecError.self
         ]
         let optionalShellSurface: [Any.Type] = [
             MHMutationAdapter<String>.self,
@@ -52,7 +54,7 @@ struct MHPlatformTests {
             coreSurface +
             optionalShellSurface
 
-        #expect(exportedTypes.count == 37)
+        #expect(exportedTypes.count == 39)
     }
 
     @MainActor

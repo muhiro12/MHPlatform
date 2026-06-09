@@ -12,7 +12,7 @@ For product-selection rationale and current selection rules, pair it with
 | --- | --- | --- | --- | --- |
 | Full-platform app target | `FooApp`, `FooWatch`, other UI/composition roots that want the full platform surface | `MHPlatform` | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow`, `MHPlatformTesting` in tests | Direct split runtime bundles unless custom composition is intentional |
 | Advanced app runtime target | App root that wants runtime, lifecycle, environment injection, and optional route plumbing without the full umbrella | `MHAppRuntime` | `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`, `MHMutationFlow`, `MHReviewPolicy`, concrete core modules | Pulling `MHPlatform` only to reach bootstrap helpers when the narrower runtime surface is intentional |
-| Shared logic package / shared library | `FooLibrary`, watch-capable shared logic package, reusable package target | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance` | `MHPlatform`, `MHAppRuntime`, `MHReviewPolicy` |
+| Shared logic package / shared library | `FooLibrary`, watch-capable shared logic package, reusable package target | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance`, `MHPlatformUtilities` | `MHPlatform`, `MHAppRuntime`, `MHReviewPolicy` |
 | Granular core-safe consumer | Target that only needs one focused concern | Concrete module product | `MHPlatformTesting` in tests | Umbrellas when a single module is enough |
 | Optional shell adopter | App target already on one of the app-facing paths above | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Keep app-owned route meaning, mutation semantics, and review policy inputs outside MHPlatform | Treating route, review, or mutation shells as mandatory platform baseline |
 
@@ -37,7 +37,7 @@ Advanced composition surfaces:
   `MHAppRuntimeLicenses`
 - concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
-  `MHPreferences`
+  `MHPreferences`, `MHPlatformUtilities`
 - opt-in workflow shells: `MHMutationFlow`, `MHReviewPolicy`
 
 Start from a documented public entry point unless the target is intentionally doing
@@ -70,6 +70,7 @@ advanced composition around one focused concern.
 - Planner business semantics
 - Persistence schema meaning and validation
 - Preference key meaning and defaults
+- SwiftData schema meaning, validation, and model deletion policy
 - Domain mutation result and effect meaning
 - Other app-specific business semantics
 

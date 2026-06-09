@@ -31,7 +31,7 @@ Advanced composition surfaces that should not be the default onboarding path:
   `MHAppRuntimeLicenses`
 - concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
-  `MHPreferences`
+  `MHPreferences`, `MHPlatformUtilities`
 - opt-in workflow shells: `MHMutationFlow`, `MHReviewPolicy`
 
 See [Consumer Boundaries](./consumer-boundaries.md) for the consumer product
@@ -48,6 +48,7 @@ If a shared package only imports core-safe APIs such as:
 - `MHRouteExecution`
 - `MHPersistenceMaintenance`
 - `MHLogging`
+- `MHPlatformUtilities`
 
 it should adopt `MHPlatformCore`.
 
