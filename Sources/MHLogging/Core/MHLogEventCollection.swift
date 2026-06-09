@@ -15,22 +15,19 @@ enum MHLogEventCollection {
 
         if let category = query.category {
             values = values.filter { event in
-                event.category.localizedCaseInsensitiveContains(category)
+                matchesCategory(
+                    event,
+                    category: category
+                )
             }
         }
 
         if let searchText = query.searchText {
             values = values.filter { event in
-                event.message.localizedCaseInsensitiveContains(searchText)
-                    || event.subsystem.localizedCaseInsensitiveContains(searchText)
-                    || event.category.localizedCaseInsensitiveContains(searchText)
-                    || event.source.file.localizedCaseInsensitiveContains(searchText)
-                    || event.metadata.keys.contains { key in
-                        key.localizedCaseInsensitiveContains(searchText)
-                    }
-                    || event.metadata.values.contains { value in
-                        value.localizedCaseInsensitiveContains(searchText)
-                    }
+                matchesSearchText(
+                    event,
+                    searchText: searchText
+                )
             }
         }
 
@@ -56,9 +53,38 @@ enum MHLogEventCollection {
             guard let data = try? encoder.encode(event) else {
                 return nil
             }
-            return String(data: data, encoding: .utf8)
+            return String(bytes: data, encoding: .utf8)
         }
 
         return lines.joined(separator: "\n")
+    }
+}
+
+private extension MHLogEventCollection {
+    static func matchesCategory(
+        _ event: MHLogEvent,
+        category: String
+    ) -> Bool {
+        event.category.localizedCaseInsensitiveContains(category)
+    }
+
+    static func matchesSearchText(
+        _ event: MHLogEvent,
+        searchText: String
+    ) -> Bool {
+        searchableValues(for: event).contains { value in
+            value.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    static func searchableValues(
+        for event: MHLogEvent
+    ) -> [String] {
+        [
+            event.message,
+            event.subsystem,
+            event.category,
+            event.source.file
+        ] + Array(event.metadata.keys) + Array(event.metadata.values)
     }
 }
