@@ -32,6 +32,7 @@ public struct MHLogConsoleView: View {
     @State var limit = Constants.defaultLimit
     @State var events = [MHLogEvent]()
     @State var statusMessage = "Ready"
+    @State var isPresentingClearConfirmation = false
 
     #if !os(watchOS)
     @State var exportDocument = MHLogConsoleExportDocument(jsonLines: "")
@@ -92,6 +93,22 @@ public struct MHLogConsoleView: View {
             }
         }
         #endif
+        .confirmationDialog(
+            "Clear Logs?",
+            isPresented: $isPresentingClearConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Clear Logs", role: .destructive) {
+                Task {
+                    await clearLogs()
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                isPresentingClearConfirmation = false
+            }
+        } message: {
+            Text("This removes the visible diagnostic log history for the selected store.")
+        }
     }
 
     var availableSessionScopes: [MHLogSessionScope] {

@@ -56,11 +56,10 @@ extension MHLogConsoleView {
                     await exportJSONL()
                 }
             }
-            Button("Clear") {
-                Task {
-                    await clearLogs()
-                }
+            Button("Clear", role: .destructive) {
+                isPresentingClearConfirmation = true
             }
+            .accessibilityHint("Shows a confirmation before removing diagnostic log history.")
         }
     }
 
@@ -73,6 +72,7 @@ extension MHLogConsoleView {
                         : "No events"
                 )
                 .foregroundStyle(.secondary)
+                .accessibilityLabel(emptyEventsAccessibilityLabel)
             } else {
                 ForEach(
                     Array(events.enumerated()),
@@ -93,7 +93,15 @@ extension MHLogConsoleView {
             Text(statusMessage)
                 .font(.caption.monospaced())
                 .logConsoleTextSelectionIfSupported()
+                .accessibilityLabel("Console status")
+                .accessibilityValue(statusMessage)
         }
+    }
+
+    var emptyEventsAccessibilityLabel: String {
+        sessionScope == .previous
+            ? "No previous session log events"
+            : "No current session log events"
     }
 
     func eventRow(_ event: MHLogEvent) -> some View {
@@ -124,6 +132,26 @@ extension MHLogConsoleView {
             }
         }
         .padding(.vertical, Constants.verticalPadding)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(eventAccessibilityLabel(event))
+        .accessibilityValue(eventAccessibilityValue(event))
+        .accessibilityHint("Opens the full log event details.")
+    }
+
+    func eventAccessibilityLabel(_ event: MHLogEvent) -> String {
+        "\(event.level.name.uppercased()) log event"
+    }
+
+    func eventAccessibilityValue(_ event: MHLogEvent) -> String {
+        let metadataSummary = event.metadata.isEmpty
+            ? "No metadata"
+            : "\(event.metadata.count) metadata items"
+        return [
+            event.timestamp.ISO8601Format(),
+            "\(event.subsystem)/\(event.category)",
+            event.message,
+            metadataSummary
+        ].joined(separator: ", ")
     }
 
     func levelColor(_ level: MHLogLevel) -> Color {
