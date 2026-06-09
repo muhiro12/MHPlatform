@@ -39,6 +39,7 @@ Reference and design docs:
 - [Architecture Guide](Designs/Architecture/ARCHITECTURE_GUIDE.md)
 - [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
 - [Architecture](Designs/Architecture/architecture.md)
+- [Unchecked Sendable Audit](Designs/Architecture/sendable-audit.md)
 - [Runtime-start Design](Designs/Architecture/runtime-start.md)
 - [North Star](Designs/Architecture/north-star.md)
 - [Design Decisions](Designs/Decisions/README.md)
