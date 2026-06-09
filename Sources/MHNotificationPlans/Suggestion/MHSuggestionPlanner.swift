@@ -54,7 +54,7 @@ public enum MHSuggestionPlanner {
             return nil
         }
 
-        return PlanningState(
+        return .init(
             orderedCandidates: orderedCandidates(from: candidates),
             daysAhead: daysAhead,
             startOfToday: calendar.startOfDay(for: now)

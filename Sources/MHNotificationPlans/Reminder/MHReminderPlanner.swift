@@ -105,7 +105,7 @@ public enum MHReminderPlanner {
             return nil
         }
 
-        return ScheduledCandidate(
+        return .init(
             candidate: candidate,
             notifyDate: notifyDate
         )
@@ -153,7 +153,7 @@ public enum MHReminderPlanner {
             calendar: calendar
         )
 
-        return MHReminderPlan(
+        return .init(
             identifier: policy.identifierPrefix + scheduledCandidate.candidate.stableIdentifier,
             notifyDate: scheduledCandidate.notifyDate,
             threadIdentifier: policy.identifierPrefix + threadSuffix(
