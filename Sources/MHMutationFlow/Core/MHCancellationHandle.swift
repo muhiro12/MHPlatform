@@ -8,9 +8,11 @@ public final class MHCancellationHandle: @unchecked Sendable {
     /// Returns `true` when cancellation was requested.
     public var isCancelled: Bool {
         lock.lock()
-        let result = cancelled
-        lock.unlock()
-        return result
+        defer {
+            lock.unlock()
+        }
+
+        return cancelled
     }
 
     /// Creates an active cancellation handle.
@@ -21,7 +23,10 @@ public final class MHCancellationHandle: @unchecked Sendable {
     /// Marks this handle as cancelled.
     public func cancel() {
         lock.lock()
+        defer {
+            lock.unlock()
+        }
+
         cancelled = true
-        lock.unlock()
     }
 }
