@@ -2,6 +2,21 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
+        content
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        #if os(macOS)
+        tabs
+            // swiftlint:disable:next no_magic_numbers
+            .frame(minWidth: 900, minHeight: 640)
+        #else
+        tabs
+        #endif
+    }
+
+    private var tabs: some View {
         TabView {
             Tab("Runtime", systemImage: "bolt.horizontal.circle") {
                 DemoCategoryView(
@@ -45,8 +60,6 @@ struct ContentView: View {
                 )
             }
         }
-        // swiftlint:disable:next no_magic_numbers
-        .frame(minWidth: 900, minHeight: 640)
     }
 }
 
