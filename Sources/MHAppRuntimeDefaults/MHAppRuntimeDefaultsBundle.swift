@@ -21,10 +21,10 @@ public struct MHAppRuntimeDefaultsBundle {
         preferenceStore = .init()
 
         #if canImport(StoreKitWrapper)
-        let normalizedSubscriptionProductIDs = Self.normalizeTextSet(
+        let normalizedSubscriptionProductIDs = MHRuntimeTextNormalizer.uniqueTrimmedNonEmptyValues(
             configuration.subscriptionProductIDs
         )
-        let normalizedSubscriptionGroupID = Self.normalizeText(
+        let normalizedSubscriptionGroupID = MHRuntimeTextNormalizer.trimmedNonEmpty(
             configuration.subscriptionGroupID
         )
         let store = Store()
@@ -51,39 +51,5 @@ public struct MHAppRuntimeDefaultsBundle {
             EmptyView()
         }
         #endif
-    }
-}
-
-private extension MHAppRuntimeDefaultsBundle {
-    static func normalizeText(_ text: String?) -> String? {
-        guard let text else {
-            return nil
-        }
-
-        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard normalized.isEmpty == false else {
-            return nil
-        }
-
-        return normalized
-    }
-
-    static func normalizeTextSet(_ values: [String]) -> [String] {
-        var normalizedValues: [String] = []
-        var uniqueValues = Set<String>()
-
-        for value in values {
-            guard let normalizedValue = normalizeText(value) else {
-                continue
-            }
-            guard uniqueValues.contains(normalizedValue) == false else {
-                continue
-            }
-
-            uniqueValues.insert(normalizedValue)
-            normalizedValues.append(normalizedValue)
-        }
-
-        return normalizedValues
     }
 }

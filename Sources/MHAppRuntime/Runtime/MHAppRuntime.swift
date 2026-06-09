@@ -68,13 +68,13 @@ public final class MHAppRuntime {
     ) {
         self.configuration = configuration
         self.preferenceStore = preferenceStore
-        self.subscriptionProductIDs = Self.normalizeProductIDs(
+        self.subscriptionProductIDs = MHRuntimeTextNormalizer.uniqueTrimmedNonEmptyValues(
             configuration.subscriptionProductIDs
         )
-        self.subscriptionGroupID = Self.normalizeText(
+        self.subscriptionGroupID = MHRuntimeTextNormalizer.trimmedNonEmpty(
             configuration.subscriptionGroupID
         )
-        self.nativeAdUnitID = Self.normalizeText(
+        self.nativeAdUnitID = MHRuntimeTextNormalizer.trimmedNonEmpty(
             configuration.nativeAdUnitID
         )
         self.startStore = startStore
@@ -157,39 +157,5 @@ public final class MHAppRuntime {
             purchasedProductIDs.contains(productID)
         }
         premiumStatus = isPremiumActive ? .active : .inactive
-    }
-}
-
-private extension MHAppRuntime {
-    static func normalizeText(_ text: String?) -> String? {
-        guard let text else {
-            return nil
-        }
-
-        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard normalized.isEmpty == false else {
-            return nil
-        }
-
-        return normalized
-    }
-
-    static func normalizeProductIDs(_ productIDs: [String]) -> [String] {
-        var normalizedProductIDs: [String] = []
-        var uniqueProductIDs = Set<String>()
-
-        for productID in productIDs {
-            guard let normalizedProductID = normalizeText(productID) else {
-                continue
-            }
-            guard uniqueProductIDs.contains(normalizedProductID) == false else {
-                continue
-            }
-
-            uniqueProductIDs.insert(normalizedProductID)
-            normalizedProductIDs.append(normalizedProductID)
-        }
-
-        return normalizedProductIDs
     }
 }

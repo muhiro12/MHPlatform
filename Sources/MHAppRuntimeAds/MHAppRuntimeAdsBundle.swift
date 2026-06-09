@@ -16,7 +16,7 @@ public struct MHAppRuntimeAdsBundle {
     /// Creates package-owned ads runtime defaults.
     public init(configuration: MHAppConfiguration) {
         #if canImport(GoogleMobileAdsWrapper)
-        guard let normalizedNativeAdUnitID = Self.normalizeText(
+        guard let normalizedNativeAdUnitID = MHRuntimeTextNormalizer.trimmedNonEmpty(
             configuration.nativeAdUnitID
         ) else {
             startAds = nil
@@ -38,20 +38,5 @@ public struct MHAppRuntimeAdsBundle {
         startAds = nil
         nativeAdFactory = nil
         #endif
-    }
-}
-
-private extension MHAppRuntimeAdsBundle {
-    static func normalizeText(_ text: String?) -> String? {
-        guard let text else {
-            return nil
-        }
-
-        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard normalized.isEmpty == false else {
-            return nil
-        }
-
-        return normalized
     }
 }

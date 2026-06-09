@@ -78,6 +78,20 @@ struct MHAppRuntimeTests {
         #expect(runtime.adsAvailability == .disabledByPremium)
     }
 
+    @Test
+    func runtime_text_normalizer_trims_drops_empty_and_preserves_first_unique_order() {
+        let normalizedValues = MHRuntimeTextNormalizer.uniqueTrimmedNonEmptyValues([
+            " premium.monthly ",
+            "",
+            "\npremium.monthly",
+            " premium.yearly "
+        ])
+
+        #expect(normalizedValues == ["premium.monthly", "premium.yearly"])
+        #expect(MHRuntimeTextNormalizer.trimmedNonEmpty("  ad-unit\n") == "ad-unit")
+        #expect(MHRuntimeTextNormalizer.trimmedNonEmpty("  \n") == nil)
+    }
+
     @MainActor
     @Test
     func ads_availability_is_not_configured_without_ad_unit() {
