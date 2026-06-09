@@ -131,18 +131,11 @@ public struct MHPreferenceStore: @unchecked Sendable {
     public func codable<Value: Codable & Sendable>(
         for descriptor: MHCodablePreferenceDescriptor<Value>
     ) -> Value? {
-        let userDefaults = resolvedUserDefaults(for: descriptor)
-
-        guard let object = userDefaults.object(
-            forKey: descriptor.storageKey
-        ) else {
+        switch codableResult(for: descriptor) {
+        case let .success(value):
+            return value
+        case .failure:
             return nil
-        }
-        guard let data = object as? Data else {
-            return nil
-        }
-        return codingLock.withLock {
-            try? decoder.decode(Value.self, from: data)
         }
     }
 
@@ -151,20 +144,7 @@ public struct MHPreferenceStore: @unchecked Sendable {
         _ value: Value?,
         for descriptor: MHCodablePreferenceDescriptor<Value>
     ) {
-        let userDefaults = resolvedUserDefaults(for: descriptor)
-
-        guard let value else {
-            userDefaults.removeObject(forKey: descriptor.storageKey)
-            return
-        }
-
-        guard let encodedData = codingLock.withLock({
-            try? encoder.encode(value)
-        }) else {
-            return
-        }
-
-        userDefaults.set(encodedData, forKey: descriptor.storageKey)
+        _ = setCodableResult(value, for: descriptor)
     }
 
     /// Returns a boolean preference value from a descriptor namespace.
@@ -282,6 +262,84 @@ public struct MHPreferenceStore: @unchecked Sendable {
         resolvedUserDefaults(for: descriptor).removeObject(
             forKey: descriptor.storageKey
         )
+    }
+}
+
+public extension MHPreferenceStore {
+    /// Decodes a `Codable` preference value and preserves decode failures.
+    func codableResult<Value: Codable & Sendable>(
+        for descriptor: MHCodablePreferenceDescriptor<Value>
+    ) -> Result<Value?, MHPreferenceStoreCodableError> {
+        let userDefaults = resolvedUserDefaults(for: descriptor)
+
+        guard let object = userDefaults.object(
+            forKey: descriptor.storageKey
+        ) else {
+            return .success(nil)
+        }
+        guard let data = object as? Data else {
+            return .failure(
+                .storedValueIsNotData(storageKey: descriptor.storageKey)
+            )
+        }
+
+        return codingLock.withLock {
+            do {
+                return .success(try decoder.decode(Value.self, from: data))
+            } catch {
+                return .failure(
+                    .decodingFailed(
+                        storageKey: descriptor.storageKey,
+                        description: error.localizedDescription
+                    )
+                )
+            }
+        }
+    }
+
+    /// Decodes a namespaced `Codable` preference and preserves decode failures.
+    func codableResult<Value: Codable & Sendable>(
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHCodablePreferenceDescriptor<Value>>
+    ) -> Result<Value?, MHPreferenceStoreCodableError> {
+        codableResult(for: MHPreferenceDescriptors()[keyPath: keyPath])
+    }
+
+    /// Encodes and stores a `Codable` preference value and preserves failures.
+    @discardableResult
+    func setCodableResult<Value: Codable & Sendable>(
+        _ value: Value?,
+        for descriptor: MHCodablePreferenceDescriptor<Value>
+    ) -> Result<Void, MHPreferenceStoreCodableError> {
+        let userDefaults = resolvedUserDefaults(for: descriptor)
+
+        guard let value else {
+            userDefaults.removeObject(forKey: descriptor.storageKey)
+            return .success(())
+        }
+
+        return codingLock.withLock {
+            do {
+                let encodedData = try encoder.encode(value)
+                userDefaults.set(encodedData, forKey: descriptor.storageKey)
+                return .success(())
+            } catch {
+                return .failure(
+                    .encodingFailed(
+                        storageKey: descriptor.storageKey,
+                        description: error.localizedDescription
+                    )
+                )
+            }
+        }
+    }
+
+    /// Encodes and stores a namespaced `Codable` preference and preserves failures.
+    @discardableResult
+    func setCodableResult<Value: Codable & Sendable>(
+        _ value: Value?,
+        for keyPath: KeyPath<MHPreferenceDescriptors, MHCodablePreferenceDescriptor<Value>>
+    ) -> Result<Void, MHPreferenceStoreCodableError> {
+        setCodableResult(value, for: MHPreferenceDescriptors()[keyPath: keyPath])
     }
 }
 
