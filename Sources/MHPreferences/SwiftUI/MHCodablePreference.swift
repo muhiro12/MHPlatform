@@ -13,13 +13,17 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
 
     public var wrappedValue: Value {
         get {
-            guard let storedData else {
-                return defaultValue
-            }
-            return (try? decoder.decode(Value.self, from: storedData)) ?? defaultValue
+            Self.decode(
+                storedData,
+                decoder: decoder,
+                defaultValue: defaultValue
+            )
         }
         nonmutating set {
-            guard let encodedData = try? encoder.encode(newValue) else {
+            guard let encodedData = Self.encode(
+                newValue,
+                encoder: encoder
+            ) else {
                 return
             }
             storedData = encodedData
@@ -34,13 +38,17 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
 
         return .init(
             get: {
-                guard let storedData = storedDataBinding.wrappedValue else {
-                    return defaultValue
-                }
-                return (try? decoder.decode(Value.self, from: storedData)) ?? defaultValue
+                Self.decode(
+                    storedDataBinding.wrappedValue,
+                    decoder: decoder,
+                    defaultValue: defaultValue
+                )
             },
             set: { newValue in
-                guard let encodedData = try? encoder.encode(newValue) else {
+                guard let encodedData = Self.encode(
+                    newValue,
+                    encoder: encoder
+                ) else {
                     return
                 }
                 storedDataBinding.wrappedValue = encodedData
@@ -80,6 +88,27 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
             encoder: encoder,
             decoder: decoder
         )
+    }
+}
+
+private extension MHCodablePreference {
+    static func decode(
+        _ storedData: Data?,
+        decoder: JSONDecoder,
+        defaultValue: Value
+    ) -> Value {
+        guard let storedData else {
+            return defaultValue
+        }
+
+        return (try? decoder.decode(Value.self, from: storedData)) ?? defaultValue
+    }
+
+    static func encode(
+        _ value: Value,
+        encoder: JSONEncoder
+    ) -> Data? {
+        try? encoder.encode(value)
     }
 }
 #endif

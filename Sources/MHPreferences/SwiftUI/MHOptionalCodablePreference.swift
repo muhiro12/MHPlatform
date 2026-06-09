@@ -12,17 +12,20 @@ public struct MHOptionalCodablePreference<Value: Codable & Sendable>: DynamicPro
 
     public var wrappedValue: Value? {
         get {
-            guard let storedData else {
-                return nil
-            }
-            return try? decoder.decode(Value.self, from: storedData)
+            Self.decode(
+                storedData,
+                decoder: decoder
+            )
         }
         nonmutating set {
             guard let newValue else {
                 storedData = nil
                 return
             }
-            guard let encodedData = try? encoder.encode(newValue) else {
+            guard let encodedData = Self.encode(
+                newValue,
+                encoder: encoder
+            ) else {
                 return
             }
             storedData = encodedData
@@ -36,17 +39,20 @@ public struct MHOptionalCodablePreference<Value: Codable & Sendable>: DynamicPro
 
         return .init(
             get: {
-                guard let storedData = storedDataBinding.wrappedValue else {
-                    return nil
-                }
-                return try? decoder.decode(Value.self, from: storedData)
+                Self.decode(
+                    storedDataBinding.wrappedValue,
+                    decoder: decoder
+                )
             },
             set: { newValue in
                 guard let newValue else {
                     storedDataBinding.wrappedValue = nil
                     return
                 }
-                guard let encodedData = try? encoder.encode(newValue) else {
+                guard let encodedData = Self.encode(
+                    newValue,
+                    encoder: encoder
+                ) else {
                     return
                 }
                 storedDataBinding.wrappedValue = encodedData
@@ -82,6 +88,26 @@ public struct MHOptionalCodablePreference<Value: Codable & Sendable>: DynamicPro
             encoder: encoder,
             decoder: decoder
         )
+    }
+}
+
+private extension MHOptionalCodablePreference {
+    static func decode(
+        _ storedData: Data?,
+        decoder: JSONDecoder
+    ) -> Value? {
+        guard let storedData else {
+            return nil
+        }
+
+        return try? decoder.decode(Value.self, from: storedData)
+    }
+
+    static func encode(
+        _ value: Value,
+        encoder: JSONEncoder
+    ) -> Data? {
+        try? encoder.encode(value)
     }
 }
 #endif
