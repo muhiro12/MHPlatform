@@ -1,8 +1,11 @@
 # AGENTS.md
 
 This document defines the repository-specific agent contract for MHPlatform.
-Global agent behavior and durable cross-repository developer principles belong
-outside this repository.
+
+Keep this file self-contained enough for agents working from a fresh clone.
+Repeat portable rules here when they are required to work safely in this
+repository; keep local-machine-only routing, broad development philosophy, and
+cross-repository principles outside the repository.
 
 ## Repository Scope
 
@@ -53,12 +56,12 @@ outside this repository.
 
 ## Verification Contract
 
-Agents must prefer XcodeBuildMCP for Apple build, test, run, Simulator, runtime
+Agents MUST prefer XcodeBuildMCP for Apple build, test, run, Simulator, runtime
 log, screenshot, and UI snapshot verification.
 
-Before the first MCP build or test call in a session, run XcodeBuildMCP
-`session_show_defaults`. If defaults do not point at MHPlatform, set them for
-the current session instead of relying on shell wrappers.
+Before the first XcodeBuildMCP build, test, or run call in a session, run
+XcodeBuildMCP `session_show_defaults`. If defaults do not point at MHPlatform,
+set them for the current session instead of relying on shell wrappers.
 
 For package compile checks, use XcodeBuildMCP `build_sim` with:
 
