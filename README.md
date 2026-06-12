@@ -15,8 +15,7 @@ The package ships three main adoption pillars:
 The current 1.x beta baseline focuses on runtime startup, deep-link handoff,
 route execution, deterministic notification planning, notification payload
 routing, post-mutation side-effect orchestration, logging, preferences,
-persistence maintenance, review policy, and small non-UI Foundation/SwiftData
-utilities.
+persistence maintenance, and review policy.
 
 Minimum supported platforms:
 
@@ -133,7 +132,6 @@ Granular core-safe products and optional shells:
 - `MHRouteExecution`
 - `MHPersistenceMaintenance`
 - `MHPreferences`
-- `MHPlatformUtilities`
 - `MHMutationFlow`
 - `MHMutationLogging`
 - `MHReviewPolicy`

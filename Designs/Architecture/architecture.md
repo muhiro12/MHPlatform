@@ -8,7 +8,6 @@
 - `MHAppRuntimeDefaults`
 - `MHAppRuntimeAds`
 - `MHAppRuntimeLicenses`
-- `MHPlatformUtilities`
 - `MHDeepLinking`
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
@@ -37,7 +36,6 @@ and explicit split-runtime-bundle composition.
 - `MHRouteExecution`
 - `MHPersistenceMaintenance`
 - `MHPreferences`
-- `MHPlatformUtilities`
 - `MHPlatformTesting`
 
 Consumers may either `import MHPlatform` for default app targets,
@@ -81,7 +79,7 @@ non-domain app infrastructure.
 - Re-exports the shared-package-safe infrastructure modules:
   `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`,
-  `MHPersistenceMaintenance`, `MHPreferences`, and `MHPlatformUtilities`
+  `MHPersistenceMaintenance`, and `MHPreferences`
 - Exists so shared packages can adopt one umbrella without picking up
   `MHAppRuntime` or third-party runtime adapters
 - Does not own `MHAppRuntime`, mutation workflow, or review workflow surfaces
@@ -221,20 +219,6 @@ Integration contract:
 - Does not own app-specific persistence model types, schema migration plans,
   startup timing policy, validation policy, or data-deletion policy decisions
 
-### `MHPlatformUtilities`
-
-Integration contract:
-[`MHPlatformUtilities`](integration-contracts.md#mhplatformutilities)
-
-- Owns small non-domain Foundation helpers:
-  collection/optional emptiness, date formatting/parsing, calendar boundaries,
-  number sign checks, and width/kana-normalized string search
-- Owns thin SwiftData helper APIs for stable `PersistentIdentifier` string
-  coding and direct `ModelContext` fetch descriptor conveniences
-- Does not own SwiftUI layout, image/color helpers, reusable UI components,
-  `PersistentModel.delete()`, app schema policy, or a generic SwiftData
-  repository/facade layer
-
 ### `MHPreferences`
 
 Integration contract:
@@ -296,7 +280,7 @@ Integration contract:
   layer without independent runtime logic.
 - `MHPlatformCore` depends on `MHDeepLinking`, `MHLogging`,
   `MHNotificationPlans`, `MHNotificationPayloads`, `MHRouteExecution`,
-  `MHPersistenceMaintenance`, `MHPreferences`, and `MHPlatformUtilities`.
+  `MHPersistenceMaintenance`, and `MHPreferences`.
 - `MHAppRuntime` depends on `MHDeepLinking`, `MHLogging`, `MHPreferences`, and
   `MHRouteExecution`.
 - `MHAppRuntimeDefaults` depends on `MHAppRuntime`, `MHPreferences`, and
@@ -313,7 +297,6 @@ Integration contract:
   helpers and on `MHLogging` for `MHRouteLifecycle` outcome logging.
 - `MHPersistenceMaintenance` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
-- `MHPlatformUtilities` has no dependency on the other modules.
 - `MHReviewPolicy` depends on `MHAppRuntime`, `MHLogging`, and
   `MHMutationFlow` for runtime-task, outcome logging, and mutation-step
   integration.
@@ -329,8 +312,8 @@ Integration contract:
 
 - The duplicated logic found in Incomes and Cookle is concrete and concern-specific.
 - Introducing `MHCore` or a generic workflow layer would create abstraction before stable shared usage exists.
-- `MHPlatformUtilities` is intentionally limited to small replacement helpers
-  and is not a broad core architecture layer.
+- General-purpose replacement helpers for app-local utility extensions are not
+  a platform architecture layer.
 - If repeated low-level types emerge later, they can be extracted after at least two modules genuinely need them.
 
 ## Out Of Scope
