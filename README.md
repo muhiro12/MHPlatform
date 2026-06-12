@@ -1,19 +1,25 @@
 # MHPlatform
 
-MHPlatform is an internal app platform foundation delivered as a Swift package
-workspace for shared infrastructure extracted from real usage in Incomes and
-Cookle. It ships a full app umbrella `MHPlatform`, a shared-package umbrella
-`MHPlatformCore`, and an advanced app-runtime foundation `MHAppRuntime` for
-explicit composition. The default consumer pillars are `MHPlatform` and
-`MHPlatformCore`, while `MHAppRuntime` remains public for narrower app-root
-adoption. The current 1.x beta baseline focuses on runtime startup, deep-link
-handling, route execution, deterministic notification planning,
-post-mutation side-effect orchestration, logging, preferences, and
-store-file relocation plus destructive reset orchestration, plus small
-Foundation and SwiftData utilities that let app packages avoid a separate
-SwiftUtilities dependency for non-UI helpers.
+MHPlatform is an internal Apple-platform foundation delivered as a Swift
+package workspace. It centralizes reusable, app-agnostic infrastructure proven
+through Incomes and Cookle while keeping app-specific domain behavior in the
+adopting apps.
+
+The package ships three main adoption pillars:
+
+- `MHPlatform`: full app-facing convenience umbrella.
+- `MHPlatformCore`: shared-library-safe umbrella for core primitives.
+- `MHAppRuntime`: advanced app-root runtime/bootstrap surface for explicit
+  composition.
+
+The current 1.x beta baseline focuses on runtime startup, deep-link handoff,
+route execution, deterministic notification planning, notification payload
+routing, post-mutation side-effect orchestration, logging, preferences,
+persistence maintenance, review policy, and small non-UI Foundation/SwiftData
+utilities.
 
 Minimum supported platforms:
+
 - iOS 18.0+
 - macOS 15.0+
 - watchOS 11.0+
@@ -24,30 +30,47 @@ Minimum supported platforms:
   still being shaped.
 - MHPlatform does not keep app-upgrade fallback paths, compatibility aliases,
   or historical shell support solely to ease SDK updates during `1.x`.
-- Caller-owned relocation or migration primitives that operate on the app's
-  current configuration remain in scope when schema policy stays in the app.
-- Adopters should follow the current documentation and current public surface on
-  each update.
+- Caller-owned relocation or migration primitives remain in scope when they
+  operate on the app's current configuration and schema policy stays in the
+  app.
+- Adopters should follow the current documentation and current public surface
+  on each update.
 
 ## Documentation Map
 
-Primary adoption docs:
-- [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md)
-- [Consumer Adoption](Designs/Architecture/adoption-policy.md)
-- [Integration Contracts](Designs/Architecture/integration-contracts.md)
-- [Minimal App Setup](Designs/Architecture/minimal-app-setup.md)
+Read these first when choosing products or integrating a consumer:
 
-Reference and design docs:
-- [Architecture Guide](Designs/Architecture/ARCHITECTURE_GUIDE.md)
-- [Integration Cookbook](Designs/Architecture/integration-cookbook.md)
-- [Architecture](Designs/Architecture/architecture.md)
-- [Unchecked Sendable Audit](Designs/Architecture/sendable-audit.md)
-- [Runtime-start Design](Designs/Architecture/runtime-start.md)
-- [North Star](Designs/Architecture/north-star.md)
-- [Design Decisions](Designs/Decisions/README.md)
-- [Platform Status](Designs/Overviews/platform-status.md)
-- [Verification History](Designs/Overviews/verification-history.md)
-- [Backlog](Designs/Overviews/backlog.md)
+- [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md):
+  normative 1.x consumer matrix.
+- [Consumer Adoption](Designs/Architecture/adoption-policy.md):
+  product-selection rationale and current shell preferences.
+- [Minimal App Setup](Designs/Architecture/minimal-app-setup.md): compact app
+  bootstrap path.
+- [Integration Contracts](Designs/Architecture/integration-contracts.md):
+  module-by-module public contracts.
+
+Use these when changing architecture or reviewing durable decisions:
+
+- [Architecture Guide](Designs/Architecture/ARCHITECTURE_GUIDE.md):
+  `platform-in-package, app-as-adapter` policy.
+- [Architecture](Designs/Architecture/architecture.md): module and dependency
+  boundaries.
+- [Integration Cookbook](Designs/Architecture/integration-cookbook.md):
+  detailed integration examples.
+- [Runtime-start Design](Designs/Architecture/runtime-start.md): runtime
+  bootstrap design.
+- [North Star](Designs/Architecture/north-star.md): long-term extraction
+  direction.
+- [Design Decisions](Designs/Decisions/README.md): ADR index.
+- [Platform Status](Designs/Overviews/platform-status.md): current adoption
+  status.
+- [Verification History](Designs/Overviews/verification-history.md): durable
+  verification contract and run artifact layout.
+- [Backlog](Designs/Overviews/backlog.md): extraction history and current
+  backlog posture.
+
+This README is intentionally an adoption map. Keep detailed API walkthroughs in
+the architecture documents above so the entry point stays readable.
 
 ## Directory Conventions
 
@@ -62,141 +85,77 @@ Reference and design docs:
 - Keep the example app shell in `Example/MHPlatformExample/App/` and place
   module demos under `Example/MHPlatformExample/Demos/<Area>/`.
 
-## Adoption
-
-Normative consumer matrix:
-
-| Consumer type | Primary product | Add only when needed | Avoid by default |
-| --- | --- | --- | --- |
-| Full-platform app target (`FooApp`, `FooWatch`) | `MHPlatform` | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Split runtime bundles unless custom composition is intentional |
-| Advanced runtime/bootstrap app target | `MHAppRuntime` | `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`, `MHMutationFlow`, `MHReviewPolicy`, concrete core modules | Pulling `MHPlatform` only to reach bootstrap helpers when the narrower runtime surface is intentional |
-| Shared logic package / shared library | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance`, `MHPlatformUtilities` | `MHPlatform`, `MHAppRuntime`, `MHReviewPolicy` |
-| Widget / App Intent / extension adapter | App shared library first, then `MHPlatformCore` or granular core-safe modules for direct platform primitives | `MHDeepLinking`, `MHNotificationPlans`, `MHNotificationPayloads`, `MHPreferences`, `MHRouteExecution` | `MHPlatform`, `MHAppRuntime`, split runtime bundles, ads/license/runtime adapters |
-| Lightweight watch companion surface | App shared library, `MHPreferences`, `MHPlatformCore`, or granular core-safe modules | `MHDeepLinking`, `MHNotificationPayloads`, `MHRouteExecution` when the watch surface owns route handoff | Full umbrella adoption unless the watch target intentionally owns an app-root runtime/shell surface |
-| Optional shell adopter | Keep current product and add the specific shell | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Treating route, review, or mutation shells as mandatory |
+## Product Selection
 
 Use [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md) as the
-source of truth for 1.x package adoption. The rest of this section explains the
-recommended paths in more detail. For product-selection rationale and current
-selection rules, see
-[Consumer Adoption](Designs/Architecture/adoption-policy.md).
-Compile-backed reference adopters live under `Fixtures/Consumers/`, while
-`Example/MHPlatformExample/` remains the full-umbrella demo app.
+source of truth before adding package dependencies.
 
-Fixture-backed adoption references:
+- Full-platform app targets should use `MHPlatform` when they intentionally
+  want the default runtime, core primitives, mutation shell, and review shell
+  from one import.
+- Advanced app-runtime targets should use `MHAppRuntime` when they want
+  runtime/bootstrap mechanics without the full umbrella.
+- Shared logic packages and shared libraries should use `MHPlatformCore` or
+  granular core-safe modules.
+- Widget, App Intent, watch, and extension adapters should call app-owned
+  shared APIs first. If they need direct MHPlatform primitives, use
+  `MHPlatformCore` or granular core-safe modules.
+- Optional route, mutation, and review shells should be added only to targets
+  that own those concerns.
 
-- `Fixtures/Consumers/SharedLibraryConsumer/` builds the shared-library-safe
-  `MHPlatformCore` path.
-- `Fixtures/Consumers/RuntimeOnlyConsumer/` builds the
-  advanced `MHAppRuntime` runtime/bootstrap-only path.
-- `Fixtures/Consumers/SplitRuntimeConsumer/` builds the advanced
-  `MHAppRuntime` plus split-runtime-bundle composition path.
-- `Fixtures/Consumers/OptionalShellConsumer/` builds the opt-in
-  `MHMutationFlow` + `MHReviewPolicy` shell path.
-- `Fixtures/Consumers/SurfaceAdapterConsumer/` builds the widget, App Intent,
-  watch, and extension-adapter path using only granular core-safe products.
+Avoid `MHPlatform`, `MHAppRuntime`, split runtime bundles, ads, license, and
+review dependencies in surface adapters unless the target intentionally owns an
+app-root runtime surface.
 
-Minimum adoption evidence for documented consumer paths:
+## Public Products
 
-- shared-library path: fixture smoke tests cover `MHPlatformCore` codec and
-  reminder-policy wiring
-- runtime-only path: fixture smoke tests start an `MHAppRuntime` lifecycle
-  without split runtime bundles
-- explicit split-runtime composition: fixture smoke tests start an
-  `MHAppRuntime` lifecycle with split runtime bundles
-- optional-shell path: fixture smoke tests run `MHMutationWorkflow` with
-  `MHReviewFlow`
-- surface-adapter path: fixture smoke tests build route URLs, pending-route
-  handoff, notification payload resolution, reminder planning, and route
-  execution without app runtime or split runtime bundles
-- full umbrella path: `MHPlatformIntegrationTests` exercises notification
-  delivery, route replay, and mutation orchestration together
+Default adoption pillars:
 
-Supported default pillars:
+- `MHPlatform`
+- `MHPlatformCore`
 
-- `MHPlatform`: full app umbrella for composition roots that want the package's
-  default runtime and shell surface from one import.
-- `MHPlatformCore`: shared-package umbrella for core-safe functionality.
+Advanced app-root surface:
 
-Advanced app surface:
+- `MHAppRuntime`
 
-- `MHAppRuntime`: runtime/bootstrap foundation for app roots that want a
-  narrower surface or explicit split-runtime-bundle composition.
+Advanced runtime composition bundles:
 
-Testing support:
+- `MHAppRuntimeDefaults`
+- `MHAppRuntimeAds`
+- `MHAppRuntimeLicenses`
 
-- `MHPlatformTesting`: test-only support surface.
+Granular core-safe products and optional shells:
 
-Advanced composition surfaces:
+- `MHDeepLinking`
+- `MHLogging`
+- `MHNotificationPlans`
+- `MHNotificationPayloads`
+- `MHRouteExecution`
+- `MHPersistenceMaintenance`
+- `MHPreferences`
+- `MHPlatformUtilities`
+- `MHMutationFlow`
+- `MHMutationLogging`
+- `MHReviewPolicy`
 
-- split runtime bundles: `MHAppRuntimeDefaults`, `MHAppRuntimeAds`,
-  `MHAppRuntimeLicenses`
-- concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
-  `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
-  `MHPreferences`, `MHPlatformUtilities`
-- opt-in workflow shells: `MHMutationFlow`, `MHMutationLogging`,
-  `MHReviewPolicy`
+Test support:
 
-Full app umbrella adoption:
+- `MHPlatformTesting`
 
-```swift
-.product(name: "MHPlatform", package: "MHPlatform")
-```
+## Boundary Rules
 
-```swift
-import MHPlatform
-
-let store = MHPreferenceStore()
-let policy = MHReviewPolicy(
-    lotteryMaxExclusive: 10,
-    requestDelay: .seconds(2)
-)
-```
-
-`MHPlatform` remains an aggregation target with no independent runtime logic.
-It re-exports `MHPlatformCore`, `MHAppRuntime`, `MHMutationFlow`, and
-`MHReviewPolicy`. It also keeps the one-step
-`MHAppRuntime(configuration:)` and
-`MHAppRuntimeBootstrap(configuration:...)` convenience initializers that wire
-the split runtime bundles behind the full app path. This is the recommended
-convenience surface for app composition targets that intentionally want the
-full package-owned platform path.
-
-Shared package umbrella adoption:
-
-```swift
-.product(name: "MHPlatformCore", package: "MHPlatform")
-```
-
-```swift
-import MHPlatformCore
-
-let store = MHPreferenceStore()
-let logger = MHLoggerFactory.osLogDefault.logger(
-    category: "shared",
-    source: #fileID
-)
-```
-
-`MHPlatformCore` is the recommended umbrella for shared packages. It re-exports
-`MHDeepLinking`, `MHLogging`, `MHNotificationPlans`, `MHNotificationPayloads`,
-`MHRouteExecution`, `MHPersistenceMaintenance`, `MHPreferences`, and
-`MHPlatformUtilities` without pulling in `MHAppRuntime` or third-party runtime
-adapters. Shared packages should stop here or move to granular concrete
-modules.
-
-Granular adoption:
-
-```swift
-.product(name: "MHDeepLinking", package: "MHPlatform")
-.product(name: "MHRouteExecution", package: "MHPlatform")
-```
-
-```swift
-import MHDeepLinking
-import MHPreferences
-import MHRouteExecution
-```
+- `MHPlatform` remains a thin convenience umbrella over concrete modules.
+- `MHPlatformCore` must not pull in `MHAppRuntime`, app-root runtime adapters,
+  StoreKit, ads, licenses, mutation workflow, or review policy.
+- `MHAppRuntime` owns reusable runtime/bootstrap mechanics, not StoreKit, ads,
+  license, or app-specific side-effect policy.
+- Route enum meaning, navigation destination meaning, notification copy,
+  preference key meaning, persistence schema meaning, mutation result schemas,
+  and concrete side effects stay app-owned.
+- App-specific `*Operations` facades belong in adopting app shared libraries,
+  not in MHPlatform.
+- `MHPlatformTesting` is a separate test-support product and must not be
+  re-exported by production umbrellas.
 
 Direct third-party dependency rule:
 
@@ -205,794 +164,67 @@ Direct third-party dependency rule:
 - If consumer code uses those APIs directly, add the third-party package as a
   direct dependency and `import` that module explicitly.
 
-Testing support:
+## Fixture-Backed Evidence
 
-```swift
-.product(name: "MHPlatformTesting", package: "MHPlatform")
-```
+Compile-backed reference adopters live under `Fixtures/Consumers/`.
 
-`MHPlatformTesting` is a separate test-support product. It provides reusable
-helpers such as `MHNotificationCenterDouble`, `MHDeepLinkURLRecorder`,
-`MHLogSinkRecorder`, and `MHRouteExecutionRecorder` without re-exporting them
-through the umbrella `MHPlatform` module.
-For a package-owned end-to-end reference, see
-`Tests/MHPlatformIntegrationTests/MHPlatformIntegrationTests.swift`.
+- `SharedLibraryConsumer` proves the `MHPlatformCore` shared-library path.
+- `RuntimeOnlyConsumer` proves the `MHAppRuntime` runtime/bootstrap-only path.
+- `SplitRuntimeConsumer` proves explicit runtime-bundle composition.
+- `OptionalShellConsumer` proves route/review/mutation shells stay opt-in.
+- `SurfaceAdapterConsumer` proves the widget, App Intent, watch, and extension
+  adapter path using only granular core-safe products.
 
-Utilities support:
-
-`MHPlatformUtilities` provides small non-domain helpers that are safe for
-shared packages and app targets. It is re-exported by `MHPlatformCore`, and
-therefore also by the full `MHPlatform` umbrella.
-
-Integration contract:
-[`MHPlatformUtilities`](Designs/Architecture/integration-contracts.md#mhplatformutilities)
-
-```swift
-import MHPlatformCore
-
-let hasItems = items.isNotEmpty
-let displayDate = Date.now.stringValue(.yyyyMMMd)
-let stableID = try model.persistentModelID.base64Encoded()
-```
-
-The module intentionally excludes SwiftUI view modifiers, layout scales, image
-helpers, color generation, close-button components, and
-`PersistentModel.delete()`. Those are either UI-package concerns or app-owned
-persistence-policy choices.
-
-Optional shell rule:
-
-- Route, review, and mutation shells are optional.
-- Apps that only need runtime/bootstrap can stop at `MHAppRuntime`.
-- Shared packages must not adopt `MHPlatform`, `MHAppRuntime`, or
-  `MHReviewPolicy`.
-- Widget, App Intent, watch, and extension adapters should call app-owned
-  shared APIs first. When they need MHPlatform directly, use `MHPlatformCore`
-  or granular core-safe modules rather than the full app/runtime surfaces.
-- Add `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, and
-  `MHReviewFlow` only in targets that actually own those concerns.
+Package tests and integration tests cover the module behavior behind those
+consumer paths. `Example/MHPlatformExample/` remains the full-umbrella demo app.
 
 ## Current Adoption Snapshot
 
 - Incomes and Cookle currently adopt MHPlatform primarily through the umbrella
-  `MHPlatform` product.
-- `MHAppRuntime` is the main shared runtime-start surface already used in both
-  apps for startup, premium/ad availability state, and runtime-owned views.
-- `MHReviewPolicy` is already shared, but the surrounding workflow triggers stay
-  app-specific.
-- `MHRouteExecution` now provides both the low-level coordinator/executor
-  primitives and the higher-level `MHRouteLifecycle` shell. Both apps already
-  use the lifecycle helper while keeping route enums, parsing, and apply logic
-  app-owned.
-- Domain mutation result models, follow-up metadata, and concrete side effects
-  still belong to each app. `MHMutationFlow` now provides both
-  `MHMutationAdapter` and the higher-level `MHMutationWorkflow` shell so apps
-  can converge on a shared workflow shape without standardizing those
-  app-specific schemas.
-- Recent MHPlatform-first additions focus on thinner app integration:
-  `MHRouteLifecycle`, `MHRouteExecution` identity helpers, lifecycle
-  deep-link handoff helpers, codec-backed deep-link inbox/store/observable
-  inbox helpers, `MHLoggerFactory`, `MHMutationAdapter` composition, and
-  `MHMutationWorkflow`. These reduce app-side boilerplate without moving
-  route enums, effect models, or concrete side effects into MHPlatform.
-- `MHPlatformUtilities` now carries non-UI SwiftUtilities replacements that
-  fit the shared platform foundation: collection, optional, date, calendar,
-  number, string normalization, `PersistentIdentifier` coding, and thin
-  `ModelContext` fetch conveniences. UI, image, color, layout, and close-button
-  helpers remain outside MHPlatform and should be evaluated in MHUI.
-
-Recommended starting paths:
-
-- shared package umbrella: `MHPlatformCore`
-- full app default path: `MHPlatform`
-- advanced runtime foundation: `MHAppRuntime`
-- app root assembly shell: `MHAppRuntimeBootstrap`
-- explicit runtime defaults: `MHAppRuntimeDefaults`, `MHAppRuntimeAds`,
-  `MHAppRuntimeLicenses`
-- shared non-UI utilities: `MHPlatformUtilities`
-- preview/test runtime injection: `View.mhAppRuntimeEnvironment(_:)`
-- route root wiring: `MHAppRoutePipeline`
-- route handoff into app-owned navigation state: `MHObservableRouteInbox`
-- review trigger wiring: `MHReviewFlow`
-- fixed adapter follow-up from mutations: `MHMutationWorkflow.runThrowing(..., adapterValue:)`
-
-## MHAppRuntime
-
-`MHAppRuntimeBootstrap` is the recommended runtime-start entry point for new
-apps. It assembles `MHAppRuntime`, `MHAppRuntimeLifecyclePlan`, optional route
-pipeline root integration, and SwiftUI runtime environment injection into a
-single package-owned shell. Lower-level `MHAppRuntime`, `MHAppRuntimeLifecycle`,
-and `MHAppRoutePipeline` remain available when an app needs custom integration
-or non-SwiftUI control.
-
-`MHPlatform` is the default app-facing convenience surface. It keeps the
-one-step `MHAppRuntime(configuration:)` and
-`MHAppRuntimeBootstrap(configuration:...)` initializers for apps that want the
-package-owned StoreKit, ads, and license integrations through one import.
-`MHAppRuntime` is the advanced runtime/bootstrap foundation. Use it when the
-app wants runtime/lifecycle/route mechanics without the full umbrella, or when
-it wants to compose `MHAppRuntimeDefaultsBundle`, `MHAppRuntimeAdsBundle`, and
-`MHAppRuntimeLicensesBundle` explicitly. Those bundles expose
-`subscriptionSectionFactory`, `nativeAdFactory`, and `licensesFactory` for
-manual composition into `MHAppRuntime`.
-
-Integration contract:
-[`MHAppRuntime`](Designs/Architecture/integration-contracts.md#mhappruntime)
-
-```swift
-import MHAppRuntime
-import MHDeepLinking
-import MHLogging
-import MHRouteExecution
-
-let routeCodec = MHDeepLinkCodec<AppRoute>(
-    configuration: .init(
-        customScheme: "myapp",
-        preferredUniversalLinkHost: "example.com",
-        allowedUniversalLinkHosts: ["example.com"],
-        universalLinkPathPrefix: "MyApp",
-        preferredTransport: .customScheme
-    )
-)
-let routePipeline = MHAppRoutePipeline(
-    routeLifecycle: MHRouteLifecycle<AppRoute>(
-        logger: MHLoggerFactory.osLogDefault.logger(
-            category: "route",
-            source: #fileID
-        ),
-        initialReadiness: false,
-        isDuplicate: ==
-    ),
-    using: routeCodec,
-    pendingSources: [
-        intentStore,
-        notificationInbox
-    ]
-) { route in
-    try await applyRoute(route)
-}
-let bootstrap = MHAppRuntimeBootstrap(
-    runtimeOnlyConfiguration: .init(),
-    lifecyclePlan: .init(
-        commonTasks: [
-            .init(name: "syncSubscriptionState") {
-                syncSubscriptionStateIfNeeded()
-            }
-        ],
-        startupTasks: [
-            .init(name: "loadConfig") {
-                await configurationService.load()
-            }
-        ],
-        activeTasks: [
-            routePipeline.task(name: "synchronizePendingRoutes")
-        ],
-        skipFirstActivePhase: true
-    ),
-    routePipeline: routePipeline
-)
-
-ContentView()
-    .mhAppRuntimeBootstrap(bootstrap)
-```
-
-Use `bootstrap.routeInbox` when app-owned services need a package-owned pending
-route destination, such as notification or App Intent handoff adapters.
-When the app wants latest-route handoff before mutating navigation state, pair
-`MHAppRoutePipeline` with `MHObservableRouteInbox<Route>` and
-`View.mhRouteHandler(_:apply:)`. Observe `routePipeline.lastParseFailureURL`
-when invalid deep links should present app-owned error UI.
-`MHAppRoutePipeline` logs activation and route-apply failures through its
-`failureLogger` (or the default `MHAppRoutePipeline` logger). Provide
-`onFailure:` when the app also needs analytics, telemetry fan-out, or custom
-error presentation hooks.
-Runtime-bootstrap-only adoption remains a supported advanced path. Apps that do not use
-route, review, or mutation shells can stop at `MHAppRuntimeBootstrap` and
-`View.mhAppRuntimeEnvironment(_:)` without pulling additional workflow APIs
-into their root.
-
-For previews and tests that only need runtime injection, prefer:
-
-```swift
-let bootstrap = MHAppRuntimeBootstrap(
-    runtimeOnlyConfiguration: .init()
-)
-
-ContentView()
-    .mhAppRuntimeEnvironment(bootstrap)
-```
-
-## MHDeepLinking
-
-`MHDeepLinking` handles route URL building, parsing, and pending-route handoff
-without owning app-specific route enums. Inbox, observable inbox, and store
-helpers can round-trip app-owned routes through a codec while keeping the
-stored payload as a `URL`. `MHDeepLinkSourceChain` lets apps combine intent,
-notification, and in-memory handoff slots into a single ordered source.
-
-Integration contract:
-[`MHDeepLinking`](Designs/Architecture/integration-contracts.md#mhdeeplinking)
-
-```swift
-import MHDeepLinking
-
-let codec = MHDeepLinkCodec<MyRoute>(
-    configuration: .init(
-        customScheme: "myapp",
-        preferredUniversalLinkHost: "example.com",
-        allowedUniversalLinkHosts: ["example.com"],
-        universalLinkPathPrefix: "MyApp",
-        preferredTransport: .customScheme
-    )
-)
-let routeInbox = MHObservableDeepLinkInbox()
-let notificationInbox = MHDeepLinkInbox()
-enum AppDefaults {
-    static let mainSelection: MHUserDefaultsSelection = .standard
-}
-let intentStore = MHDeepLinkStore(
-    key: .init(
-        storageKey: "pendingIntentRouteURL",
-        defaultSelection: AppDefaults.mainSelection
-    )
-)
-let handoffSources = MHDeepLinkSourceChain(
-    intentStore,
-    notificationInbox
-)
-
-await notificationInbox.ingest(.settings, using: codec)
-let forwardedURL = await handoffSources.forwardLatestURL(to: routeInbox)
-let pendingRoute = await routeInbox.consumeLatest(using: codec)
-```
-
-## MHNotificationPlans
-
-`MHNotificationPlans` builds deterministic reminder and suggestion schedules without depending on `UserNotifications`.
-
-Integration contract:
-[`MHNotificationPlans`](Designs/Architecture/integration-contracts.md#mhnotificationplans)
-
-```swift
-import MHNotificationPlans
-
-let deliveryTime = MHNotificationTime(hour: 20, minute: 0)!
-let policy = MHReminderPolicy(
-    isEnabled: true,
-    minimumAmount: 500,
-    daysBeforeDueDate: 3,
-    deliveryTime: deliveryTime,
-    identifierPrefix: "upcoming-payment:"
-)
-```
-
-## MHNotificationPayloads
-
-`MHNotificationPayloads` provides routing-focused payload/action/userInfo models, response route resolution, and `UNUserNotificationCenter` orchestration helpers.
-
-Integration contract:
-[`MHNotificationPayloads`](Designs/Architecture/integration-contracts.md#mhnotificationpayloads)
-
-```swift
-import MHDeepLinking
-import MHNotificationPayloads
-import UserNotifications
-
-let payload = MHNotificationPayload(
-    routes: .init(
-        defaultRouteURL: URL(string: "myapp://item?id=rent"),
-        fallbackRouteURL: URL(string: "myapp://month?year=2026&month=1"),
-        actionRouteURLs: ["view-month": URL(string: "myapp://month?year=2026&month=1")!]
-    )
-)
-let inbox = MHDeepLinkInbox()
-
-let status = await MHNotificationOrchestrator.requestAuthorizationIfNeeded(
-    center: UNUserNotificationCenter.current(),
-    options: [.alert, .sound, .providesAppNotificationSettings]
-)
-let syncResult = await MHNotificationOrchestrator.replaceManagedPendingRequests(
-    center: UNUserNotificationCenter.current(),
-    requests: requestsToSchedule,
-    matcher: .init(prefixes: ["upcoming-payment:"])
-)
-let deliveryOutcome = await MHNotificationOrchestrator.deliverRouteURL(
-    payload: payload,
-    response: .init(
-        actionIdentifier: UNNotificationDefaultActionIdentifier
-    ),
-    destination: inbox
-)
-```
-
-## MHMutationFlow
-
-`MHMutationFlow` supports two adoption levels. Reach for
-`MHMutationWorkflow` when the app wants a default throwing shell with ordered
-follow-up steps. Drop to `MHMutationRunner` directly only when the app needs
-explicit retry, cancellation, or event streaming control.
-
-`MHMutationAdapter` lets an app map its own success value metadata or effect
-hints into ordered steps without introducing a shared cross-app mutation
-outcome model. Adapters can also be composed to keep fixed and value-derived
-follow-up steps explicit. For conditionally appending review, async, or
-main-actor work from app-owned effect flags, prefer
-`MHMutationAdapter.build { ... }` plus `MHMutationStepListBuilder` rather than
-adding another package-owned builder layer.
-
-Integration contract:
-[`MHMutationFlow`](Designs/Architecture/integration-contracts.md#mhmutationflow)
-
-```swift
-import MHMutationFlow
-
-struct SaveItemFollowUp: Sendable {
-    let shouldReloadWidgets: Bool
-    let shouldSyncNotifications: Bool
-}
-
-let adapter = MHMutationAdapter<SaveItemFollowUp>.build { followUp in
-    if followUp.shouldReloadWidgets {
-        MHMutationStep.mainActor(name: "reloadWidgets") {
-            reloadWidgets()
-        }
-    }
-
-    if followUp.shouldSyncNotifications {
-        MHMutationStep.mainActor(name: "syncNotifications") {
-            await syncNotifications()
-        }
-    }
-}
-
-let result = try await MHMutationWorkflow.runThrowing(
-    name: "save-item",
-    operation: {
-        "saved"
-    },
-    adapter: adapter,
-    adapterValue: .init(
-        shouldReloadWidgets: true,
-        shouldSyncNotifications: true
-    ),
-    configuration: .init(
-        retryPolicy: .default
-    )
-)
-```
-
-The lower-level `MHMutationRunner` remains available when the app needs
-observable event streams or direct run-handle ownership. Retry policy,
-cancellation handles, and operation failure formatting now fit in
-`MHMutationWorkflowConfiguration`. Use `adapterValue:` when the successful
-operation value should be returned unchanged and only the adapter input is
-fixed. Projection strategies keep adapter input and result shaping explicit
-with `.identity`, `.fixedAdapterValue(_:)`, `.keyPaths(adapterValue:resultValue:)`, and
-`.closures(afterSuccess:returning:)`. When an app already owns a combined
-success carrier, use `.valueAndFollowUp(value:followUp:)` to return the app
-value while routing app-owned follow-up metadata into the adapter. Add
-`onEvent:` to `MHMutationRunner` or `MHMutationWorkflow.runThrowing` when the
-app wants ordered mutation callbacks without storing an `AsyncStream`. Apps
-that want the standard logger bridge can pass
-`MHMutationWorkflowLogger(logger: logger).onEvent()` from `MHMutationLogging`.
-
-## MHRouteExecution
-
-`MHRouteExecution` supports two adoption levels. Reach for
-`MHRouteLifecycle` when the app wants a logger-backed helper around parsed
-URLs, pending-source drain, readiness gating, and queued-route replay. Drop to
-`MHRouteCoordinator` directly only when the app needs explicit resolve/apply
-separation or direct pending-queue introspection.
-
-When the app also wants package-owned root-view wiring for ordered source
-composition, URL ingestion, and activation/drain coordination, layer
-`MHAppRoutePipeline` on top from `MHAppRuntime`.
-
-Integration contract:
-[`MHRouteExecution`](Designs/Architecture/integration-contracts.md#mhrouteexecution)
-
-```swift
-import MHDeepLinking
-import MHLogging
-import MHRouteExecution
-
-let codec = MHDeepLinkCodec<AppRoute>(
-    configuration: .init(
-        customScheme: "myapp",
-        preferredUniversalLinkHost: "example.com",
-        allowedUniversalLinkHosts: ["example.com"],
-        universalLinkPathPrefix: "MyApp",
-        preferredTransport: .customScheme
-    )
-)
-let routeInbox = MHObservableDeepLinkInbox()
-let notificationInbox = MHDeepLinkInbox()
-let logger = MHLoggerFactory.osLogDefault.logger(
-    category: "route",
-    source: #fileID
-)
-let routeLifecycle = MHRouteLifecycle<AppRoute>(
-    logger: logger,
-    initialReadiness: false,
-    isDuplicate: ==
-)
-await routeLifecycle.setReadiness(hasLoadedInitialState)
-
-_ = try await routeLifecycle.submitLatest(
-    from: routeInbox,
-    notificationInbox,
-    using: codec,
-    applyOnMainActor: { route in
-        try await applyRoute(route)
-    }
-)
-```
-
-Use `MHObservableDeepLinkInbox` when SwiftUI needs to observe the pending URL,
-swap in `MHDeepLinkInbox` for actor-only handoff, and use `MHDeepLinkStore`
-when the pending URL must survive process restarts. When multiple sources can
-race to provide the next URL, pass them directly to `submitLatest(from:...)`
-in priority order or build an `MHDeepLinkSourceChain` first when you want to
-reuse that ordering elsewhere.
-Use `MHObservableRouteInbox<Route>` when parsed routes should be handed to an
-app-owned navigation model through a replace-latest observable slot.
-
-The lower-level `MHRouteCoordinator` and identity-route apply path remain
-available for flows that need a custom resolve/apply split or direct pending
-queue inspection.
-
-## MHPersistenceMaintenance
-
-`MHPersistenceMaintenance` provides store-file relocation primitives and
-ordered destructive reset orchestration for app-owned persistence cleanup
-flows.
-
-Integration contract:
-[`MHPersistenceMaintenance`](Designs/Architecture/integration-contracts.md#mhpersistencemaintenance)
-
-```swift
-import MHPersistenceMaintenance
-import SwiftData
-
-let currentConfiguration = ModelConfiguration(url: currentStoreURL)
-let relocationPlan = MHStoreRelocationPlan(
-    legacyStoreURL: legacyStoreURL,
-    currentStoreURL: currentConfiguration.url
-)
-
-let relocationOutcome = try MHStoreRelocationService.relocateIfNeeded(
-    plan: relocationPlan
-) { relocatedStoreURL, _ in
-    let validationConfiguration = ModelConfiguration(url: relocatedStoreURL)
-    _ = try ModelContainer(
-        for: AppRecord.self,
-        configurations: validationConfiguration
-    )
-}
-
-let resetOutcome = await MHDestructiveResetService.run(
-    steps: [
-        .init(name: "deleteAll") {
-            try await deleteAllData()
-        }
-    ]
-)
-```
-
-The app chooses legacy/current store URLs, validates that the relocated store
-opens with the current schema, and decides when legacy files should be removed.
-
-## MHPreferences
-
-`MHPreferences` provides a typed preference layer backed by `UserDefaults`.
-`MHPreferenceStore` is the canonical non-SwiftUI access path, while SwiftUI
-integration is layered on top through `AppStorage` wrappers for primitive and
-`Date` values plus dedicated codable wrappers.
-
-Integration contract:
-[`MHPreferences`](Designs/Architecture/integration-contracts.md#mhpreferences)
-
-```swift
-import MHPreferences
-import SwiftUI
-
-enum AppDefaults {
-    static let mainSelection: MHUserDefaultsSelection = .suite("group.com.example.app")
-}
-
-struct UserProfile: Codable, Equatable, Sendable {
-    let displayName: String
-    let launchCount: Int
-}
-
-extension MHPreferenceDescriptors {
-    var notificationsEnabled: MHBoolPreferenceDescriptor {
-        .init(
-            storageKey: "app.preferences.notifications.enabled",
-            defaultSelection: AppDefaults.mainSelection,
-            default: true
-        )
-    }
-
-    var displayName: MHStringPreferenceDescriptor {
-        .init(
-            storageKey: "app.preferences.display-name",
-            defaultSelection: AppDefaults.mainSelection
-        )
-    }
-
-    var lastSeenAt: MHDatePreferenceDescriptor {
-        .init(
-            storageKey: "app.preferences.last-seen-at",
-            defaultSelection: AppDefaults.mainSelection
-        )
-    }
-
-    var userProfile: MHCodablePreferenceDescriptor<UserProfile> {
-        .init(
-            storageKey: "app.preferences.user-profile",
-            defaultSelection: AppDefaults.mainSelection
-        )
-    }
-}
-
-let store = MHPreferenceStore()
-let isEnabled = store.bool(for: \.notificationsEnabled)
-let displayName = store.string(for: \.displayName, default: "")
-store.set(false, for: \.notificationsEnabled)
-
-struct SettingsView: View {
-    @AppStorage(\.notificationsEnabled) private var notificationsEnabled
-    @AppStorage(\.displayName, default: "") private var displayName
-    @AppStorage(\.lastSeenAt) private var lastSeenAt
-    @MHCodablePreference(
-        \.userProfile,
-        default: .init(displayName: "", launchCount: 0)
-    )
-    private var userProfile: UserProfile
-}
-```
-
-Use `MHPreferenceStore` for app logic, migration, cleanup, and other
-non-SwiftUI access. In SwiftUI views, use `@AppStorage(...)`,
-`@MHCodablePreference(...)`, or `@MHOptionalCodablePreference(...)` as wrappers
-over the same `UserDefaults`-backed descriptors.
-
-`@AppStorage(descriptor)` remains available, and concrete descriptor overloads
-still allow the property type to be inferred without spelling it explicitly.
-Apps that want `.notificationsEnabled` shorthand can add a manual static alias
-on the descriptor type; MHPlatform does not auto-generate those aliases.
-
-It also provides explicit unknown-key cleanup for caller-owned domains.
-
-```swift
-enum AppDefaultsDescriptor: CaseIterable, MHStorageDescriptorProtocol {
-    case notifications
-    case pendingDeepLink
-
-    var storageKey: String {
-        switch self {
-        case .notifications:
-            "app.preferences.notifications.enabled"
-        case .pendingDeepLink:
-            "app.pending-deeplink"
-        }
-    }
-
-    var defaultSelection: MHUserDefaultsSelection {
-        .suite("group.com.example.app")
-    }
-}
-
-let cleanupReport = MHUserDefaultsCleanupService.removeUnknownKeys(
-    from: userDefaults,
-    domainName: "group.com.example.app",
-    knownDescriptors: AppDefaultsDescriptor.allCases
-)
-```
-
-Use this API from app startup or a settings maintenance action when you want to
-prune stale `UserDefaults` values that no longer belong to the current
-descriptor set.
-
-It also provides a launch-time lifecycle service for moving values between
-`UserDefaults` keys or domains before SwiftUI starts reading the current
-descriptors. Current descriptors can declare legacy storage slots directly, and
-the app can register its full current descriptor set with an enum.
-
-```swift
-enum AppDefaults {
-    static let legacySelection: MHUserDefaultsSelection = .standard
-    static let mainSelection: MHUserDefaultsSelection = .suite("group.com.example.app")
-}
-
-let migrationState = MHPreferenceMigrationStateDescriptor(
-    storageKey: "app.preferences.migration-state",
-    defaultSelection: AppDefaults.mainSelection
-)
-
-enum AppStringPreference {
-    case displayName
-
-    var descriptor: MHStringPreferenceDescriptor {
-        switch self {
-        case .displayName:
-            .init(
-                storageKey: "app.preferences.display-name",
-                defaultSelection: AppDefaults.mainSelection,
-                legacySources: [
-                    .init(
-                        storageKey: "legacy.display-name",
-                        selection: AppDefaults.legacySelection
-                    )
-                ]
-            )
-        }
-    }
-}
-
-enum AppBoolPreference {
-    case notificationsEnabled
-
-    var descriptor: MHBoolPreferenceDescriptor {
-        switch self {
-        case .notificationsEnabled:
-            .init(
-                storageKey: "app.preferences.notifications.enabled",
-                defaultSelection: AppDefaults.mainSelection,
-                default: true
-            )
-        }
-    }
-}
-
-enum AppPreferenceDescriptorRegistry: CaseIterable, MHStorageDescriptorProtocol {
-    case displayName
-    case notificationsEnabled
-
-    var storageKey: String {
-        switch self {
-        case .displayName:
-            AppStringPreference.displayName.descriptor.storageKey
-        case .notificationsEnabled:
-            AppBoolPreference.notificationsEnabled.descriptor.storageKey
-        }
-    }
-
-    var defaultSelection: MHUserDefaultsSelection {
-        switch self {
-        case .displayName:
-            AppStringPreference.displayName.descriptor.defaultSelection
-        case .notificationsEnabled:
-            AppBoolPreference.notificationsEnabled.descriptor.defaultSelection
-        }
-    }
-
-    func migrationSteps(
-        store: MHPreferenceStore
-    ) -> [MHPreferenceMigrationStep] {
-        switch self {
-        case .displayName:
-            AppStringPreference.displayName.descriptor.migrationSteps(
-                store: store
-            )
-        case .notificationsEnabled:
-            AppBoolPreference.notificationsEnabled.descriptor.migrationSteps(
-                store: store
-            )
-        }
-    }
-}
-
-let lifecycleOutcome = await MHPreferenceLifecycleService.run(
-    descriptors: AppPreferenceDescriptorRegistry.allCases,
-    migrationStateDescriptor: migrationState,
-    standardDomainName: Bundle.main.bundleIdentifier
-)
-```
-
-## MHReviewPolicy
-
-`MHReviewPolicy` provides review-request lottery policy plus a higher-level flow shell with runtime and mutation wiring.
-
-Integration contract:
-[`MHReviewPolicy`](Designs/Architecture/integration-contracts.md#mhreviewpolicy)
-
-```swift
-import MHReviewPolicy
-
-let policy = MHReviewPolicy(
-    lotteryMaxExclusive: 10,
-    requestDelay: .seconds(2)
-)
-
-let reviewFlow = MHReviewFlow(policy: policy)
-let outcome = await reviewFlow.requestIfNeeded()
-```
-
-Prefer `reviewFlow.step(name:)` for successful mutation follow-up and
-`reviewFlow.task(name:)` for lifecycle or activation-based prompts. Keep the
-mapping from app-specific success effects to "should request review" decisions
-in the app layer.
-
-## MHLogging
-
-`MHLogging` provides a structured logging surface with in-memory query support,
-optional last-session snapshot storage, reusable console UI, and small metadata
-helpers. `MHLoggerFactory` is a thin helper for app-owned logger setup; it does
-not move runtime wiring or policy decisions into MHPlatform.
-
-Integration contract:
-[`MHLogging`](Designs/Architecture/integration-contracts.md#mhlogging)
-
-```swift
-import MHLogging
-
-let policy = MHLogPolicy.default
-let loggerFactory = MHLoggerFactory(
-    policy: policy,
-    subsystem: "com.example.app",
-    sinks: [MHOSLogSink()]
-)
-let logger = loggerFactory.logger(
-    category: "startup",
-    source: #fileID
-)
-logger.info("App started")
-logger.info(
-    "Subscription refreshed",
-    metadata: MHLogMetadata.merge(
-        MHLogMetadata.bool("isPremium", true),
-        MHLogMetadata.count("productCount", 2)
-    )
-)
-
-let logging = MHLoggingBootstrap(
-    subsystem: "com.example.app",
-    snapshotStorageDescriptors: .init(
-        current: .init(
-            storageKey: "opaque.example.logging.current-session",
-            defaultSelection: .suite("group.com.example.app")
-        ),
-        previous: .init(
-            storageKey: "opaque.example.logging.previous-session",
-            defaultSelection: .suite("group.com.example.app")
-        )
-    )
-)
-```
+  `MHPlatform` product in app composition targets.
+- `MHAppRuntime` is the shared runtime/startup surface used by app targets.
+- `MHRouteExecution`, `MHDeepLinking`, `MHNotificationPlans`,
+  `MHNotificationPayloads`, `MHPreferences`, `MHLogging`, `MHMutationFlow`, and
+  `MHReviewPolicy` provide reusable infrastructure while route meanings,
+  mutation effects, notification copy, review timing, and platform side effects
+  stay app-owned.
+- Shared-library and surface-adapter consumers should follow the consumer
+  matrix instead of mirroring an app target's umbrella imports.
 
 ## Example App
 
-`MHPlatformExample` demonstrates all modules with app-local sample data in `Example/`.
-It remains the package-owned reference for the full `MHPlatform` umbrella.
-Consumer-specific minimal adopters live in `Fixtures/Consumers/` instead of
-duplicating those narrower paths inside the demo app.
+`MHPlatformExample` demonstrates the full `MHPlatform` umbrella with app-local
+sample data in `Example/`.
 
 It includes cross-module demos for:
 
-- DeepLinking inbox + RouteLifecycle pipeline
-- RouteExecution low-level coordinator apply path
-- NotificationPlans + NotificationPayloads pipeline
-- MutationWorkflow-driven ReviewPolicy trigger
-- Structured logging + last-session diagnostics workflow
-- MutationFlow adapter composition with ordered follow-up steps
+- Deep-link inbox and route-lifecycle pipelines.
+- Low-level route execution.
+- Notification planning and notification payload routing.
+- Mutation workflow and review policy integration.
+- Structured logging and last-session diagnostics.
+- Mutation adapter composition with ordered follow-up steps.
+
+Consumer-specific minimal adopters live in `Fixtures/Consumers/` instead of
+duplicating narrower paths inside the demo app.
 
 ## Requirements
 
-- Xcode 16 or later with the iOS 18, macOS 15, and watchOS 11 SDKs installed
-- `swiftlint` for repository verify and strict lint runs
+- Xcode 16 or later with the iOS 18, macOS 15, and watchOS 11 SDKs installed.
+- `swiftlint` for repository verification and strict lint runs.
 
 ## Setup
 
 1. Clone the repository and open the project directory.
 2. Open `Package.swift` in Xcode if you want package browsing and test support.
-3. Open `Example/MHPlatformExample.xcodeproj` if you want to run the demo app shell.
-4. Use the helper scripts in `ci_scripts/tasks/` for repeatable local verification.
+3. Open `Example/MHPlatformExample.xcodeproj` if you want to run the demo app
+   shell.
+4. Use the helper scripts in `ci_scripts/tasks/` for repeatable local
+   verification.
 
 ## Build and Test
 
-Use the helper scripts in `ci_scripts/tasks/` as needed. For full local verification:
+For full local verification:
 
 ```sh
 bash ci_scripts/tasks/verify_task_completion.sh
@@ -1022,6 +254,15 @@ If you want an optional local push hook:
 ```sh
 bash ci_scripts/tasks/verify_pre_push.sh
 ```
+
+`ci_scripts/tasks/verify.sh` remains only as a legacy compatibility wrapper
+around `verify_task_completion.sh`.
+
+The retained shell gate covers SwiftLint, SwiftPM tests, consumer fixture
+builds, example-project builds, repository-specific static rules, and generated
+run artifacts. Use XcodeBuildMCP or official Apple tooling when a change needs
+live Apple runtime, Simulator, screenshot, UI snapshot, or Xcode-specific
+evidence.
 
 ## CI Artifact Layout
 

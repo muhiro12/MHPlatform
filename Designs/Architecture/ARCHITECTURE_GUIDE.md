@@ -82,6 +82,8 @@ Apps still own the mutation result schema and follow-up policy.
   composition around `MHAppRuntime`.
 - `Fixtures/Consumers/OptionalShellConsumer/` proves route/review/mutation
   shells stay opt-in instead of defining the platform baseline.
+- `Fixtures/Consumers/SurfaceAdapterConsumer/` proves widget, App Intent,
+  watch, and extension-adapter adoption through core-safe products.
 - `ci_scripts/tasks/test_consumer_fixtures.sh` compiles those fixture packages
   in CI so the documented consumer matrix stays build-backed.
 

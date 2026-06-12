@@ -6,13 +6,28 @@ Actual verification history lives under `.build/ci/runs/<RUN_ID>/`.
 
 ## Standard Entry Points
 
-Use one of these repository entry points:
+Use these repository entry points:
 
-- `bash ci_scripts/tasks/verify.sh`
-- `bash ci_scripts/tasks/run_required_builds.sh`
+- `bash ci_scripts/tasks/verify_task_completion.sh`
+- `bash ci_scripts/tasks/verify_repository_state.sh`
 
-`verify.sh` is the full verification path for clean checkouts and CI.
-`run_required_builds.sh` is the incremental path for local diff-based work.
+`verify_task_completion.sh` is the full task-completion gate for clean
+checkouts, local implementation work, and CI-equivalent validation.
+`verify_repository_state.sh` is the change-based repository-state gate for
+local diff-focused work.
+`verify.sh` remains only as a legacy compatibility wrapper around the full
+task-completion gate.
+`run_required_builds.sh` remains the internal incremental planner used by the
+repository-state gate.
+
+## Apple Runtime Evidence
+
+MHPlatform intentionally retains shell verification for SwiftLint, SwiftPM
+tests, consumer fixture builds, example-project builds, repository-specific
+static rules, and run artifacts.
+When a change needs live Apple runtime, Simulator, screenshot, UI snapshot, or
+Xcode-specific evidence, use XcodeBuildMCP or official Apple tooling in
+addition to the retained repository gate.
 
 ## Run Artifact Layout
 
