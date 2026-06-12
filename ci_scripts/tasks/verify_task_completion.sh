@@ -11,6 +11,5 @@ script_directory=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 repository_root=$(cd "$script_directory/../.." && pwd)
 cd "$repository_root"
 
-echo "Running full verification pipeline..."
-CI_RUN_FORCE_ALL=1 \
-bash "$repository_root/ci_scripts/tasks/verify_repository_state.sh"
+echo "Running retained MHPlatform task-completion compatibility checks..."
+bash "$repository_root/ci_scripts/tasks/check_repository_rules.sh"

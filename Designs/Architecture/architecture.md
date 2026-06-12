@@ -346,10 +346,16 @@ Integration contract:
 
 - Changes stay inside `MHPlatform/`.
 - `Incomes/` and `Cookle/` remain read-only reference material.
-- Run `bash ci_scripts/tasks/verify_task_completion.sh` for the full
-  repository verification path.
-- Run `bash ci_scripts/tasks/verify_repository_state.sh` when only
-  change-based repository-state checks are needed.
-- Use XcodeBuildMCP or official Apple tooling when a change needs live example
-  app, Simulator, screenshot, UI snapshot, or Xcode-specific evidence.
+- Prefer XcodeBuildMCP for Apple build, test, run, Simulator, runtime log,
+  screenshot, and UI snapshot evidence.
+- Use XcodeBuildMCP `build_sim` / `test_sim` with
+  `.swiftpm/xcode/package.xcworkspace` and the `MHPlatform-Package` scheme for
+  package compile and test evidence.
+- Use XcodeBuildMCP `build_sim` / `build_run_sim` with
+  `Example/MHPlatformExample.xcodeproj` and the `MHPlatformExample` scheme for
+  example app compile or runtime evidence.
+- Run `bash ci_scripts/tasks/check_repository_rules.sh` for retained SwiftLint,
+  models-directory consistency, and consumer fixture checks.
+- Treat direct shell build/test scripts and `verify_*` scripts as compatibility
+  or fallback wrappers when MCP is unavailable or not sufficient for a check.
 - Inspect `.build/ci/runs/<RUN_ID>/` artifacts when verification fails.

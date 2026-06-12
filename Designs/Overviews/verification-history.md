@@ -2,37 +2,71 @@
 
 This document is intentionally durable guidance, not a manually maintained run
 log.
-Actual verification history lives under `.build/ci/runs/<RUN_ID>/`.
+XcodeBuildMCP owns MCP build, test, runtime, screenshot, and UI evidence.
+Compatibility shell run history lives under `.build/ci/runs/<RUN_ID>/` when a
+fallback wrapper uses the run artifact helper.
 
-## Standard Entry Points
+## MCP-First Verification Contract
 
-Use these repository entry points:
+Use XcodeBuildMCP as the standard evidence surface for Apple build, test, run,
+Simulator, runtime log, screenshot, and UI snapshot verification.
+
+For package compile checks:
+
+- XcodeBuildMCP `build_sim`
+- Workspace: `.swiftpm/xcode/package.xcworkspace`
+- Scheme: `MHPlatform-Package`
+- Simulator: an available iPhone simulator
+
+For package tests:
+
+- XcodeBuildMCP `test_sim`
+- Workspace: `.swiftpm/xcode/package.xcworkspace`
+- Scheme: `MHPlatform-Package`
+- Simulator: an available iPhone simulator
+
+For example app compile or runtime evidence:
+
+- XcodeBuildMCP `build_sim` or `build_run_sim`
+- Project: `Example/MHPlatformExample.xcodeproj`
+- Scheme: `MHPlatformExample`
+- Simulator: an available iPhone simulator
+
+Use the `MHPlatform` scheme from `Example/MHPlatformExample.xcodeproj` when the
+package umbrella needs an example-project compile check.
+
+## Retained Shell Checks
+
+Run retained repository rules with:
+
+```sh
+bash ci_scripts/tasks/check_repository_rules.sh
+```
+
+`check_repository_rules.sh` runs SwiftLint, the models-directory consistency
+check, and consumer fixture checks that are not naturally covered by
+XcodeBuildMCP.
+
+The following scripts are compatibility wrappers around retained repository
+rules:
 
 - `bash ci_scripts/tasks/verify_task_completion.sh`
 - `bash ci_scripts/tasks/verify_repository_state.sh`
+- `bash ci_scripts/tasks/verify_pre_push.sh`
+- `bash ci_scripts/tasks/verify.sh`
 
-`verify_task_completion.sh` is the full task-completion gate for clean
-checkouts, local implementation work, and CI-equivalent validation.
-`verify_repository_state.sh` is the change-based repository-state gate for
-local diff-focused work.
-`verify.sh` remains only as a legacy compatibility wrapper around the full
-task-completion gate.
-`run_required_builds.sh` remains the internal incremental planner used by the
-repository-state gate.
+The aggregate shell build and package-test wrappers remain fallback tools when
+MCP is unavailable or when a check is not yet covered by the available MCP tool
+surface:
 
-## Apple Runtime Evidence
-
-MHPlatform intentionally retains shell verification for SwiftLint, SwiftPM
-tests, consumer fixture builds, example-project builds, repository-specific
-static rules, and run artifacts.
-When a change needs live Apple runtime, Simulator, screenshot, UI snapshot, or
-Xcode-specific evidence, use XcodeBuildMCP or official Apple tooling in
-addition to the retained repository gate.
+- `bash ci_scripts/tasks/build_app.sh`
+- `bash ci_scripts/tasks/test_shared_library.sh`
+- `bash ci_scripts/tasks/run_required_builds.sh`
 
 ## Run Artifact Layout
 
-Each verification run writes a directory under `.build/ci/runs/<RUN_ID>/` with
-these artifacts:
+Compatibility aggregate scripts may write directories under
+`.build/ci/runs/<RUN_ID>/` with these artifacts:
 
 - `summary.md`
 - `commands.txt`
@@ -41,7 +75,8 @@ these artifacts:
 - `results/`
 - `work/`
 
-Only the newest 5 run directories are retained.
+Only the newest 5 run directories are retained by scripts that use the run
+artifact helper.
 The entire `.build/ci/` directory is disposable and should be treated as
 generated state.
 

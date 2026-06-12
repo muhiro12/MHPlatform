@@ -11,5 +11,5 @@ script_directory=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 repository_root=$(cd "$script_directory/../.." && pwd)
 cd "$repository_root"
 
-echo "Running pre-push verification..."
-bash "$repository_root/ci_scripts/tasks/verify_task_completion.sh"
+echo "Running pre-push retained repository rules..."
+bash "$repository_root/ci_scripts/tasks/check_repository_rules.sh"

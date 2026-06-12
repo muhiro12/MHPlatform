@@ -224,50 +224,53 @@ duplicating narrower paths inside the demo app.
 
 ## Build and Test
 
-For full local verification:
+Use Xcode and XcodeBuildMCP for Apple build, test, run, Simulator, runtime log,
+screenshot, and UI snapshot verification.
+
+For MHPlatform package compile checks, use XcodeBuildMCP `build_sim` with
+`.swiftpm/xcode/package.xcworkspace` and the `MHPlatform-Package` scheme. For
+package tests, use XcodeBuildMCP `test_sim` with the same workspace and scheme.
+
+For example app compile or runtime checks, use XcodeBuildMCP `build_sim` or
+`build_run_sim` with `Example/MHPlatformExample.xcodeproj` and the
+`MHPlatformExample` scheme. Use the `MHPlatform` scheme from the same project
+when the package umbrella needs an example-project compile check.
+
+The remaining helper scripts in `ci_scripts/` are retained for repository rules
+and compatibility wrappers that are not naturally covered by XcodeBuildMCP.
+
+For retained repository rule checks:
+
+```sh
+bash ci_scripts/tasks/check_repository_rules.sh
+```
+
+This retained rule entry point runs SwiftLint, the models-directory consistency
+check, and consumer fixture checks.
+
+Compatibility wrappers remain available for older local habits and push hooks:
 
 ```sh
 bash ci_scripts/tasks/verify_task_completion.sh
-```
-
-Use `verify_repository_state.sh` when you only want required checks based on
-local package changes:
-
-```sh
 bash ci_scripts/tasks/verify_repository_state.sh
+bash ci_scripts/tasks/verify_pre_push.sh
+bash ci_scripts/tasks/verify.sh
 ```
 
-If you only need the package and example app build:
+The aggregate shell build and package-test wrappers are kept for fallback use
+when MCP is unavailable or when a check is not yet covered by the available MCP
+tool surface:
 
 ```sh
 bash ci_scripts/tasks/build_app.sh
-```
-
-If you only need Swift package tests:
-
-```sh
 bash ci_scripts/tasks/test_shared_library.sh
+bash ci_scripts/tasks/run_required_builds.sh
 ```
-
-If you want an optional local push hook:
-
-```sh
-bash ci_scripts/tasks/verify_pre_push.sh
-```
-
-`ci_scripts/tasks/verify.sh` remains only as a legacy compatibility wrapper
-around `verify_task_completion.sh`.
-
-The retained shell gate covers SwiftLint, SwiftPM tests, consumer fixture
-builds, example-project builds, repository-specific static rules, and generated
-run artifacts. Use XcodeBuildMCP or official Apple tooling when a change needs
-live Apple runtime, Simulator, screenshot, UI snapshot, or Xcode-specific
-evidence.
 
 ## CI Artifact Layout
 
-CI helper scripts write generated artifacts under `.build/ci/`.
+Compatibility aggregate scripts write generated artifacts under `.build/ci/`.
 Run-scoped outputs are stored in `.build/ci/runs/<RUN_ID>/` (`summary.md`,
-`commands.txt`, `meta.json`, `logs/`, `results/`, `work/`), while shared
-caches and build state live in `.build/ci/shared/` (`cache/`, `DerivedData/`,
-`tmp/`, `home/`).
+`commands.txt`, `meta.json`, `logs/`, `results/`, `work/`) when a wrapper uses
+the run artifact helper. Shared caches and build state live in
+`.build/ci/shared/` (`cache/`, `DerivedData/`, `tmp/`, `home/`).

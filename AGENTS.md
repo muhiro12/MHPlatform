@@ -53,39 +53,47 @@ outside this repository.
 
 ## Verification Contract
 
-Agents must use this full task-completion entry point before finishing
-implementation work:
+Agents must prefer XcodeBuildMCP for Apple build, test, run, Simulator, runtime
+log, screenshot, and UI snapshot verification.
+
+Before the first MCP build or test call in a session, run XcodeBuildMCP
+`session_show_defaults`. If defaults do not point at MHPlatform, set them for
+the current session instead of relying on shell wrappers.
+
+For package compile checks, use XcodeBuildMCP `build_sim` with:
+
+- Workspace: `.swiftpm/xcode/package.xcworkspace`
+- Scheme: `MHPlatform-Package`
+- Simulator: an available iPhone simulator
+
+For package tests, use XcodeBuildMCP `test_sim` with the same workspace and
+scheme.
+
+For example app compile or runtime checks, use XcodeBuildMCP `build_sim` or
+`build_run_sim` with:
+
+- Project: `Example/MHPlatformExample.xcodeproj`
+- Scheme: `MHPlatformExample`
+- Simulator: an available iPhone simulator
+
+For package umbrella compile checks through the example project, use the same
+project with the `MHPlatform` scheme.
+
+Agents should also run the retained repository rule checks:
 
 ```sh
-bash ci_scripts/tasks/verify_task_completion.sh
+bash ci_scripts/tasks/check_repository_rules.sh
 ```
 
-Use this supplemental repository-state entry point when only change-based checks
-are needed:
+`check_repository_rules.sh` runs SwiftLint, the models-directory consistency
+check, and consumer fixture checks that are not naturally covered by
+XcodeBuildMCP.
 
-```sh
-bash ci_scripts/tasks/verify_repository_state.sh
-```
+`verify_task_completion.sh`, `verify_repository_state.sh`, `verify_pre_push.sh`,
+and `verify.sh` are compatibility wrappers around retained repository rules.
+Direct shell build and package-test scripts are compatibility or fallback tools;
+do not treat them as the primary agent verification surface when MCP is
+available.
 
-`ci_scripts/tasks/verify.sh` is a legacy compatibility wrapper around the full
-task-completion gate. Do not document it as the primary entry point for new
-work.
-
-If a local push hook is desired, use this optional wrapper:
-
-```sh
-bash ci_scripts/tasks/verify_pre_push.sh
-```
-
-MHPlatform intentionally retains shell verification for SwiftLint, SwiftPM
-tests, consumer fixture builds, example-project builds, repository-specific
-static rules, and `.build/ci/runs/<RUN_ID>/` artifacts. When work requires live
-Apple runtime, Simulator, screenshot, UI snapshot, or Xcode-specific evidence,
-prefer XcodeBuildMCP or official Apple tooling in addition to the retained
-repository gate.
-
-CI run artifacts are written under `.build/ci/runs/<RUN_ID>/`. Each run stores
-`summary.md`, `commands.txt`, `meta.json`, `logs/`, `results/`, and `work/`.
-Shared CI directories are under `.build/ci/shared/` (`cache/`, `DerivedData/`,
-`tmp/`, `home/`). Only the newest 5 run directories are retained. The entire
-`.build/ci` directory is disposable.
+Compatibility scripts may write disposable cache data under `.build/ci/shared/`
+or run artifacts under `.build/ci/runs/<RUN_ID>/`.
