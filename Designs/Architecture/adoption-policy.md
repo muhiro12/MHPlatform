@@ -13,6 +13,10 @@ fallback shells inside MHPlatform.
   `MHAppRuntime`.
 - Shared packages and shared libraries should adopt `MHPlatformCore` or
   granular core-safe modules.
+- Widget, App Intent, watch, and extension adapters should call the app's
+  shared APIs first. If they need MHPlatform directly, they should adopt
+  `MHPlatformCore` or granular core-safe modules rather than app runtime
+  products.
 - Route, mutation, and review shells remain opt-in additions. They do not
   change the base product recommendation for a target.
 
@@ -54,6 +58,26 @@ it should adopt `MHPlatformCore`.
 
 Do not keep the full `MHPlatform` umbrella in a shared library only because an
 app target happens to use it elsewhere.
+
+## Surface Adapter Selection Rule
+
+For widgets, App Intents, watch companion surfaces, notification extensions,
+and Shortcuts adapters, start from the app's shared library or shared
+`*Operations` APIs. MHPlatform does not define app-specific operations or
+business facades.
+
+If the surface needs direct platform primitives, choose `MHPlatformCore` or the
+specific granular product:
+
+- `MHDeepLinking` for route URL building and pending-route handoff
+- `MHNotificationPlans` for deterministic schedule planning
+- `MHNotificationPayloads` for notification route payload resolution
+- `MHPreferences` for `UserDefaults`-backed app group preference access
+- `MHRouteExecution` for readiness-gated route execution primitives
+
+Do not add `MHPlatform`, `MHAppRuntime`, `MHAppRuntimeDefaults`,
+`MHAppRuntimeAds`, `MHAppRuntimeLicenses`, or `MHReviewPolicy` to a surface
+adapter only to reach those core primitives.
 
 ## Advanced Runtime Selection Rule
 
@@ -100,6 +124,8 @@ They are not part of the minimum runtime/bootstrap baseline.
    integration glue for historical adoption paths.
 3. Keep app-specific route meaning, preference meaning, mutation semantics, and
    notification semantics outside MHPlatform.
+4. Keep App Intent, widget, watch, and extension adapters thin over app-owned
+   shared APIs and core-safe MHPlatform primitives.
 
 ## Out Of Scope For This Run
 

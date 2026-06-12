@@ -32,6 +32,7 @@ mkdir -p \
 
 fixtures=(
   "SharedLibraryConsumer"
+  "SurfaceAdapterConsumer"
   "RuntimeOnlyConsumer"
   "SplitRuntimeConsumer"
   "OptionalShellConsumer"

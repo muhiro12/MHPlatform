@@ -71,6 +71,8 @@ Normative consumer matrix:
 | Full-platform app target (`FooApp`, `FooWatch`) | `MHPlatform` | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Split runtime bundles unless custom composition is intentional |
 | Advanced runtime/bootstrap app target | `MHAppRuntime` | `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`, `MHMutationFlow`, `MHReviewPolicy`, concrete core modules | Pulling `MHPlatform` only to reach bootstrap helpers when the narrower runtime surface is intentional |
 | Shared logic package / shared library | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance`, `MHPlatformUtilities` | `MHPlatform`, `MHAppRuntime`, `MHReviewPolicy` |
+| Widget / App Intent / extension adapter | App shared library first, then `MHPlatformCore` or granular core-safe modules for direct platform primitives | `MHDeepLinking`, `MHNotificationPlans`, `MHNotificationPayloads`, `MHPreferences`, `MHRouteExecution` | `MHPlatform`, `MHAppRuntime`, split runtime bundles, ads/license/runtime adapters |
+| Lightweight watch companion surface | App shared library, `MHPreferences`, `MHPlatformCore`, or granular core-safe modules | `MHDeepLinking`, `MHNotificationPayloads`, `MHRouteExecution` when the watch surface owns route handoff | Full umbrella adoption unless the watch target intentionally owns an app-root runtime/shell surface |
 | Optional shell adopter | Keep current product and add the specific shell | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Treating route, review, or mutation shells as mandatory |
 
 Use [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md) as the
@@ -91,6 +93,8 @@ Fixture-backed adoption references:
   `MHAppRuntime` plus split-runtime-bundle composition path.
 - `Fixtures/Consumers/OptionalShellConsumer/` builds the opt-in
   `MHMutationFlow` + `MHReviewPolicy` shell path.
+- `Fixtures/Consumers/SurfaceAdapterConsumer/` builds the widget, App Intent,
+  watch, and extension-adapter path using only granular core-safe products.
 
 Minimum adoption evidence for documented consumer paths:
 
@@ -102,6 +106,9 @@ Minimum adoption evidence for documented consumer paths:
   `MHAppRuntime` lifecycle with split runtime bundles
 - optional-shell path: fixture smoke tests run `MHMutationWorkflow` with
   `MHReviewFlow`
+- surface-adapter path: fixture smoke tests build route URLs, pending-route
+  handoff, notification payload resolution, reminder planning, and route
+  execution without app runtime or split runtime bundles
 - full umbrella path: `MHPlatformIntegrationTests` exercises notification
   delivery, route replay, and mutation orchestration together
 
@@ -239,6 +246,9 @@ Optional shell rule:
 - Apps that only need runtime/bootstrap can stop at `MHAppRuntime`.
 - Shared packages must not adopt `MHPlatform`, `MHAppRuntime`, or
   `MHReviewPolicy`.
+- Widget, App Intent, watch, and extension adapters should call app-owned
+  shared APIs first. When they need MHPlatform directly, use `MHPlatformCore`
+  or granular core-safe modules rather than the full app/runtime surfaces.
 - Add `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, and
   `MHReviewFlow` only in targets that actually own those concerns.
 

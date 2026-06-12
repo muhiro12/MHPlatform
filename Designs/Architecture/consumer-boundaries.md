@@ -13,6 +13,8 @@ For product-selection rationale and current selection rules, pair it with
 | Full-platform app target | `FooApp`, `FooWatch`, other UI/composition roots that want the full platform surface | `MHPlatform` | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow`, `MHPlatformTesting` in tests | Direct split runtime bundles unless custom composition is intentional |
 | Advanced app runtime target | App root that wants runtime, lifecycle, environment injection, and optional route plumbing without the full umbrella | `MHAppRuntime` | `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`, `MHMutationFlow`, `MHReviewPolicy`, concrete core modules | Pulling `MHPlatform` only to reach bootstrap helpers when the narrower runtime surface is intentional |
 | Shared logic package / shared library | `FooLibrary`, watch-capable shared logic package, reusable package target | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance`, `MHPlatformUtilities` | `MHPlatform`, `MHAppRuntime`, `MHReviewPolicy` |
+| Widget / App Intent / extension adapter | WidgetKit bundles, App Intent adapters, notification/content extensions, Shortcuts adapters | App shared library first, then `MHPlatformCore` or granular core-safe modules for direct platform primitives | `MHDeepLinking`, `MHNotificationPlans`, `MHNotificationPayloads`, `MHPreferences`, `MHRouteExecution` | `MHPlatform`, `MHAppRuntime`, split runtime bundles, ads/license/runtime adapters |
+| Lightweight watch companion surface | Watch app surfaces that mirror shared state or preferences without owning the full app runtime | App shared library, `MHPreferences`, `MHPlatformCore`, or granular core-safe modules | `MHDeepLinking`, `MHNotificationPayloads`, `MHRouteExecution` when the watch surface owns route handoff | Full umbrella adoption unless the watch target intentionally owns an app-root runtime/shell surface |
 | Granular core-safe consumer | Target that only needs one focused concern | Concrete module product | `MHPlatformTesting` in tests | Umbrellas when a single module is enough |
 | Optional shell adopter | App target already on one of the app-facing paths above | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Keep app-owned route meaning, mutation semantics, and review policy inputs outside MHPlatform | Treating route, review, or mutation shells as mandatory platform baseline |
 
@@ -52,6 +54,10 @@ advanced composition around one focused concern.
   for shared packages and shared libraries.
 - `MHAppRuntime` is the advanced app-root surface for runtime/bootstrap-only
   apps and explicit split-runtime-bundle composition.
+- Widget, App Intent, watch, and extension adapters should call the app's
+  shared APIs first. MHPlatform should only appear directly in those surfaces
+  when they need reusable platform primitives, and then through
+  `MHPlatformCore` or granular core-safe modules.
 - `MHPlatform` remains the only one-step default runtime path. Keep the full
   umbrella when the target wants package-owned StoreKit, ads, or license
   integrations without manual composition.
@@ -62,6 +68,9 @@ advanced composition around one focused concern.
 - Shared packages must not depend on `MHPlatform`, `MHAppRuntime`, or
   `MHReviewPolicy`. Shared packages should stop at `MHPlatformCore` or granular
   core-safe modules unless a focused standalone product is genuinely required.
+- Surface adapters must not adopt `MHPlatform` or `MHAppRuntime` just to build
+  route URLs, read preferences, plan notifications, resolve notification route
+  payloads, or hand off pending routes.
 
 ## What Stays App-Owned
 
@@ -73,6 +82,7 @@ advanced composition around one focused concern.
 - SwiftData schema meaning, validation, and model deletion policy
 - Domain mutation result and effect meaning
 - Other app-specific business semantics
+- App-specific `Operations` facades and surface adapter branching
 
 ## Consumer Selection Checklist
 
@@ -83,9 +93,12 @@ advanced composition around one focused concern.
    Use `MHAppRuntime`.
 3. Is this a shared package or shared library?
    Use `MHPlatformCore` or a concrete module.
-4. Is the target only adding route, mutation, or review workflow shells?
+4. Is this a widget, App Intent, watch, or extension adapter?
+   Call the app shared library first; use `MHPlatformCore` or granular
+   core-safe modules only for direct platform primitives.
+5. Is the target only adding route, mutation, or review workflow shells?
    Add those shells explicitly instead of switching umbrellas.
-5. Does the app want package-owned StoreKit, ads, or license integrations
+6. Does the app want package-owned StoreKit, ads, or license integrations
    without the full umbrella?
    Add the split runtime bundles explicitly on top of `MHAppRuntime`.
 
@@ -97,6 +110,8 @@ advanced composition around one focused concern.
 - Explicit split-runtime consumer fixture:
   `Fixtures/Consumers/SplitRuntimeConsumer/`
 - Optional-shell consumer fixture: `Fixtures/Consumers/OptionalShellConsumer/`
+- Surface-adapter consumer fixture:
+  `Fixtures/Consumers/SurfaceAdapterConsumer/`
 - Shared-package-safe umbrella tests: `Tests/MHPlatformCoreTests/`
 - Full umbrella tests: `Tests/MHPlatformTests/`
 - Runtime split composition tests: `Tests/MHAppRuntimeTests/`
