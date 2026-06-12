@@ -43,11 +43,8 @@ This document defines the repository-specific agent contract for MHPlatform.
 
 ## Swift Code Rules
 
-- Follow the repository SwiftLint configuration.
-- Avoid abbreviated variable names such as `res`, `img`, and `btn`.
-- Use `.init(...)` when the return type is explicit.
-- Do not use single-line bodies for control-flow statements or trailing
-  closures.
+Swift code must follow the repository SwiftLint configuration and existing
+source style.
 
 ## Verification Contract
 
@@ -93,5 +90,5 @@ Direct shell build and package-test scripts are compatibility or fallback tools;
 do not treat them as the primary agent verification surface when MCP is
 available.
 
-Compatibility scripts may write disposable cache data under `.build/ci/shared/`
-or run artifacts under `.build/ci/runs/<RUN_ID>/`.
+Compatibility scripts may write disposable data under `.build/ci/shared/` or
+`.build/ci/runs/<RUN_ID>/`.
