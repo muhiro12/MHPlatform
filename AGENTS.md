@@ -74,6 +74,19 @@ For example app compile or runtime checks, use XcodeBuildMCP `build_sim` or
 For package umbrella compile checks through the example project, use the same
 project with the `MHPlatform` scheme.
 
+Treat package tests, consumer fixture checks, example builds, and runtime/UI
+evidence as separate verification capabilities. Choose the smallest set that
+proves the current change, and prefer stronger evidence when public products,
+consumer-facing APIs, package boundaries, runtime bootstrap, review prompts,
+StoreKit, ads, route delivery, or visible example-app behavior are affected.
+
+- For package source or product changes, use the package build/test checks above.
+- For consumer boundary changes, run the retained repository rule checks below.
+- For app-runtime or adopter-facing integration changes, also build the example
+  project or the affected example scheme.
+- For visible runtime behavior in the example app, use targeted XcodeBuildMCP
+  run, UI snapshot, or screenshot evidence.
+
 Agents should also run the retained repository rule checks:
 
 ```sh
