@@ -1,5 +1,5 @@
 {
-  "originHash" : "ac50765fc312c530aed0816c7015ab67f301ff5171fa9eb31066825dff176ca2",
+  "originHash" : "adfc95e101350182ba853bd807a77433b163823ae21a0c5f1a3ecdf18998b1a3",
   "pins" : [
     {
       "identity" : "googlemobileadswrapper",
@@ -13,10 +13,10 @@
     {
       "identity" : "licenselist",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/cybozu/LicenseList.git",
+      "location" : "https://github.com/cybozu/LicenseList",
       "state" : {
-        "revision" : "56f1b5724138e4d9f60453b555edc80e43805503",
-        "version" : "2.2.0"
+        "revision" : "ee1e897acb2c8f3061fca4434cb702e8ddb7a72c",
+        "version" : "2.5.0"
       }
     },
     {
