@@ -2,17 +2,30 @@ import Foundation
 
 /// Policy controlling whether and when an in-app review request should be attempted.
 public struct MHReviewPolicy: Sendable {
+    private enum Constants {
+        static let defaultRequestDelaySeconds = 2
+    }
+
     /// Upper bound of the lottery range used for deciding review requests.
     public let lotteryMaxExclusive: Int
 
     /// Delay applied before attempting the review request.
     public let requestDelay: Duration
 
+    /// Creates a review request policy with the default request delay.
+    public init(
+        lotteryMaxExclusive: Int
+    ) {
+        self.init(
+            lotteryMaxExclusive: lotteryMaxExclusive,
+            requestDelay: .seconds(Constants.defaultRequestDelaySeconds)
+        )
+    }
+
     /// Creates a review request policy.
     public init(
         lotteryMaxExclusive: Int,
-        // swiftlint:disable:next no_magic_numbers
-        requestDelay: Duration = .seconds(2)
+        requestDelay: Duration
     ) {
         self.lotteryMaxExclusive = lotteryMaxExclusive
         self.requestDelay = requestDelay

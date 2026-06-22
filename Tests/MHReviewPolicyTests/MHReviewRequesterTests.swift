@@ -12,14 +12,22 @@ struct MHReviewRequesterTests {
         )
 
         let outcome = await MHReviewRequester.requestIfNeeded(
-            policy: policy,
-            randomValueProvider: { _ in
-                state.recordRandomCall()
-                return 0
-            },
-            sleep: { _ in
-                state.recordSleepCall()
-            }
+            .init(
+                policy: policy,
+                randomValueProvider: { _ in
+                    state.recordRandomCall()
+                    return 0
+                },
+                sleep: { _ in
+                    state.recordSleepCall()
+                },
+                environment: .live,
+                logger: nil,
+                onOutcome: { _ in
+                    // no-op
+                },
+                logMetadata: [:]
+            )
         )
 
         #expect(outcome == .skippedInvalidLotteryRange)
@@ -52,14 +60,22 @@ struct MHReviewRequesterTests {
         )
 
         let outcome = await MHReviewRequester.requestIfNeeded(
-            policy: policy,
-            randomValueProvider: { range in
-                state.recordRandomCall()
-                return range.upperBound - 1
-            },
-            sleep: { _ in
-                state.recordSleepCall()
-            }
+            .init(
+                policy: policy,
+                randomValueProvider: { range in
+                    state.recordRandomCall()
+                    return range.upperBound - 1
+                },
+                sleep: { _ in
+                    state.recordSleepCall()
+                },
+                environment: .live,
+                logger: nil,
+                onOutcome: { _ in
+                    // no-op
+                },
+                logMetadata: [:]
+            )
         )
 
         #expect(outcome == .skippedByPolicy)
@@ -102,16 +118,23 @@ struct MHReviewRequesterTests {
         }
 
         let outcome = await MHReviewRequester.requestIfNeeded(
-            policy: policy,
-            randomValueProvider: { _ in
-                state.recordRandomCall()
-                return 0
-            },
-            sleep: { _ in
-                state.recordSleepCall()
-                state.recordEvent("sleep")
-            },
-            environment: environment
+            .init(
+                policy: policy,
+                randomValueProvider: { _ in
+                    state.recordRandomCall()
+                    return 0
+                },
+                sleep: { _ in
+                    state.recordSleepCall()
+                    state.recordEvent("sleep")
+                },
+                environment: environment,
+                logger: nil,
+                onOutcome: { _ in
+                    // no-op
+                },
+                logMetadata: [:]
+            )
         )
 
         #expect(outcome == .requested)
@@ -138,13 +161,18 @@ struct MHReviewRequesterTests {
         }
 
         let outcome = await MHReviewRequester.requestIfNeeded(
-            policy: policy,
-            randomValueProvider: randomValueProvider,
-            sleep: sleep,
-            environment: environment
-        ) { reportedOutcome in
-            state.recordEvent(String(describing: reportedOutcome))
-        }
+            .init(
+                policy: policy,
+                randomValueProvider: randomValueProvider,
+                sleep: sleep,
+                environment: environment,
+                logger: nil,
+                onOutcome: { reportedOutcome in
+                    state.recordEvent(String(describing: reportedOutcome))
+                },
+                logMetadata: [:]
+            )
+        )
 
         #expect(outcome == .requested)
         #expect(state.eventsValue() == ["requested"])
@@ -194,23 +222,28 @@ struct MHReviewRequesterTests {
 
         await MHReviewRequester.logOutcome(
             .requested,
-            logger: logger
+            logger: logger,
+            metadata: [:]
         )
         await MHReviewRequester.logOutcome(
             .skippedInvalidLotteryRange,
-            logger: logger
+            logger: logger,
+            metadata: [:]
         )
         await MHReviewRequester.logOutcome(
             .skippedNoForegroundScene,
-            logger: logger
+            logger: logger,
+            metadata: [:]
         )
         await MHReviewRequester.logOutcome(
             .unsupportedPlatform,
-            logger: logger
+            logger: logger,
+            metadata: [:]
         )
         await MHReviewRequester.logOutcome(
             .skippedByPolicy,
-            logger: logger
+            logger: logger,
+            metadata: [:]
         )
 
         let events = await store.events()

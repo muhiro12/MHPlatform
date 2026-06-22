@@ -13,6 +13,16 @@ public enum MHReviewRequester {
     /// Closure used for sleeping before review requests.
     public typealias Sleep = @Sendable (Duration) async -> Void
 
+    struct RequestContext: Sendable {
+        let policy: MHReviewPolicy
+        let randomValueProvider: RandomValueProvider
+        let sleep: Sleep
+        let environment: MHReviewRequestEnvironment
+        let logger: MHLogger?
+        let onOutcome: @Sendable (MHReviewRequestOutcome) -> Void
+        let logMetadata: [String: String]
+    }
+
     /// Requests an in-app review when the policy allows it.
     ///
     /// Prefer `MHReviewFlow` when review triggering should be wired into
@@ -22,19 +32,25 @@ public enum MHReviewRequester {
     @preconcurrency
     public static func requestIfNeeded(
         policy: MHReviewPolicy,
-        randomValueProvider: RandomValueProvider = { range in
+        randomValueProvider: @escaping RandomValueProvider = { range in
             Int.random(in: range)
         },
-        sleep: Sleep = { duration in
+        sleep: @escaping Sleep = { duration in
             try? await Task.sleep(for: duration)
         }
     ) async -> MHReviewRequestOutcome {
         await requestIfNeeded(
-            policy: policy,
-            randomValueProvider: randomValueProvider,
-            sleep: sleep,
-            environment: .live,
-            logger: nil
+            .init(
+                policy: policy,
+                randomValueProvider: randomValueProvider,
+                sleep: sleep,
+                environment: .live,
+                logger: nil,
+                onOutcome: { _ in
+                    // no-op
+                },
+                logMetadata: [:]
+            )
         )
     }
 
@@ -46,21 +62,24 @@ public enum MHReviewRequester {
     @preconcurrency
     public static func requestIfNeeded(
         policy: MHReviewPolicy,
-        randomValueProvider: RandomValueProvider = { range in
+        randomValueProvider: @escaping RandomValueProvider = { range in
             Int.random(in: range)
         },
-        sleep: Sleep = { duration in
+        sleep: @escaping Sleep = { duration in
             try? await Task.sleep(for: duration)
         },
-        onOutcome: @Sendable (MHReviewRequestOutcome) -> Void
+        onOutcome: @escaping @Sendable (MHReviewRequestOutcome) -> Void
     ) async -> MHReviewRequestOutcome {
         await requestIfNeeded(
-            policy: policy,
-            randomValueProvider: randomValueProvider,
-            sleep: sleep,
-            environment: .live,
-            logger: nil,
-            onOutcome: onOutcome
+            .init(
+                policy: policy,
+                randomValueProvider: randomValueProvider,
+                sleep: sleep,
+                environment: .live,
+                logger: nil,
+                onOutcome: onOutcome,
+                logMetadata: [:]
+            )
         )
     }
 
@@ -73,62 +92,60 @@ public enum MHReviewRequester {
     public static func requestIfNeeded(
         policy: MHReviewPolicy,
         logger: MHLogger,
-        randomValueProvider: RandomValueProvider = { range in
+        randomValueProvider: @escaping RandomValueProvider = { range in
             Int.random(in: range)
         },
-        sleep: Sleep = { duration in
+        sleep: @escaping Sleep = { duration in
             try? await Task.sleep(for: duration)
         }
     ) async -> MHReviewRequestOutcome {
         await requestIfNeeded(
-            policy: policy,
-            randomValueProvider: randomValueProvider,
-            sleep: sleep,
-            environment: .live,
-            logger: logger
+            .init(
+                policy: policy,
+                randomValueProvider: randomValueProvider,
+                sleep: sleep,
+                environment: .live,
+                logger: logger,
+                onOutcome: { _ in
+                    // no-op
+                },
+                logMetadata: [:]
+            )
         )
     }
 
     @MainActor
     static func requestIfNeeded(
-        policy: MHReviewPolicy,
-        randomValueProvider: RandomValueProvider,
-        sleep: Sleep,
-        environment: MHReviewRequestEnvironment,
-        logger: MHLogger? = nil,
-        onOutcome: @Sendable (MHReviewRequestOutcome) -> Void = { _ in
-            // no-op
-        },
-        logMetadata: [String: String] = [:]
+        _ context: RequestContext
     ) async -> MHReviewRequestOutcome {
-        guard policy.lotteryMaxExclusive > 0 else {
+        guard context.policy.lotteryMaxExclusive > 0 else {
             return await finish(
                 .skippedInvalidLotteryRange,
-                logger: logger,
-                onOutcome: onOutcome,
-                logMetadata: logMetadata
+                logger: context.logger,
+                onOutcome: context.onOutcome,
+                logMetadata: context.logMetadata
             )
         }
 
-        let randomValue = randomValueProvider(0..<policy.lotteryMaxExclusive)
-        guard policy.shouldRequestReview(randomValue: randomValue) else {
+        let randomValue = context.randomValueProvider(0..<context.policy.lotteryMaxExclusive)
+        guard context.policy.shouldRequestReview(randomValue: randomValue) else {
             return await finish(
                 .skippedByPolicy,
-                logger: logger,
-                onOutcome: onOutcome,
-                logMetadata: logMetadata
+                logger: context.logger,
+                onOutcome: context.onOutcome,
+                logMetadata: context.logMetadata
             )
         }
 
-        if policy.requestDelay != .zero {
-            await sleep(policy.requestDelay)
+        if context.policy.requestDelay != .zero {
+            await context.sleep(context.policy.requestDelay)
         }
 
         return await finish(
-            environment.requestReview(),
-            logger: logger,
-            onOutcome: onOutcome,
-            logMetadata: logMetadata
+            context.environment.requestReview(),
+            logger: context.logger,
+            onOutcome: context.onOutcome,
+            logMetadata: context.logMetadata
         )
     }
 }
@@ -137,7 +154,7 @@ extension MHReviewRequester {
     static func logOutcome(
         _ outcome: MHReviewRequestOutcome,
         logger: MHLogger,
-        metadata: [String: String] = [:]
+        metadata: [String: String]
     ) async {
         switch outcome {
         case .requested:

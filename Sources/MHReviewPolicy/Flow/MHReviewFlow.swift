@@ -99,13 +99,15 @@ private extension MHReviewFlow {
         logMetadata: [String: String]
     ) async -> MHReviewRequestOutcome {
         await MHReviewRequester.requestIfNeeded(
-            policy: policy,
-            randomValueProvider: randomValueProvider,
-            sleep: sleep,
-            environment: environment,
-            logger: logger,
-            onOutcome: onOutcome,
-            logMetadata: logMetadata
+            .init(
+                policy: policy,
+                randomValueProvider: randomValueProvider,
+                sleep: sleep,
+                environment: environment,
+                logger: logger,
+                onOutcome: onOutcome,
+                logMetadata: logMetadata
+            )
         )
     }
 }
