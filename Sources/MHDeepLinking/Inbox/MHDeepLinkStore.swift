@@ -58,15 +58,17 @@ public final class MHDeepLinkStore: @unchecked Sendable {
     }
 
     /// Stores a pending URL, or clears the store when `nil` is provided.
-    public func setPendingURL(_ url: URL?) async { // swiftlint:disable:this async_without_await
+    public func setPendingURL(_ url: URL?) async {
+        await Task.yield()
         replacePendingURL(url)
     }
 }
 
 extension MHDeepLinkStore: MHDeepLinkURLSource {
     /// Consumes and clears the latest pending URL.
-    public func consumeLatestURL() async -> URL? { // swiftlint:disable:this async_without_await
-        consumeLatest()
+    public func consumeLatestURL() async -> URL? {
+        await Task.yield()
+        return consumeLatest()
     }
 }
 

@@ -13,7 +13,7 @@ struct MHRouteLifecycleCodecTests {
         let lifecycle = MHRouteLifecycle<CodecRoute>(
             logger: logger,
             initialReadiness: true,
-            isDuplicate: ==
+            isDuplicate: Self.isDuplicateRoute
         )
 
         let outcome = try await lifecycle.submit(
@@ -42,7 +42,7 @@ struct MHRouteLifecycleCodecTests {
         let lifecycle = MHRouteLifecycle<CodecRoute>(
             logger: logger,
             initialReadiness: false,
-            isDuplicate: ==
+            isDuplicate: Self.isDuplicateRoute
         )
         let suiteName = "MHRouteLifecycleCodecSubmitLatestTests"
         let userDefaults = try #require(UserDefaults(suiteName: suiteName))
@@ -91,7 +91,7 @@ struct MHRouteLifecycleCodecTests {
         let lifecycle = MHRouteLifecycle<CodecRoute>(
             logger: logger,
             initialReadiness: true,
-            isDuplicate: ==
+            isDuplicate: Self.isDuplicateRoute
         )
         let inbox = MHDeepLinkInbox()
         await inbox.ingest(
@@ -120,7 +120,7 @@ struct MHRouteLifecycleCodecTests {
         let lifecycle = MHRouteLifecycle<CodecRoute>(
             logger: logger,
             initialReadiness: true,
-            isDuplicate: ==
+            isDuplicate: Self.isDuplicateRoute
         )
         let emptySource = MHDeepLinkURLRecorder(initialURL: nil)
         let queuedSource = MHDeepLinkURLRecorder(
@@ -163,7 +163,7 @@ struct MHRouteLifecycleCodecTests {
         let lifecycle = MHRouteLifecycle<CodecRoute>(
             logger: logger,
             initialReadiness: true,
-            isDuplicate: ==
+            isDuplicate: Self.isDuplicateRoute
         )
         let invalidSource = MHDeepLinkURLRecorder(
             initialURL: URL(string: "test://unknown/42")
@@ -222,11 +222,11 @@ private extension MHRouteLifecycleCodecTests {
         init?(deepLinkDescriptor: MHDeepLinkDescriptor) {
             guard deepLinkDescriptor.pathComponents.count == TestConstants.routePathComponentCount,
                   deepLinkDescriptor.pathComponents[0] == "route",
-                  let value = Int(deepLinkDescriptor.pathComponents[1]) else {
+                  let routeValue = Int(deepLinkDescriptor.pathComponents[1]) else {
                 return nil
             }
 
-            self = .route(value)
+            self = .route(routeValue)
         }
     }
 
@@ -240,6 +240,10 @@ private extension MHRouteLifecycleCodecTests {
                 preferredTransport: .customScheme
             )
         )
+    }
+
+    static let isDuplicateRoute: MHRouteLifecycle<CodecRoute>.DuplicatePredicate = { firstRoute, secondRoute in
+        firstRoute == secondRoute
     }
 
     func makeLogger() -> (MHLogger, MHLogStore) {

@@ -106,14 +106,14 @@ public final class MHAppRoutePipeline<Route: Sendable> {
         guard let url = await orderedSources.consumeLatestURL() else {
             return nil
         }
-        let parseRoute = self.parseRoute
+        let routeParser = self.parseRoute
         let parseFailureBox = ParseFailureBox()
 
         do {
             let outcome = try await routeLifecycle.submit(
                 url,
                 parse: { incomingURL in
-                    let route = parseRoute(incomingURL)
+                    let route = routeParser(incomingURL)
                     if route == nil {
                         parseFailureBox.url = incomingURL
                     }
@@ -240,9 +240,9 @@ private extension MHAppRoutePipeline {
     }
 
     var orderedSources: MHDeepLinkSourceChain {
-        var orderedSources = pendingSources
-        orderedSources.append(inbox)
-        return .init(orderedSources)
+        var resolvedSources = pendingSources
+        resolvedSources.append(inbox)
+        return .init(resolvedSources)
     }
 
     func handleFailure(

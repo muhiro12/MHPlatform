@@ -39,13 +39,12 @@ public struct MHAppRuntimeBootstrap {
         )
     }
 
-    // swiftlint:disable function_default_parameter_at_end
     /// Creates a bootstrap around an existing runtime and route pipeline.
     @preconcurrency
     public init<Route: Sendable>(
         runtime: MHAppRuntime,
-        lifecyclePlan: MHAppRuntimeLifecyclePlan = .empty,
-        routePipeline: MHAppRoutePipeline<Route>
+        routePipeline: MHAppRoutePipeline<Route>,
+        lifecyclePlan: MHAppRuntimeLifecyclePlan = .empty
     ) {
         self.runtime = runtime
         self.lifecyclePlan = lifecyclePlan
@@ -56,16 +55,15 @@ public struct MHAppRuntimeBootstrap {
     @preconcurrency
     public init<Route: Sendable>(
         runtimeOnlyConfiguration configuration: MHAppConfiguration,
-        lifecyclePlan: MHAppRuntimeLifecyclePlan = .empty,
-        routePipeline: MHAppRoutePipeline<Route>
+        routePipeline: MHAppRoutePipeline<Route>,
+        lifecyclePlan: MHAppRuntimeLifecyclePlan = .empty
     ) {
         self.init(
             runtime: .init(runtimeOnly: configuration),
-            lifecyclePlan: lifecyclePlan,
-            routePipeline: routePipeline
+            routePipeline: routePipeline,
+            lifecyclePlan: lifecyclePlan
         )
     }
-    // swiftlint:enable function_default_parameter_at_end
 
     /// Builds a lifecycle coordinator for manual integration sites.
     public func makeLifecycle() -> MHAppRuntimeLifecycle {

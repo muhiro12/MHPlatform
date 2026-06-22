@@ -75,8 +75,8 @@ struct MHAppRuntimeBootstrapTests {
         )
         let bootstrap = MHAppRuntimeBootstrap(
             runtime: runtime,
-            lifecyclePlan: lifecyclePlan,
-            routePipeline: routePipeline
+            routePipeline: routePipeline,
+            lifecyclePlan: lifecyclePlan
         )
 
         let routeInbox = try #require(bootstrap.routeInbox)

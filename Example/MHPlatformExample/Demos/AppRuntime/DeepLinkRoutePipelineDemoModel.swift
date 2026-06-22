@@ -88,9 +88,16 @@ final class DeepLinkRoutePipelineDemoModel {
     @ObservationIgnored private var isSynchronizingReadiness = false
     @ObservationIgnored private var sequence = 0
 
+    init() {
+        self.init(
+            routeInbox: .init(),
+            notificationInbox: .init()
+        )
+    }
+
     init(
-        routeInbox: MHObservableDeepLinkInbox = .init(),
-        notificationInbox: MHObservableDeepLinkInbox = .init()
+        routeInbox: MHObservableDeepLinkInbox,
+        notificationInbox: MHObservableDeepLinkInbox
     ) {
         self.routeInbox = routeInbox
         self.notificationInbox = notificationInbox
@@ -142,13 +149,13 @@ final class DeepLinkRoutePipelineDemoModel {
         Task {
             let hadRouteInboxURL = routeInbox.pendingURL != nil
             let hadNotificationInboxURL = notificationInbox.pendingURL != nil
-            let codec = self.codec
+            let routeCodec = self.codec
 
             do {
                 let outcome = try await routeLifecycle.submitLatest(
                     from: routeInbox,
                     notificationInbox,
-                    using: codec
+                    using: routeCodec
                 ) { [self] route in
                     try await apply(route)
                 }

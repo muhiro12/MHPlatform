@@ -12,19 +12,17 @@ public extension MHAppRuntimeBootstrap {
         )
     }
 
-    // swiftlint:disable function_default_parameter_at_end
     /// Creates a bootstrap with the default runtime adapters and route pipeline.
     @preconcurrency
     init<Route: Sendable>(
         configuration: MHAppConfiguration,
-        lifecyclePlan: MHAppRuntimeLifecyclePlan = .empty,
-        routePipeline: MHAppRoutePipeline<Route>
+        routePipeline: MHAppRoutePipeline<Route>,
+        lifecyclePlan: MHAppRuntimeLifecyclePlan = .empty
     ) {
         self.init(
             runtime: .init(configuration: configuration),
-            lifecyclePlan: lifecyclePlan,
-            routePipeline: routePipeline
+            routePipeline: routePipeline,
+            lifecyclePlan: lifecyclePlan
         )
     }
-    // swiftlint:enable function_default_parameter_at_end
 }

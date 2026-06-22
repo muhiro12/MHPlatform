@@ -21,6 +21,10 @@ extension MHPlatformIntegrationTests {
         )
     )
 
+    static let isDuplicateRoute: MHRouteLifecycle<IntegrationRoute>.DuplicatePredicate = { firstRoute, secondRoute in
+        firstRoute == secondRoute
+    }
+
     nonisolated static func describe(
         _ source: MHNotificationRouteDeliveryOutcome.Source
     ) -> String {
@@ -144,6 +148,7 @@ extension MHPlatformIntegrationTests {
     ) -> MHAppRuntimeBootstrap {
         .init(
             runtime: makeRuntime(traceRecorder: traceRecorder),
+            routePipeline: routePipeline,
             lifecyclePlan: .init(
                 startupTasks: [
                     .init(name: "deliverNotificationRoute") {
@@ -157,12 +162,11 @@ extension MHPlatformIntegrationTests {
                     .init(name: "synchronizePendingRoutes") {
                         await synchronizePendingRoutes(
                             routePipeline: routePipeline,
-                            traceRecorder: traceRecorder,
-                            )
+                            traceRecorder: traceRecorder
+                        )
                     }
                 ]
-            ),
-            routePipeline: routePipeline
+            )
         )
     }
 
@@ -194,7 +198,7 @@ extension MHPlatformIntegrationTests {
             routeLifecycle: .init(
                 logger: logger,
                 initialReadiness: false,
-                isDuplicate: ==
+                isDuplicate: Self.isDuplicateRoute
             ),
             using: Self.codec,
             pendingSources: [
@@ -263,13 +267,15 @@ extension MHPlatformIntegrationTests {
                     "synced:\(identifier)"
                 }
             ),
-            onEvent: { event in
-                traceRecorder.record(Self.describe(event))
-            },
-            configuration: .init(
-                retryPolicy: .init(
-                    maximumAttempts: TestConstants.maximumAttempts,
-                    backoff: .immediate
+            options: .init(
+                onEvent: { event in
+                    traceRecorder.record(Self.describe(event))
+                },
+                configuration: .init(
+                    retryPolicy: .init(
+                        maximumAttempts: TestConstants.maximumAttempts,
+                        backoff: .immediate
+                    )
                 )
             )
         )
@@ -348,8 +354,17 @@ extension MHPlatformIntegrationTests {
     }
 
     func waitForExpectedLogFlush(
+        for harness: Harness
+    ) async {
+        await waitForExpectedLogFlush(
+            for: harness,
+            expectedEventCount: TestConstants.expectedRouteLogEventCount
+        )
+    }
+
+    func waitForExpectedLogFlush(
         for harness: Harness,
-        expectedEventCount: Int = 2
+        expectedEventCount: Int
     ) async {
         for _ in 0..<TestConstants.maximumLogFlushAttempts {
             let sinkEvents = await harness.sinkRecorder.events()

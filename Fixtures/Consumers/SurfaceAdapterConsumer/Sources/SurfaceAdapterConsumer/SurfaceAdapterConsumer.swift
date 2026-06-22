@@ -95,7 +95,7 @@ enum SurfaceAdapterConsumer {
         guard let defaultRouteURL = codec.preferredURL(
             for: .item(Constants.itemIdentifier)
         ),
-              let fallbackRouteURL = codec.preferredURL(for: .home) else {
+        let fallbackRouteURL = codec.preferredURL(for: .home) else {
             return nil
         }
 
@@ -130,14 +130,14 @@ enum SurfaceAdapterConsumer {
             hour: Constants.deliveryHour,
             minute: Constants.deliveryMinute
         ),
-              let dueDate = calendar.date(
-                byAdding: .day,
-                value: Constants.dueDateOffsetDays,
-                to: now
-              ),
-              let payload = makeNotificationPayload(),
-              let primaryRouteURL = payload.routes.defaultRouteURL,
-              let secondaryRouteURL = payload.routes.fallbackRouteURL else {
+        let dueDate = calendar.date(
+            byAdding: .day,
+            value: Constants.dueDateOffsetDays,
+            to: now
+        ),
+        let payload = makeNotificationPayload(),
+        let primaryRouteURL = payload.routes.defaultRouteURL,
+        let secondaryRouteURL = payload.routes.fallbackRouteURL else {
             return []
         }
 

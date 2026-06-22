@@ -39,8 +39,9 @@ public actor MHDeepLinkInbox {
 
 extension MHDeepLinkInbox: MHDeepLinkURLSource {
     /// Consumes and clears the latest pending URL.
-    public func consumeLatestURL() async -> URL? { // swiftlint:disable:this async_without_await
-        consumeLatest()
+    public func consumeLatestURL() async -> URL? {
+        await Task.yield()
+        return consumeLatest()
     }
 }
 

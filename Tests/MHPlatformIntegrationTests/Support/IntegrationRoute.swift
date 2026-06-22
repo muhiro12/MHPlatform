@@ -25,10 +25,10 @@ enum IntegrationRoute: Equatable, Sendable, MHDeepLinkRoute {
     init?(deepLinkDescriptor: MHDeepLinkDescriptor) {
         guard deepLinkDescriptor.pathComponents.count == TestConstants.routePathComponentCount,
               deepLinkDescriptor.pathComponents[0] == "item",
-              let identifier = Int(deepLinkDescriptor.pathComponents[1]) else {
+              let routeIdentifier = Int(deepLinkDescriptor.pathComponents[1]) else {
             return nil
         }
 
-        self = .item(identifier)
+        self = .item(routeIdentifier)
     }
 }
