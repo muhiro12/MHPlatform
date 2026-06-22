@@ -1,6 +1,9 @@
 # Finder
 .DS_Store
 
+# Swift Package Manager
+.build/
+
 # Xcode - User files
 xcuserdata/
 

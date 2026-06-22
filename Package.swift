@@ -2,7 +2,6 @@
 
 import PackageDescription
 
-// swiftlint:disable:next prefixed_toplevel_constant
 let package = Package(
     name: "MHPlatform",
     platforms: [
@@ -99,6 +98,12 @@ let package = Package(
         .package(
             url: "https://github.com/cybozu/LicenseList",
             "2.0.0"..<"3.0.0"
+        ),
+
+        // Tooling-only command plugin used by retained repository rule scripts.
+        .package(
+            url: "https://github.com/SimplyDanny/SwiftLintPlugins",
+            "0.64.0"..<"1.0.0"
         )
     ],
     targets: [

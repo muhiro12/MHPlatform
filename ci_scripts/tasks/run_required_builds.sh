@@ -198,23 +198,10 @@ if $needs_package_build || $needs_package_tests; then
 fi
 
 if $needs_swiftlint; then
-  if ! command -v swiftlint >/dev/null 2>&1; then
-    log_command swiftlint lint --strict --no-cache
-    failed_step="Run SwiftLint strict no-cache"
-    failed_log="$LOG_DIR/swiftlint_strict.log"
-    {
-      echo "swiftlint is not installed. Install it and retry."
-      echo "Install with: brew install swiftlint"
-    } | tee "$failed_log" >&2
-    overall_result="failure"
-    run_note="A required step failed. Review failure details and logs."
-    exit 1
-  fi
-
   run_step \
-    "swiftlint_strict" \
-    "Run SwiftLint strict no-cache" \
-    swiftlint lint --strict --no-cache
+    "lint_swift" \
+    "Run repository-managed SwiftLint" \
+    bash "$repository_root/ci_scripts/tasks/lint_swift.sh"
 fi
 
 if $needs_package_build; then

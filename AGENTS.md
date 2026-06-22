@@ -46,6 +46,12 @@ This document defines the repository-specific agent contract for MHPlatform.
 Swift code must follow the repository SwiftLint configuration and existing
 source style.
 
+When Swift files are edited, agents should run:
+
+```sh
+bash ci_scripts/tasks/format_swift.sh
+```
+
 ## Verification Contract
 
 Agents MUST prefer XcodeBuildMCP for Apple build, test, run, Simulator, runtime
@@ -96,6 +102,8 @@ bash ci_scripts/tasks/check_repository_rules.sh
 `check_repository_rules.sh` runs SwiftLint, the models-directory consistency
 check, and consumer fixture checks that are not naturally covered by
 XcodeBuildMCP.
+SwiftLint is resolved from the `SwiftLintPlugins` package declared in
+`Package.swift`, not from a separately installed `swiftlint` binary.
 
 `verify_task_completion.sh`, `verify_repository_state.sh`, `verify_pre_push.sh`,
 and `verify.sh` are compatibility wrappers around retained repository rules.

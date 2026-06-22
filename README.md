@@ -209,7 +209,8 @@ duplicating narrower paths inside the demo app.
 ## Requirements
 
 - Xcode 16 or later with the iOS 18, macOS 15, and watchOS 11 SDKs installed.
-- `swiftlint` for repository verification and strict lint runs.
+- SwiftPM package resolution for the repository-managed SwiftLint plugin used
+  by retained rule scripts.
 
 ## Setup
 
@@ -237,6 +238,22 @@ when the package umbrella needs an example-project compile check.
 The remaining helper scripts in `ci_scripts/` are retained for repository rules
 and compatibility wrappers that are not naturally covered by XcodeBuildMCP.
 
+The retained scripts resolve SwiftLint from the `SwiftLintPlugins` package
+declared in `Package.swift`; they do not require a separately installed
+`swiftlint` binary on `PATH`.
+
+Before running retained script checks, diagnose local prerequisites:
+
+```sh
+bash ci_scripts/tasks/check_environment.sh --profile rules
+```
+
+After Swift edits, run the explicit autofix step:
+
+```sh
+bash ci_scripts/tasks/format_swift.sh
+```
+
 For retained repository rule checks:
 
 ```sh
@@ -245,6 +262,13 @@ bash ci_scripts/tasks/check_repository_rules.sh
 
 This retained rule entry point runs SwiftLint, the models-directory consistency
 check, and consumer fixture checks.
+
+If you prefer to run SwiftLint directly through the repository wrapper:
+
+```sh
+bash ci_scripts/tasks/format_swift.sh
+bash ci_scripts/tasks/lint_swift.sh
+```
 
 Compatibility wrappers remain available for older local habits and push hooks:
 
