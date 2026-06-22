@@ -133,13 +133,15 @@ struct MHMutationWorkflowKeyPathProjectionTests {
                 operation: { () -> WrappedValue in
                     throw OperationTestError.failed
                 },
-                adapter: MHMutationAdapter<FollowUp>.none,
+                adapter: MHMutationAdapter<FollowUp>.noSteps,
                 projection: .keyPaths(
                     adapterValue: \.followUp,
                     resultValue: \.value
                 ),
-                configuration: .init(
-                    operationErrorDescription: operationErrorDescription
+                options: .init(
+                    configuration: .init(
+                        operationErrorDescription: operationErrorDescription
+                    )
                 )
             )
         }
@@ -189,7 +191,7 @@ struct MHMutationWorkflowKeyPathProjectionTests {
                 operation: { () -> WrappedValue in
                     throw CancellationError()
                 },
-                adapter: MHMutationAdapter<FollowUp>.none,
+                adapter: MHMutationAdapter<FollowUp>.noSteps,
                 projection: .keyPaths(
                     adapterValue: \.followUp,
                     resultValue: \.value

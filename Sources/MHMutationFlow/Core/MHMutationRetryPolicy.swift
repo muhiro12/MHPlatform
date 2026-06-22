@@ -2,18 +2,22 @@ import Foundation
 
 /// Retry policy for mutation operations.
 public struct MHMutationRetryPolicy: Sendable {
+    private enum Constants {
+        static let noRetryMaximumAttempts = 1
+        static let defaultMaximumAttempts = 3
+        static let defaultBackoffMilliseconds = 200
+    }
+
     /// Retry policy with no retry.
-    public static let none = Self( // swiftlint:disable:this discouraged_none_name
-        maximumAttempts: 1,
+    public static let noRetry = Self(
+        maximumAttempts: Constants.noRetryMaximumAttempts,
         backoff: .immediate
     )
 
     /// Default retry policy used by examples.
     public static let `default` = Self(
-        // swiftlint:disable:next no_magic_numbers
-        maximumAttempts: 3,
-        // swiftlint:disable:next no_magic_numbers
-        backoff: .fixed(.milliseconds(200))
+        maximumAttempts: Constants.defaultMaximumAttempts,
+        backoff: .fixed(.milliseconds(Constants.defaultBackoffMilliseconds))
     )
 
     /// Maximum attempts, including the first attempt.

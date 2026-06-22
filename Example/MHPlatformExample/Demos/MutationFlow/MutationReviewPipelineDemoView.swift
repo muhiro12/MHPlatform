@@ -185,8 +185,10 @@ struct MutationReviewPipelineDemoView: View {
                     shouldRequestReview: true
                 )
             ),
-            configuration: .init(
-                operationErrorDescription: Self.operationErrorDescription
+            options: .init(
+                configuration: .init(
+                    operationErrorDescription: Self.operationErrorDescription
+                )
             )
         )
     }

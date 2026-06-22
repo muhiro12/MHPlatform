@@ -9,9 +9,9 @@ public struct MHMutationAdapter<Value: Sendable>: Sendable {
     public typealias StepBuilder = @Sendable (Value) -> [MHMutationStep]
 
     /// Adapter that derives no post-success steps.
-    public static var none: Self { // swiftlint:disable:this discouraged_none_name
-        let stepBuilder: StepBuilder = { _ in [] }
-        return .init(stepBuilder: stepBuilder)
+    public static var noSteps: Self {
+        let emptyStepBuilder: StepBuilder = { _ in [] }
+        return .init(stepBuilder: emptyStepBuilder)
     }
 
     private let stepBuilder: StepBuilder
@@ -40,10 +40,10 @@ public struct MHMutationAdapter<Value: Sendable>: Sendable {
     public static func fixed(
         _ steps: [MHMutationStep]
     ) -> Self {
-        let stepBuilder: StepBuilder = { _ in
+        let fixedStepBuilder: StepBuilder = { _ in
             steps
         }
-        return .init(stepBuilder: stepBuilder)
+        return .init(stepBuilder: fixedStepBuilder)
     }
 
     /// Creates an adapter that always returns the same ordered steps built
@@ -52,10 +52,10 @@ public struct MHMutationAdapter<Value: Sendable>: Sendable {
     public static func fixed(
         @MHMutationStepListBuilder _ steps: @escaping @Sendable () -> [MHMutationStep]
     ) -> Self {
-        let stepBuilder: StepBuilder = { _ in
+        let fixedStepBuilder: StepBuilder = { _ in
             steps()
         }
-        return .init(stepBuilder: stepBuilder)
+        return .init(stepBuilder: fixedStepBuilder)
     }
 
     /// Derives ordered post-success steps for a successful mutation value.
@@ -85,10 +85,10 @@ public struct MHMutationAdapter<Value: Sendable>: Sendable {
     public func appending(
         _ other: Self
     ) -> Self {
-        let stepBuilder: StepBuilder = { value in
+        let combinedStepBuilder: StepBuilder = { value in
             steps(for: value) + other.steps(for: value)
         }
-        return .init(stepBuilder: stepBuilder)
+        return .init(stepBuilder: combinedStepBuilder)
     }
 
     /// Reuses this adapter for a new value by mapping the new value first.
@@ -96,9 +96,9 @@ public struct MHMutationAdapter<Value: Sendable>: Sendable {
     public func contramap<NewValue: Sendable>(
         _ transform: @escaping @Sendable (NewValue) -> Value
     ) -> MHMutationAdapter<NewValue> {
-        let stepBuilder: MHMutationAdapter<NewValue>.StepBuilder = { newValue in
+        let mappedStepBuilder: MHMutationAdapter<NewValue>.StepBuilder = { newValue in
             steps(for: transform(newValue))
         }
-        return .init(stepBuilder: stepBuilder)
+        return .init(stepBuilder: mappedStepBuilder)
     }
 }

@@ -4,58 +4,63 @@ public enum MHMutationStepListBuilder {
     /// Lifts a single step into the builder output.
     public static func buildExpression(
         _ expression: MHMutationStep
-    ) -> [MHMutationStep] {
-        [expression]
+    ) -> MHMutationStepList {
+        .init([expression])
     }
 
     /// Passes through a prebuilt ordered step list.
     public static func buildExpression(
         _ expression: [MHMutationStep]
-    ) -> [MHMutationStep] {
-        expression
+    ) -> MHMutationStepList {
+        .init(expression)
     }
 
     /// Flattens builder components into one ordered step list.
     public static func buildBlock(
-        _ components: [MHMutationStep]...
-    ) -> [MHMutationStep] {
-        components.flatMap(\.self)
+        _ components: MHMutationStepList...
+    ) -> MHMutationStepList {
+        .init(components.flatMap(\.steps))
     }
 
-    // swiftlint:disable discouraged_optional_collection
     /// Supports `if` branches that may not emit any steps.
     public static func buildOptional(
-        _ component: [MHMutationStep]?
-    ) -> [MHMutationStep] {
-        component ?? []
+        _ component: MHMutationStepList?
+    ) -> MHMutationStepList {
+        component ?? .init([])
     }
-    // swiftlint:enable discouraged_optional_collection
 
     /// Supports the first branch of `if/else`.
     public static func buildEither(
-        first component: [MHMutationStep]
-    ) -> [MHMutationStep] {
+        first component: MHMutationStepList
+    ) -> MHMutationStepList {
         component
     }
 
     /// Supports the second branch of `if/else`.
     public static func buildEither(
-        second component: [MHMutationStep]
-    ) -> [MHMutationStep] {
+        second component: MHMutationStepList
+    ) -> MHMutationStepList {
         component
     }
 
     /// Supports `for` loops that emit ordered step lists.
     public static func buildArray(
-        _ components: [[MHMutationStep]]
-    ) -> [MHMutationStep] {
-        components.flatMap(\.self)
+        _ components: [MHMutationStepList]
+    ) -> MHMutationStepList {
+        .init(components.flatMap(\.steps))
     }
 
     /// Preserves builder output inside availability checks.
     public static func buildLimitedAvailability(
-        _ component: [MHMutationStep]
-    ) -> [MHMutationStep] {
+        _ component: MHMutationStepList
+    ) -> MHMutationStepList {
         component
+    }
+
+    /// Exposes the final builder output as an ordered step array.
+    public static func buildFinalResult(
+        _ component: MHMutationStepList
+    ) -> [MHMutationStep] {
+        component.steps
     }
 }

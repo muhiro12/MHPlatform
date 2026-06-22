@@ -36,7 +36,7 @@ public enum MHMutationRunner {
     public static func start<Value: Sendable>(
         mutation: MHMutation<Value>,
         adapter: MHMutationAdapter<Value>,
-        retryPolicy: MHMutationRetryPolicy = .none,
+        retryPolicy: MHMutationRetryPolicy = .noRetry,
         cancellationHandle: MHCancellationHandle? = nil,
         onEvent: @escaping EventSink<Value> = { _ in
             // Intentionally empty.
@@ -79,7 +79,7 @@ public enum MHMutationRunner {
     @preconcurrency
     public static func start<Value: Sendable>(
         mutation: MHMutation<Value>,
-        retryPolicy: MHMutationRetryPolicy = .none,
+        retryPolicy: MHMutationRetryPolicy = .noRetry,
         cancellationHandle: MHCancellationHandle? = nil,
         afterSuccess: [MHMutationStep] = [],
         onEvent: @escaping EventSink<Value> = { _ in
@@ -106,7 +106,7 @@ public enum MHMutationRunner {
     public static func run<Value: Sendable>(
         mutation: MHMutation<Value>,
         adapter: MHMutationAdapter<Value>,
-        retryPolicy: MHMutationRetryPolicy = .none,
+        retryPolicy: MHMutationRetryPolicy = .noRetry,
         cancellationHandle: MHCancellationHandle? = nil,
         onEvent: @escaping EventSink<Value> = { _ in
             // Intentionally empty.
@@ -133,7 +133,7 @@ public enum MHMutationRunner {
     @preconcurrency
     public static func run<Value: Sendable>(
         mutation: MHMutation<Value>,
-        retryPolicy: MHMutationRetryPolicy = .none,
+        retryPolicy: MHMutationRetryPolicy = .noRetry,
         cancellationHandle: MHCancellationHandle? = nil,
         afterSuccess: [MHMutationStep] = [],
         onEvent: @escaping EventSink<Value> = { _ in

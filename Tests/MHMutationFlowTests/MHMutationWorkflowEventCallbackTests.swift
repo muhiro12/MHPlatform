@@ -21,38 +21,37 @@ struct MHMutationWorkflowEventCallbackTests {
         let recorder = MHMutationEventTraceRecorder<String>(
             traceBuilder: Self.trace
         )
+        let operation: @MainActor @Sendable () -> MHMutationProjection<Bool, String> = {
+            .init(
+                adapterValue: true,
+                resultValue: "saved"
+            )
+        }
+        let adapter = MHMutationAdapter<Bool> { shouldRunFollowUp in
+            if shouldRunFollowUp {
+                return [
+                    .init(name: "syncNotifications") {
+                        // Intentionally empty.
+                    }
+                ]
+            }
 
-        // `runThrowing` takes multiple closure arguments, so named closures are
-        // clearer here than forcing trailing-closure syntax.
-        // swiftlint:disable trailing_closure
+            return []
+        }
+        let onEvent: MHMutationWorkflow.EventSink<String> = { event in
+            recorder.record(event)
+        }
+
         let result = try await MHMutationWorkflow.runThrowing(
             name: "saveProjectedDraft",
-            operation: { () -> MHMutationProjection<Bool, String> in
-                .init(
-                    adapterValue: true,
-                    resultValue: "saved"
-                )
-            },
-            adapter: MHMutationAdapter<Bool> { shouldRunFollowUp in
-                if shouldRunFollowUp {
-                    return [
-                        .init(name: "syncNotifications") {
-                            // Intentionally empty.
-                        }
-                    ]
-                }
-
-                return []
-            },
+            operation: operation,
+            adapter: adapter,
             projection: .keyPaths(
                 adapterValue: \MHMutationProjection<Bool, String>.adapterValue,
                 resultValue: \MHMutationProjection<Bool, String>.resultValue
             ),
-            onEvent: { event in
-                recorder.record(event)
-            }
+            onEvent: onEvent
         )
-        // swiftlint:enable trailing_closure
 
         #expect(result == "saved")
         #expect(recorder.all() == [
@@ -84,18 +83,20 @@ struct MHMutationWorkflowEventCallbackTests {
                     resultValue: "saved"
                 )
             },
-            adapter: MHMutationAdapter<Bool>.none,
+            adapter: MHMutationAdapter<Bool>.noSteps,
             projection: .keyPaths(
                 adapterValue: \MHMutationProjection<Bool, String>.adapterValue,
                 resultValue: \MHMutationProjection<Bool, String>.resultValue
             ),
-            onEvent: { event in
-                recorder.record(event)
-            },
-            configuration: .init(
-                retryPolicy: .init(
-                    maximumAttempts: 2,
-                    backoff: .immediate
+            options: .init(
+                onEvent: { event in
+                    recorder.record(event)
+                },
+                configuration: .init(
+                    retryPolicy: .init(
+                        maximumAttempts: 2,
+                        backoff: .immediate
+                    )
                 )
             )
         )
@@ -128,15 +129,17 @@ struct MHMutationWorkflowEventCallbackTests {
 
                 return "saved"
             },
-            adapter: MHMutationAdapter<Bool>.none,
+            adapter: MHMutationAdapter<Bool>.noSteps,
             adapterValue: false,
-            onEvent: { event in
-                recorder.record(event)
-            },
-            configuration: .init(
-                retryPolicy: .init(
-                    maximumAttempts: 2,
-                    backoff: .immediate
+            options: .init(
+                onEvent: { event in
+                    recorder.record(event)
+                },
+                configuration: .init(
+                    retryPolicy: .init(
+                        maximumAttempts: 2,
+                        backoff: .immediate
+                    )
                 )
             )
         )
@@ -156,6 +159,22 @@ struct MHMutationWorkflowEventCallbackTests {
         let recorder = MHMutationEventTraceRecorder<String>(
             traceBuilder: Self.trace
         )
+        let operation: @MainActor @Sendable () -> MHMutationProjection<Bool, String> = {
+            .init(
+                adapterValue: true,
+                resultValue: "saved"
+            )
+        }
+        let adapter = MHMutationAdapter<Bool>.fixed(
+            [
+                .init(name: "syncNotifications") {
+                    throw MutationTestError.sideEffectFailed
+                }
+            ]
+        )
+        let onEvent: MHMutationWorkflow.EventSink<String> = { event in
+            recorder.record(event)
+        }
 
         await #expect(
             throws: MHMutationWorkflowError.step(
@@ -163,33 +182,16 @@ struct MHMutationWorkflowEventCallbackTests {
                 description: "sideEffectFailed"
             )
         ) {
-            // `runThrowing` takes multiple closure arguments, so named closures are
-            // clearer here than forcing trailing-closure syntax.
-            // swiftlint:disable trailing_closure
             try await MHMutationWorkflow.runThrowing(
                 name: "saveProjectedDraft",
-                operation: { () -> MHMutationProjection<Bool, String> in
-                    .init(
-                        adapterValue: true,
-                        resultValue: "saved"
-                    )
-                },
-                adapter: MHMutationAdapter<Bool>.fixed(
-                    [
-                        .init(name: "syncNotifications") {
-                            throw MutationTestError.sideEffectFailed
-                        }
-                    ]
-                ),
+                operation: operation,
+                adapter: adapter,
                 projection: .keyPaths(
                     adapterValue: \MHMutationProjection<Bool, String>.adapterValue,
                     resultValue: \MHMutationProjection<Bool, String>.resultValue
                 ),
-                onEvent: { event in
-                    recorder.record(event)
-                }
+                onEvent: onEvent
             )
-            // swiftlint:enable trailing_closure
         }
 
         #expect(recorder.all() == [
@@ -204,23 +206,21 @@ struct MHMutationWorkflowEventCallbackTests {
         let recorder = MHMutationEventTraceRecorder<String>(
             traceBuilder: Self.trace
         )
+        let operation: @MainActor @Sendable () throws -> String = {
+            throw CancellationError()
+        }
+        let onEvent: MHMutationWorkflow.EventSink<String> = { event in
+            recorder.record(event)
+        }
 
         await #expect(throws: CancellationError.self) {
-            // `runThrowing` takes multiple closure arguments, so named closures are
-            // clearer here than forcing trailing-closure syntax.
-            // swiftlint:disable trailing_closure
             try await MHMutationWorkflow.runThrowing(
                 name: "saveProjectedDraft",
-                operation: { () throws -> String in
-                    throw CancellationError()
-                },
-                adapter: MHMutationAdapter<String>.none,
+                operation: operation,
+                adapter: MHMutationAdapter<String>.noSteps,
                 projection: .identity,
-                onEvent: { event in
-                    recorder.record(event)
-                }
+                onEvent: onEvent
             )
-            // swiftlint:enable trailing_closure
         }
 
         #expect(recorder.all() == [

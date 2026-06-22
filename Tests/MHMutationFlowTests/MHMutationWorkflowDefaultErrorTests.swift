@@ -124,10 +124,12 @@ struct MHMutationWorkflowDefaultErrorTests {
                 operation: {
                     throw OperationTestError.failed
                 },
-                adapter: MHMutationAdapter<String>.none,
+                adapter: MHMutationAdapter<String>.noSteps,
                 projection: .identity,
-                configuration: .init(
-                    operationErrorDescription: operationErrorDescription
+                options: .init(
+                    configuration: .init(
+                        operationErrorDescription: operationErrorDescription
+                    )
                 )
             )
         }
@@ -168,7 +170,7 @@ struct MHMutationWorkflowDefaultErrorTests {
                 operation: {
                     throw CancellationError()
                 },
-                adapter: MHMutationAdapter<String>.none,
+                adapter: MHMutationAdapter<String>.noSteps,
                 projection: .identity
             )
         }

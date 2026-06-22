@@ -80,9 +80,11 @@ public enum MHMutationWorkflow {
             operation: operation,
             adapter: adapter,
             projection: projection,
-            onEvent: onEvent,
-            configuration: .init(
-                operationErrorDescription: operationErrorDescription
+            options: .init(
+                onEvent: onEvent,
+                configuration: .init(
+                    operationErrorDescription: operationErrorDescription
+                )
             )
         )
     }
@@ -150,10 +152,12 @@ public enum MHMutationWorkflow {
             operation: operation,
             adapter: adapter,
             projection: projection,
-            mapFailure: mapFailure,
-            onEvent: onEvent,
-            configuration: .init(
-                operationErrorDescription: operationErrorDescription
+            options: .init(
+                mapFailure: mapFailure,
+                onEvent: onEvent,
+                configuration: .init(
+                    operationErrorDescription: operationErrorDescription
+                )
             )
         )
     }

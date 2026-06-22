@@ -147,16 +147,18 @@ struct MHMutationWorkflowProjectionTests {
                 operation: {
                     throw OperationTestError.failed
                 },
-                adapter: MHMutationAdapter<FollowUp>.none,
+                adapter: MHMutationAdapter<FollowUp>.noSteps,
                 projection: .fixedAdapterValue(
                     .init(
                         reloadWidgets: true,
                         synchronizeNotifications: true
                     )
                 ),
-                mapFailure: Self.expectedError(from:),
-                configuration: .init(
-                    operationErrorDescription: operationErrorDescription
+                options: .init(
+                    mapFailure: Self.expectedError(from:),
+                    configuration: .init(
+                        operationErrorDescription: operationErrorDescription
+                    )
                 )
             )
         }
@@ -174,14 +176,16 @@ struct MHMutationWorkflowProjectionTests {
                 operation: {
                     throw OperationTestError.failed
                 },
-                adapter: MHMutationAdapter<FollowUp>.none,
+                adapter: MHMutationAdapter<FollowUp>.noSteps,
                 adapterValue: .init(
                     reloadWidgets: true,
                     synchronizeNotifications: true
                 ),
-                mapFailure: Self.expectedError(from:),
-                configuration: .init(
-                    operationErrorDescription: operationErrorDescription
+                options: .init(
+                    mapFailure: Self.expectedError(from:),
+                    configuration: .init(
+                        operationErrorDescription: operationErrorDescription
+                    )
                 )
             )
         }
@@ -232,7 +236,7 @@ struct MHMutationWorkflowProjectionTests {
                 operation: {
                     throw CancellationError()
                 },
-                adapter: MHMutationAdapter<FollowUp>.none,
+                adapter: MHMutationAdapter<FollowUp>.noSteps,
                 projection: .fixedAdapterValue(
                     .init(
                         reloadWidgets: true,

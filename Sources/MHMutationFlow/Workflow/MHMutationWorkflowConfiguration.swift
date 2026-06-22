@@ -9,7 +9,7 @@ public struct MHMutationWorkflowConfiguration: Sendable {
 
     /// Creates a workflow configuration with narrow defaults.
     public init(
-        retryPolicy: MHMutationRetryPolicy = .none,
+        retryPolicy: MHMutationRetryPolicy = .noRetry,
         cancellationHandle: MHCancellationHandle? = nil,
         operationErrorDescription: @escaping MHMutationWorkflow.OperationErrorDescription = \.localizedDescription
     ) {

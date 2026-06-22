@@ -1,6 +1,64 @@
 import Foundation
 
 public extension MHMutationWorkflow {
+    struct RunOptions<Value: Sendable>: Sendable {
+        let onEvent: EventSink<Value>
+        let configuration: MHMutationWorkflowConfiguration
+
+        public init(
+            configuration: MHMutationWorkflowConfiguration
+        ) {
+            self.init(
+                onEvent: { _ in
+                    // Intentionally empty.
+                },
+                configuration: configuration
+            )
+        }
+
+        public init(
+            onEvent: @escaping EventSink<Value>,
+            configuration: MHMutationWorkflowConfiguration
+        ) {
+            self.onEvent = onEvent
+            self.configuration = configuration
+        }
+    }
+
+    struct FailureOptions<
+        Value: Sendable,
+        Failure: Error & Sendable
+    >: Sendable {
+        let mapFailure: @Sendable (MHMutationFailure) -> Failure
+        let onEvent: EventSink<Value>
+        let configuration: MHMutationWorkflowConfiguration
+
+        @preconcurrency
+        public init(
+            mapFailure: @escaping @Sendable (MHMutationFailure) -> Failure,
+            configuration: MHMutationWorkflowConfiguration
+        ) {
+            self.init(
+                mapFailure: mapFailure,
+                onEvent: { _ in
+                    // Intentionally empty.
+                },
+                configuration: configuration
+            )
+        }
+
+        @preconcurrency
+        public init(
+            mapFailure: @escaping @Sendable (MHMutationFailure) -> Failure,
+            onEvent: @escaping EventSink<Value>,
+            configuration: MHMutationWorkflowConfiguration
+        ) {
+            self.mapFailure = mapFailure
+            self.onEvent = onEvent
+            self.configuration = configuration
+        }
+    }
+
     private static func defaultFailure(
         from failure: MHMutationFailure
     ) -> MHMutationWorkflowError {
@@ -17,18 +75,14 @@ public extension MHMutationWorkflow {
         operation: @escaping @MainActor @Sendable () throws -> OperationValue,
         adapter: MHMutationAdapter<AdapterValue>,
         adapterValue: AdapterValue,
-        onEvent: @escaping EventSink<OperationValue> = { _ in
-            // Intentionally empty.
-        },
-        configuration: MHMutationWorkflowConfiguration
+        options: RunOptions<OperationValue>
     ) async throws -> OperationValue {
         try await runThrowing(
             name: name,
             operation: operation,
             adapter: adapter,
             projection: .fixedAdapterValue(adapterValue),
-            onEvent: onEvent,
-            configuration: configuration
+            options: options
         )
     }
 
@@ -47,23 +101,21 @@ public extension MHMutationWorkflow {
             AdapterValue,
             ResultValue
         >,
-        onEvent: @escaping EventSink<ResultValue> = { _ in
-            // Intentionally empty.
-        },
-        configuration: MHMutationWorkflowConfiguration
+        options: RunOptions<ResultValue>
     ) async throws -> ResultValue {
         try await runThrowing(
             name: name,
             operation: operation,
             adapter: adapter,
             projection: projection,
-            mapFailure: defaultFailure(from:),
-            onEvent: onEvent,
-            configuration: configuration
+            options: .init(
+                mapFailure: defaultFailure(from:),
+                onEvent: options.onEvent,
+                configuration: options.configuration
+            )
         )
     }
 
-    // swiftlint:disable function_parameter_count
     /// Runs a main-actor mutation with custom workflow failure mapping.
     @preconcurrency
     static func runThrowing<
@@ -75,20 +127,18 @@ public extension MHMutationWorkflow {
         operation: @escaping @MainActor @Sendable () throws -> OperationValue,
         adapter: MHMutationAdapter<AdapterValue>,
         adapterValue: AdapterValue,
-        mapFailure: @Sendable (MHMutationFailure) -> Failure,
-        onEvent: @escaping EventSink<OperationValue> = { _ in
-            // Intentionally empty.
-        },
-        configuration: MHMutationWorkflowConfiguration
+        options: FailureOptions<OperationValue, Failure>
     ) async throws -> OperationValue {
         try await runThrowing(
             name: name,
             operation: operation,
             adapter: adapter,
             projection: .fixedAdapterValue(adapterValue),
-            mapFailure: mapFailure,
-            onEvent: onEvent,
-            configuration: configuration
+            options: .init(
+                mapFailure: options.mapFailure,
+                onEvent: options.onEvent,
+                configuration: options.configuration
+            )
         )
     }
 
@@ -108,11 +158,7 @@ public extension MHMutationWorkflow {
             AdapterValue,
             ResultValue
         >,
-        mapFailure: @Sendable (MHMutationFailure) -> Failure,
-        onEvent: @escaping EventSink<ResultValue> = { _ in
-            // Intentionally empty.
-        },
-        configuration: MHMutationWorkflowConfiguration
+        options: FailureOptions<ResultValue, Failure>
     ) async throws -> ResultValue {
         let mutation = MHMutation.mainActor(name: name) {
             do {
@@ -122,9 +168,19 @@ public extension MHMutationWorkflow {
                 throw CancellationError()
             } catch {
                 throw OperationFailure(
-                    description: configuration.operationErrorDescription(error)
+                    description: options.configuration.operationErrorDescription(error)
                 )
             }
+        }
+
+        let eventSink: MHMutationRunner.EventSink<
+            MHMutationProjection<AdapterValue, ResultValue>
+        > = { event in
+            options.onEvent(
+                event.mapValue { (projection: MHMutationProjection<AdapterValue, ResultValue>) in
+                    projection.resultValue
+                }
+            )
         }
 
         let outcome = await MHMutationRunner.run(
@@ -132,26 +188,18 @@ public extension MHMutationWorkflow {
             adapter: adapter.contramap { (projection: MHMutationProjection<AdapterValue, ResultValue>) in
                 projection.adapterValue
             },
-            retryPolicy: configuration.retryPolicy,
-            cancellationHandle: configuration.cancellationHandle,
-            // swiftlint:disable:next trailing_closure
-            onEvent: { event in
-                onEvent(
-                    event.mapValue { (projection: MHMutationProjection<AdapterValue, ResultValue>) in
-                        projection.resultValue
-                    }
-                )
-            }
+            retryPolicy: options.configuration.retryPolicy,
+            cancellationHandle: options.configuration.cancellationHandle,
+            onEvent: eventSink
         )
 
         switch outcome {
         case .succeeded(let value, _, _):
             return value.resultValue
         case .failed(let failure, _, _, _):
-            throw mapFailure(failure)
+            throw options.mapFailure(failure)
         case .cancelled:
             throw CancellationError()
         }
     }
-    // swiftlint:enable function_parameter_count
 }

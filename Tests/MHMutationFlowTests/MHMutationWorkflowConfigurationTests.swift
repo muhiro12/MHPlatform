@@ -31,12 +31,14 @@ struct MHMutationWorkflowConfigurationTests {
 
                 return "saved"
             },
-            adapter: MHMutationAdapter<String>.none,
+            adapter: MHMutationAdapter<String>.noSteps,
             projection: .identity,
-            configuration: .init(
-                retryPolicy: .init(
-                    maximumAttempts: 2,
-                    backoff: .immediate
+            options: .init(
+                configuration: .init(
+                    retryPolicy: .init(
+                        maximumAttempts: 2,
+                        backoff: .immediate
+                    )
                 )
             )
         )
@@ -56,10 +58,12 @@ struct MHMutationWorkflowConfigurationTests {
                 operation: {
                     "saved"
                 },
-                adapter: MHMutationAdapter<String>.none,
+                adapter: MHMutationAdapter<String>.noSteps,
                 projection: .identity,
-                configuration: .init(
-                    cancellationHandle: cancellationHandle
+                options: .init(
+                    configuration: .init(
+                        cancellationHandle: cancellationHandle
+                    )
                 )
             )
         }

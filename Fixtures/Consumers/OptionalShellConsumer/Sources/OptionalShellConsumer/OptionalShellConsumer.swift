@@ -45,8 +45,10 @@ enum OptionalShellConsumer {
             },
             adapter: makeAdapter(),
             adapterValue: Constants.adapterValue,
-            configuration: .init(
-                retryPolicy: .default
+            options: .init(
+                configuration: .init(
+                    retryPolicy: .default
+                )
             )
         )
     }
