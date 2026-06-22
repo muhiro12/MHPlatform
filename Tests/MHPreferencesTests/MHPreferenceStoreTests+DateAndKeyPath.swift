@@ -88,9 +88,16 @@ extension MHPreferenceStoreTests {
         )
     }
 
+    func makeDateKey(_ name: String) -> MHDatePreferenceDescriptor {
+        makeDateKey(
+            name,
+            defaultSelection: .standard
+        )
+    }
+
     func makeDateKey(
         _ name: String,
-        defaultSelection: MHUserDefaultsSelection = .standard
+        defaultSelection: MHUserDefaultsSelection
     ) -> MHDatePreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",

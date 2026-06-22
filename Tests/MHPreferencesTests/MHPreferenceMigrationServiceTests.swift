@@ -328,7 +328,7 @@ extension MHPreferenceMigrationServiceTests {
     func makeBoolDescriptor(
         _ name: String,
         defaultSelection: MHUserDefaultsSelection,
-        legacySources: [MHLegacyStorageReference] = []
+        legacySources: [MHLegacyStorageReference]
     ) -> MHBoolPreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",
@@ -340,7 +340,7 @@ extension MHPreferenceMigrationServiceTests {
     func makeStringDescriptor(
         _ name: String,
         defaultSelection: MHUserDefaultsSelection,
-        legacySources: [MHLegacyStorageReference] = []
+        legacySources: [MHLegacyStorageReference]
     ) -> MHStringPreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",
@@ -352,7 +352,7 @@ extension MHPreferenceMigrationServiceTests {
     func makeCodableDescriptor(
         _ name: String,
         defaultSelection: MHUserDefaultsSelection,
-        legacySources: [MHLegacyStorageReference] = []
+        legacySources: [MHLegacyStorageReference]
     ) -> MHCodablePreferenceDescriptor<Payload> {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",

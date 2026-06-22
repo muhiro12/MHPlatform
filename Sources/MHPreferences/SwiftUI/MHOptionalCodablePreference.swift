@@ -33,15 +33,15 @@ public struct MHOptionalCodablePreference<Value: Codable & Sendable>: DynamicPro
     }
 
     public var projectedValue: Binding<Value?> {
-        let encoder = self.encoder
-        let decoder = self.decoder
+        let preferenceEncoder = self.encoder
+        let preferenceDecoder = self.decoder
         let storedDataBinding = self.$storedData
 
         return .init(
             get: {
                 Self.decode(
                     storedDataBinding.wrappedValue,
-                    decoder: decoder
+                    decoder: preferenceDecoder
                 )
             },
             set: { newValue in
@@ -51,7 +51,7 @@ public struct MHOptionalCodablePreference<Value: Codable & Sendable>: DynamicPro
                 }
                 guard let encodedData = Self.encode(
                     newValue,
-                    encoder: encoder
+                    encoder: preferenceEncoder
                 ) else {
                     return
                 }

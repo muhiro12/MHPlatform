@@ -1,6 +1,11 @@
 import SwiftUI
 
 struct ContentView: View {
+    private enum Constants {
+        static let macMinimumWidth = 900.0
+        static let macMinimumHeight = 640.0
+    }
+
     var body: some View {
         content
     }
@@ -8,8 +13,10 @@ struct ContentView: View {
     @ViewBuilder private var content: some View {
         #if os(macOS)
         tabs
-            // swiftlint:disable:next no_magic_numbers
-            .frame(minWidth: 900, minHeight: 640)
+            .frame(
+                minWidth: Constants.macMinimumWidth,
+                minHeight: Constants.macMinimumHeight
+            )
         #else
         tabs
         #endif

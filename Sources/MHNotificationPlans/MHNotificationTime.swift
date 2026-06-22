@@ -2,6 +2,11 @@ import Foundation
 
 /// Notification delivery time represented as hour and minute.
 public struct MHNotificationTime: Equatable, Sendable {
+    private enum Constants {
+        static let hourUpperBound = 24
+        static let minuteUpperBound = 60
+    }
+
     /// Delivery hour in 24-hour format.
     public let hour: Int
 
@@ -13,10 +18,8 @@ public struct MHNotificationTime: Equatable, Sendable {
         hour: Int,
         minute: Int
     ) {
-        // swiftlint:disable:next no_magic_numbers
-        let hasValidHour = (0..<24).contains(hour)
-        // swiftlint:disable:next no_magic_numbers
-        let hasValidMinute = (0..<60).contains(minute)
+        let hasValidHour = (0..<Constants.hourUpperBound).contains(hour)
+        let hasValidMinute = (0..<Constants.minuteUpperBound).contains(minute)
 
         guard hasValidHour, hasValidMinute else {
             return nil

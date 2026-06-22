@@ -44,23 +44,22 @@ public final class MHLoggingBootstrap {
         additionalSinks: [any MHLogSink] = []
     ) {
         self.init(
+            snapshotStore: .init(),
             captureLevel: captureLevel,
             policy: policy,
             subsystem: subsystem,
             snapshotStorageDescriptors: snapshotStorageDescriptors,
-            snapshotStore: .init(),
             additionalSinks: additionalSinks
         )
     }
 
-    // swiftlint:disable function_default_parameter_at_end
     /// Creates a logging bootstrap with an explicitly injected snapshot store.
     public convenience init(
+        snapshotStore: MHPreferenceStore,
         captureLevel: MHLogLevel? = nil,
         policy: MHLogPolicy? = nil,
         subsystem: String? = nil,
         snapshotStorageDescriptors: MHLogSnapshotStorageDescriptors? = nil,
-        snapshotStore: MHPreferenceStore,
         additionalSinks: [any MHLogSink] = []
     ) {
         self.init(
@@ -73,7 +72,6 @@ public final class MHLoggingBootstrap {
             sessionIdentifier: MHLogSessionSnapshotSink.processSessionIdentifier
         )
     }
-    // swiftlint:enable function_default_parameter_at_end
 
     init(
         captureLevel: MHLogLevel?,
@@ -89,7 +87,7 @@ public final class MHLoggingBootstrap {
             captureLevel,
             policy: resolvedPolicy
         )
-        let runtimeState = Self.makeRuntimeState(
+        let resolvedRuntimeState = Self.makeRuntimeState(
             captureLevel: resolvedCaptureLevel,
             policy: resolvedPolicy
         )
@@ -98,33 +96,33 @@ public final class MHLoggingBootstrap {
             snapshotStore: snapshotStore,
             sessionIdentifier: sessionIdentifier
         )
-        let snapshotSink = Self.makeSnapshotSink(
+        let resolvedSnapshotSink = Self.makeSnapshotSink(
             snapshotSeed: snapshotSeed,
             snapshotStore: snapshotStore,
             sessionIdentifier: sessionIdentifier
         )
-        let sinks = Self.makeSinks(
-            snapshotSink: snapshotSink,
+        let resolvedSinks = Self.makeSinks(
+            snapshotSink: resolvedSnapshotSink,
             additionalSinks: additionalSinks
         )
-        let store = MHLogStore(
+        let resolvedStore = MHLogStore(
             policy: resolvedPolicy,
-            runtimeState: runtimeState,
-            sinks: sinks,
+            runtimeState: resolvedRuntimeState,
+            sinks: resolvedSinks,
             initialEvents: snapshotSeed?.currentEvents ?? []
         )
 
-        self.runtimeState = runtimeState
+        self.runtimeState = resolvedRuntimeState
         self.captureLevel = resolvedCaptureLevel
         self.previousSessionEvents = snapshotSeed?.previousEvents ?? []
         self.hasPreviousSession = previousSessionEvents.isEmpty == false
-        self.snapshotSink = snapshotSink
-        self.store = store
+        self.snapshotSink = resolvedSnapshotSink
+        self.store = resolvedStore
         self.loggerFactory = MHLoggerFactory(
-            store: store,
+            store: resolvedStore,
             policy: resolvedPolicy,
             subsystem: subsystem,
-            runtimeState: runtimeState
+            runtimeState: resolvedRuntimeState
         )
     }
 

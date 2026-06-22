@@ -42,17 +42,17 @@ actor MHLogSessionSnapshotSink: MHLogSink {
         snapshotStore: MHPreferenceStore,
         sessionIdentifier: UUID
     ) -> Seed {
-        let currentKey = MHCodablePreferenceDescriptor<StoredSnapshot>(
+        let resolvedCurrentKey = MHCodablePreferenceDescriptor<StoredSnapshot>(
             storageKey: snapshotStorageDescriptors.current.storageKey,
             defaultSelection: snapshotStorageDescriptors.current.defaultSelection
         )
-        let previousKey = MHCodablePreferenceDescriptor<StoredSnapshot>(
+        let resolvedPreviousKey = MHCodablePreferenceDescriptor<StoredSnapshot>(
             storageKey: snapshotStorageDescriptors.previous.storageKey,
             defaultSelection: snapshotStorageDescriptors.previous.defaultSelection
         )
 
-        let storedCurrentSnapshot = snapshotStore.codable(for: currentKey)
-        let storedPreviousSnapshot = snapshotStore.codable(for: previousKey)
+        let storedCurrentSnapshot = snapshotStore.codable(for: resolvedCurrentKey)
+        let storedPreviousSnapshot = snapshotStore.codable(for: resolvedPreviousKey)
 
         let currentSnapshot: StoredSnapshot
         let previousSnapshot: StoredSnapshot?
@@ -78,16 +78,16 @@ actor MHLogSessionSnapshotSink: MHLogSink {
 
         snapshotStore.setCodable(
             currentSnapshot,
-            for: currentKey
+            for: resolvedCurrentKey
         )
         snapshotStore.setCodable(
             previousSnapshot,
-            for: previousKey
+            for: resolvedPreviousKey
         )
 
         return .init(
-            currentKey: currentKey,
-            previousKey: previousKey,
+            currentKey: resolvedCurrentKey,
+            previousKey: resolvedPreviousKey,
             currentEvents: currentSnapshot.events,
             previousEvents: previousSnapshot?.events ?? []
         )

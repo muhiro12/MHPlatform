@@ -31,23 +31,23 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
     }
 
     public var projectedValue: Binding<Value> {
-        let defaultValue = self.defaultValue
-        let encoder = self.encoder
-        let decoder = self.decoder
+        let resolvedDefaultValue = self.defaultValue
+        let preferenceEncoder = self.encoder
+        let preferenceDecoder = self.decoder
         let storedDataBinding = self.$storedData
 
         return .init(
             get: {
                 Self.decode(
                     storedDataBinding.wrappedValue,
-                    decoder: decoder,
-                    defaultValue: defaultValue
+                    decoder: preferenceDecoder,
+                    defaultValue: resolvedDefaultValue
                 )
             },
             set: { newValue in
                 guard let encodedData = Self.encode(
                     newValue,
-                    encoder: encoder
+                    encoder: preferenceEncoder
                 ) else {
                     return
                 }

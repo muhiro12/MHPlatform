@@ -59,7 +59,7 @@ extension MHPreferenceMigrationServiceTests {
     func makeDateDescriptor(
         _ name: String,
         defaultSelection: MHUserDefaultsSelection,
-        legacySources: [MHLegacyStorageReference] = []
+        legacySources: [MHLegacyStorageReference]
     ) -> MHDatePreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",

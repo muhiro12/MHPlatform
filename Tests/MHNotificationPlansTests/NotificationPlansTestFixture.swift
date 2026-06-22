@@ -8,9 +8,9 @@ enum NotificationPlansTestFixture {
     }
 
     static var calendar: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: .zero) ?? .gmt
-        return calendar
+        var configuredCalendar = Calendar(identifier: .gregorian)
+        configuredCalendar.timeZone = TimeZone(secondsFromGMT: .zero) ?? .gmt
+        return configuredCalendar
     }
 
     static func deliveryTime() throws -> MHNotificationTime {

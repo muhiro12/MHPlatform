@@ -235,7 +235,9 @@ struct MHPreferenceStoreTests {
 
         #expect(userDefaults.bool(forKey: key.storageKey))
     }
+}
 
+extension MHPreferenceStoreTests {
     func makeStore(
         suiteName: String
     ) throws -> (MHPreferenceStore, UserDefaults) {
@@ -248,10 +250,40 @@ struct MHPreferenceStoreTests {
         return (store, userDefaults)
     }
 
+    func makeBoolKey(_ name: String) -> MHBoolPreferenceDescriptor {
+        makeBoolKey(
+            name,
+            defaultSelection: .standard,
+            default: false
+        )
+    }
+
     func makeBoolKey(
         _ name: String,
-        defaultSelection: MHUserDefaultsSelection = .standard,
-        default defaultValue: Bool = false
+        defaultSelection: MHUserDefaultsSelection
+    ) -> MHBoolPreferenceDescriptor {
+        makeBoolKey(
+            name,
+            defaultSelection: defaultSelection,
+            default: false
+        )
+    }
+
+    func makeBoolKey(
+        _ name: String,
+        default defaultValue: Bool
+    ) -> MHBoolPreferenceDescriptor {
+        makeBoolKey(
+            name,
+            defaultSelection: .standard,
+            default: defaultValue
+        )
+    }
+
+    func makeBoolKey(
+        _ name: String,
+        defaultSelection: MHUserDefaultsSelection,
+        default defaultValue: Bool
     ) -> MHBoolPreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",
@@ -260,10 +292,29 @@ struct MHPreferenceStoreTests {
         )
     }
 
+    func makeIntKey(_ name: String) -> MHIntPreferenceDescriptor {
+        makeIntKey(
+            name,
+            defaultSelection: .standard,
+            default: .zero
+        )
+    }
+
     func makeIntKey(
         _ name: String,
-        defaultSelection: MHUserDefaultsSelection = .standard,
-        default defaultValue: Int = .zero
+        default defaultValue: Int
+    ) -> MHIntPreferenceDescriptor {
+        makeIntKey(
+            name,
+            defaultSelection: .standard,
+            default: defaultValue
+        )
+    }
+
+    func makeIntKey(
+        _ name: String,
+        defaultSelection: MHUserDefaultsSelection,
+        default defaultValue: Int
     ) -> MHIntPreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",
@@ -272,9 +323,16 @@ struct MHPreferenceStoreTests {
         )
     }
 
+    func makeStringKey(_ name: String) -> MHStringPreferenceDescriptor {
+        makeStringKey(
+            name,
+            defaultSelection: .standard
+        )
+    }
+
     func makeStringKey(
         _ name: String,
-        defaultSelection: MHUserDefaultsSelection = .standard
+        defaultSelection: MHUserDefaultsSelection
     ) -> MHStringPreferenceDescriptor {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",
@@ -282,9 +340,16 @@ struct MHPreferenceStoreTests {
         )
     }
 
+    private func makeCodableKey(_ name: String) -> MHCodablePreferenceDescriptor<DemoPayload> {
+        makeCodableKey(
+            name,
+            defaultSelection: .standard
+        )
+    }
+
     private func makeCodableKey(
         _ name: String,
-        defaultSelection: MHUserDefaultsSelection = .standard
+        defaultSelection: MHUserDefaultsSelection
     ) -> MHCodablePreferenceDescriptor<DemoPayload> {
         .init(
             storageKey: "\(Constants.storageKeyPrefix).\(name)",

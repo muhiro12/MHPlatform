@@ -30,12 +30,12 @@ public struct MHPreferenceStore: @unchecked Sendable {
 
     /// Returns a boolean preference value or the descriptor default when unset.
     public func bool(for descriptor: MHBoolPreferenceDescriptor) -> Bool {
-        let userDefaults = resolvedUserDefaults(for: descriptor)
+        let resolvedDefaults = resolvedUserDefaults(for: descriptor)
 
-        guard userDefaults.object(forKey: descriptor.storageKey) != nil else {
+        guard resolvedDefaults.object(forKey: descriptor.storageKey) != nil else {
             return descriptor.defaultValue
         }
-        return userDefaults.bool(forKey: descriptor.storageKey)
+        return resolvedDefaults.bool(forKey: descriptor.storageKey)
     }
 
     /// Stores a boolean preference value.
@@ -48,12 +48,12 @@ public struct MHPreferenceStore: @unchecked Sendable {
 
     /// Returns an integer preference value or the descriptor default when unset.
     public func int(for descriptor: MHIntPreferenceDescriptor) -> Int {
-        let userDefaults = resolvedUserDefaults(for: descriptor)
+        let resolvedDefaults = resolvedUserDefaults(for: descriptor)
 
-        guard userDefaults.object(forKey: descriptor.storageKey) != nil else {
+        guard resolvedDefaults.object(forKey: descriptor.storageKey) != nil else {
             return descriptor.defaultValue
         }
-        return userDefaults.integer(forKey: descriptor.storageKey)
+        return resolvedDefaults.integer(forKey: descriptor.storageKey)
     }
 
     /// Returns an integer preference value or the supplied default when unset.
@@ -61,12 +61,12 @@ public struct MHPreferenceStore: @unchecked Sendable {
         for descriptor: MHIntPreferenceDescriptor,
         default defaultValue: Int
     ) -> Int {
-        let userDefaults = resolvedUserDefaults(for: descriptor)
+        let resolvedDefaults = resolvedUserDefaults(for: descriptor)
 
-        guard userDefaults.object(forKey: descriptor.storageKey) != nil else {
+        guard resolvedDefaults.object(forKey: descriptor.storageKey) != nil else {
             return defaultValue
         }
-        return userDefaults.integer(forKey: descriptor.storageKey)
+        return resolvedDefaults.integer(forKey: descriptor.storageKey)
     }
 
     /// Stores an integer preference value.
@@ -97,12 +97,12 @@ public struct MHPreferenceStore: @unchecked Sendable {
         _ value: String?,
         for descriptor: MHStringPreferenceDescriptor
     ) {
-        let userDefaults = resolvedUserDefaults(for: descriptor)
+        let resolvedDefaults = resolvedUserDefaults(for: descriptor)
 
         if let value {
-            userDefaults.set(value, forKey: descriptor.storageKey)
+            resolvedDefaults.set(value, forKey: descriptor.storageKey)
         } else {
-            userDefaults.removeObject(forKey: descriptor.storageKey)
+            resolvedDefaults.removeObject(forKey: descriptor.storageKey)
         }
     }
 
@@ -118,12 +118,12 @@ public struct MHPreferenceStore: @unchecked Sendable {
         _ value: Date?,
         for descriptor: MHDatePreferenceDescriptor
     ) {
-        let userDefaults = resolvedUserDefaults(for: descriptor)
+        let resolvedDefaults = resolvedUserDefaults(for: descriptor)
 
         if let value {
-            userDefaults.set(value, forKey: descriptor.storageKey)
+            resolvedDefaults.set(value, forKey: descriptor.storageKey)
         } else {
-            userDefaults.removeObject(forKey: descriptor.storageKey)
+            resolvedDefaults.removeObject(forKey: descriptor.storageKey)
         }
     }
 

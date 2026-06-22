@@ -119,19 +119,19 @@ struct NotificationPlansDemoView: View {
     }
 
     private var calendar: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: .zero) ?? .gmt
-        return calendar
+        var configuredCalendar = Calendar(identifier: .gregorian)
+        configuredCalendar.timeZone = TimeZone(secondsFromGMT: .zero) ?? .gmt
+        return configuredCalendar
     }
 
     private var deliveryTime: MHNotificationTime {
-        guard let deliveryTime = MHNotificationTime(
+        guard let resolvedDeliveryTime = MHNotificationTime(
             hour: Constants.deliveryHour,
             minute: Constants.deliveryMinute
         ) else {
             preconditionFailure("Invalid delivery time")
         }
-        return deliveryTime
+        return resolvedDeliveryTime
     }
 
     private var referenceDate: Date {

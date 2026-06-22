@@ -19,20 +19,20 @@ extension MHLogConsoleView {
         Section("Filters") {
             Picker(
                 "Visible Minimum Level",
-                selection: $visibleMinimumLevel
+                selection: visibleMinimumLevelBinding
             ) {
                 ForEach(MHLogLevel.allCases, id: \.self) { level in
                     Text(level.name.uppercased())
                         .tag(level)
                 }
             }
-            TextField("Category contains", text: $categoryFilter)
+            TextField("Category contains", text: categoryFilterBinding)
                 .autocorrectionDisabled()
-            TextField("Search text", text: $searchText)
+            TextField("Search text", text: searchTextBinding)
                 .autocorrectionDisabled()
             Stepper(
-                "Limit: \(limit)",
-                value: $limit,
+                "Limit: \(eventLimit)",
+                value: limitBinding,
                 in: Constants.minimumLimit...Constants.maximumLimit,
                 step: Constants.limitStep
             )
@@ -57,7 +57,7 @@ extension MHLogConsoleView {
                 }
             }
             Button("Clear", role: .destructive) {
-                isPresentingClearConfirmation = true
+                isClearConfirmationPresented = true
             }
             .accessibilityHint("Shows a confirmation before removing diagnostic log history.")
         }
@@ -65,9 +65,9 @@ extension MHLogConsoleView {
 
     var eventSection: some View {
         Section("Events") {
-            if events.isEmpty {
+            if visibleEvents.isEmpty {
                 Text(
-                    sessionScope == .previous
+                    selectedSessionScope == .previous
                         ? "No previous session events"
                         : "No events"
                 )
@@ -75,7 +75,7 @@ extension MHLogConsoleView {
                 .accessibilityLabel(emptyEventsAccessibilityLabel)
             } else {
                 ForEach(
-                    Array(events.enumerated()),
+                    Array(visibleEvents.enumerated()),
                     id: \.offset
                 ) { _, event in
                     NavigationLink {
@@ -90,16 +90,16 @@ extension MHLogConsoleView {
 
     var statusSection: some View {
         Section("Status") {
-            Text(statusMessage)
+            Text(consoleStatusMessage)
                 .font(.caption.monospaced())
                 .logConsoleTextSelectionIfSupported()
                 .accessibilityLabel("Console status")
-                .accessibilityValue(statusMessage)
+                .accessibilityValue(consoleStatusMessage)
         }
     }
 
     var emptyEventsAccessibilityLabel: String {
-        sessionScope == .previous
+        selectedSessionScope == .previous
             ? "No previous session log events"
             : "No current session log events"
     }
@@ -171,7 +171,7 @@ extension MHLogConsoleView {
     private func sessionScopePicker() -> some View {
         Picker(
             "Session",
-            selection: $sessionScope
+            selection: selectedSessionScopeBinding
         ) {
             ForEach(availableSessionScopes, id: \.self) { scope in
                 Text(scope.title)
@@ -190,7 +190,7 @@ extension MHLogConsoleView {
                 },
                 set: { newValue in
                     logging.captureLevel = newValue
-                    statusMessage = "Capture level set to \(newValue.name.uppercased())"
+                    consoleStatusMessage = "Capture level set to \(newValue.name.uppercased())"
                 }
             )
         ) {
@@ -199,12 +199,12 @@ extension MHLogConsoleView {
                     .tag(level)
             }
         }
-        .disabled(sessionScope == .previous)
+        .disabled(selectedSessionScope == .previous)
     }
 
     @ViewBuilder
     private func captureSummaryText(captureLevel: MHLogLevel) -> some View {
-        if sessionScope == .current {
+        if selectedSessionScope == .current {
             Text("Currently capturing \(captureLevel.name.uppercased()) and higher for new events.")
                 .foregroundStyle(.secondary)
                 .font(.caption)

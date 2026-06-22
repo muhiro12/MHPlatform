@@ -10,10 +10,10 @@ import AppKit
 extension MHLogConsoleView {
     var activeQuery: MHLogQuery {
         .init(
-            minimumLevel: visibleMinimumLevel,
-            category: categoryFilter,
-            searchText: searchText,
-            limit: limit
+            minimumLevel: selectedVisibleMinimumLevel,
+            category: currentCategoryFilter,
+            searchText: currentSearchText,
+            limit: eventLimit
         )
     }
 
@@ -25,7 +25,7 @@ extension MHLogConsoleView {
         let values: [MHLogEvent]
         if let logging {
             values = await logging.events(
-                in: sessionScope,
+                in: selectedSessionScope,
                 matching: activeQuery
             )
         } else {
@@ -33,8 +33,8 @@ extension MHLogConsoleView {
         }
 
         await MainActor.run {
-            events = values
-            statusMessage = "Loaded \(values.count) event(s) from \(sessionScope.title.lowercased())"
+            visibleEvents = values
+            consoleStatusMessage = "Loaded \(values.count) event(s) from \(selectedSessionScope.title.lowercased())"
         }
     }
 
@@ -42,7 +42,7 @@ extension MHLogConsoleView {
         let jsonLines: String
         if let logging {
             jsonLines = await logging.exportJSONLines(
-                in: sessionScope,
+                in: selectedSessionScope,
                 matching: activeQuery
             )
         } else {
@@ -51,9 +51,9 @@ extension MHLogConsoleView {
         let copied = copyToClipboard(jsonLines)
         await MainActor.run {
             if copied {
-                statusMessage = "Copied \(jsonLines.utf8.count) bytes as JSONL"
+                consoleStatusMessage = "Copied \(jsonLines.utf8.count) bytes as JSONL"
             } else {
-                statusMessage = "Clipboard is not supported on this platform"
+                consoleStatusMessage = "Clipboard is not supported on this platform"
             }
         }
     }
@@ -62,7 +62,7 @@ extension MHLogConsoleView {
         let jsonLines: String
         if let logging {
             jsonLines = await logging.exportJSONLines(
-                in: sessionScope,
+                in: selectedSessionScope,
                 matching: activeQuery
             )
         } else {
@@ -71,15 +71,15 @@ extension MHLogConsoleView {
 
         #if !os(watchOS)
         await MainActor.run {
-            exportDocument = .init(jsonLines: jsonLines)
-            exportFilename = makeExportFilename()
-            isPresentingExporter = true
-            statusMessage = "Prepared \(jsonLines.utf8.count) bytes for export"
+            preparedExportDocument = .init(jsonLines: jsonLines)
+            preparedExportFilename = makeExportFilename()
+            isExporterPresented = true
+            consoleStatusMessage = "Prepared \(jsonLines.utf8.count) bytes for export"
         }
         #else
         _ = jsonLines
         await MainActor.run {
-            statusMessage = "Export is not supported on this platform"
+            consoleStatusMessage = "Export is not supported on this platform"
         }
         #endif
     }
@@ -88,7 +88,7 @@ extension MHLogConsoleView {
         if let logging {
             await logging.clear()
             await MainActor.run {
-                sessionScope = .current
+                selectedSessionScope = .current
             }
         } else {
             await store.clear()
@@ -97,9 +97,9 @@ extension MHLogConsoleView {
         await refreshEvents()
         await MainActor.run {
             if logging == nil {
-                statusMessage = "Cleared in-memory logs"
+                consoleStatusMessage = "Cleared in-memory logs"
             } else {
-                statusMessage = "Cleared current and previous session snapshots"
+                consoleStatusMessage = "Cleared current and previous session snapshots"
             }
         }
     }
@@ -117,7 +117,11 @@ extension MHLogConsoleView {
         #endif
     }
 
-    package func makeExportFilename(date: Date = .init()) -> String {
+    package func makeExportFilename() -> String {
+        makeExportFilename(date: .init())
+    }
+
+    package func makeExportFilename(date: Date) -> String {
         let formatter = ISO8601DateFormatter()
         let timestamp = formatter.string(from: date)
             .replacingOccurrences(of: ":", with: "-")

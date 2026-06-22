@@ -2,6 +2,12 @@
 import Foundation
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
+
 #if !os(watchOS)
 import UniformTypeIdentifiers
 #endif
@@ -24,22 +30,20 @@ public struct MHLogConsoleView: View {
     let store: MHLogStore
     let logging: MHLoggingBootstrap?
 
-    // swiftlint:disable private_swiftui_state
-    @State var sessionScope: MHLogSessionScope = .current
-    @State var visibleMinimumLevel: MHLogLevel = .debug
-    @State var categoryFilter = String()
-    @State var searchText = String()
-    @State var limit = Constants.defaultLimit
-    @State var events = [MHLogEvent]()
-    @State var statusMessage = "Ready"
-    @State var isPresentingClearConfirmation = false
+    @State private var sessionScope: MHLogSessionScope = .current
+    @State private var visibleMinimumLevel: MHLogLevel = .debug
+    @State private var categoryFilter = String()
+    @State private var searchText = String()
+    @State private var limit = Constants.defaultLimit
+    @State private var events = [MHLogEvent]()
+    @State private var statusMessage = "Ready"
+    @State private var isPresentingClearConfirmation = false
 
     #if !os(watchOS)
-    @State var exportDocument = MHLogConsoleExportDocument(jsonLines: "")
-    @State var exportFilename = "\(Constants.exportBaseName).jsonl"
-    @State var isPresentingExporter = false
+    @State private var exportDocument = MHLogConsoleExportDocument(jsonLines: "")
+    @State private var exportFilename = "\(Constants.exportBaseName).jsonl"
+    @State private var isPresentingExporter = false
     #endif
-    // swiftlint:enable private_swiftui_state
 
     public var body: some View {
         List {
@@ -119,6 +123,107 @@ public struct MHLogConsoleView: View {
 
         return [.current]
     }
+
+    var selectedSessionScope: MHLogSessionScope {
+        get {
+            sessionScope
+        }
+        nonmutating set {
+            sessionScope = newValue
+        }
+    }
+
+    var selectedSessionScopeBinding: Binding<MHLogSessionScope> {
+        $sessionScope
+    }
+
+    var selectedVisibleMinimumLevel: MHLogLevel {
+        visibleMinimumLevel
+    }
+
+    var visibleMinimumLevelBinding: Binding<MHLogLevel> {
+        $visibleMinimumLevel
+    }
+
+    var currentCategoryFilter: String {
+        categoryFilter
+    }
+
+    var categoryFilterBinding: Binding<String> {
+        $categoryFilter
+    }
+
+    var currentSearchText: String {
+        searchText
+    }
+
+    var searchTextBinding: Binding<String> {
+        $searchText
+    }
+
+    var eventLimit: Int {
+        limit
+    }
+
+    var limitBinding: Binding<Int> {
+        $limit
+    }
+
+    var visibleEvents: [MHLogEvent] {
+        get {
+            events
+        }
+        nonmutating set {
+            events = newValue
+        }
+    }
+
+    var consoleStatusMessage: String {
+        get {
+            statusMessage
+        }
+        nonmutating set {
+            statusMessage = newValue
+        }
+    }
+
+    var isClearConfirmationPresented: Bool {
+        get {
+            isPresentingClearConfirmation
+        }
+        nonmutating set {
+            isPresentingClearConfirmation = newValue
+        }
+    }
+
+    #if !os(watchOS)
+    var preparedExportDocument: MHLogConsoleExportDocument {
+        get {
+            exportDocument
+        }
+        nonmutating set {
+            exportDocument = newValue
+        }
+    }
+
+    var preparedExportFilename: String {
+        get {
+            exportFilename
+        }
+        nonmutating set {
+            exportFilename = newValue
+        }
+    }
+
+    var isExporterPresented: Bool {
+        get {
+            isPresentingExporter
+        }
+        nonmutating set {
+            isPresentingExporter = newValue
+        }
+    }
+    #endif
 
     public init(store: MHLogStore) {
         self.store = store

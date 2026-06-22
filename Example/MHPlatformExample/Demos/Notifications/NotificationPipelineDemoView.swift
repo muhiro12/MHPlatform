@@ -107,19 +107,19 @@ struct NotificationPipelineDemoView: View {
     private var encodedUserInfoLines: [String] {
         MHNotificationPayloadCodec()
             .encode(payload)
-            .compactMap { key, value in
-                guard let key = key as? String else {
+            .compactMap { rawKey, value in
+                guard let userInfoKey = rawKey as? String else {
                     return nil
                 }
-                return "\(key): \(value)"
+                return "\(userInfoKey): \(value)"
             }
             .sorted()
     }
 
     private var calendar: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: .zero) ?? .gmt
-        return calendar
+        var configuredCalendar = Calendar(identifier: .gregorian)
+        configuredCalendar.timeZone = TimeZone(secondsFromGMT: .zero) ?? .gmt
+        return configuredCalendar
     }
 
     private var deliveryTime: MHNotificationTime {
