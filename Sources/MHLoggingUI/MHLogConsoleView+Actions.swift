@@ -1,5 +1,6 @@
 #if canImport(SwiftUI)
 import Foundation
+import MHLogging
 
 #if os(iOS)
 import UIKit

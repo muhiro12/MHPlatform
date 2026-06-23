@@ -1,6 +1,8 @@
 import MHAppRuntime
 import MHLogging
 import MHMutationFlow
+import MHReviewPolicy
+import MHReviewRequesting
 
 /// Package-owned shell for review-request orchestration and lifecycle wiring.
 public struct MHReviewFlow: Sendable {
@@ -41,7 +43,7 @@ public struct MHReviewFlow: Sendable {
         )
     }
 
-    init(
+    package init(
         policy: MHReviewPolicy,
         logger: MHLogger?,
         onOutcome: @escaping OutcomeSink,

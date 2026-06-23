@@ -1,5 +1,6 @@
 #if canImport(SwiftUI)
 import Foundation
+import MHPreferences
 import SwiftUI
 
 public extension AppStorage {

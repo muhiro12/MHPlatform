@@ -1,4 +1,5 @@
 #if canImport(SwiftUI)
+import MHLogging
 import SwiftUI
 
 struct MHLogEventDetailView: View {

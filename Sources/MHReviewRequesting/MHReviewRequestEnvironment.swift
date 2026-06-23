@@ -5,8 +5,8 @@ import StoreKit
 import UIKit
 #endif
 
-struct MHReviewRequestEnvironment: Sendable {
-    static let live: Self = {
+package struct MHReviewRequestEnvironment: Sendable {
+    package static let live: Self = {
         #if os(iOS)
         .init {
             MHReviewRequester.requestReview(
@@ -24,7 +24,7 @@ struct MHReviewRequestEnvironment: Sendable {
 
     let requestReview: @Sendable @MainActor () -> MHReviewRequestOutcome
 
-    init(_ requestReview: @escaping @Sendable @MainActor () -> MHReviewRequestOutcome) {
+    package init(_ requestReview: @escaping @Sendable @MainActor () -> MHReviewRequestOutcome) {
         self.requestReview = requestReview
     }
 }

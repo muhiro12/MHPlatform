@@ -64,8 +64,16 @@ let package = Package(
             targets: ["MHPreferences"]
         ),
         .library(
+            name: "MHPreferencesUI",
+            targets: ["MHPreferencesUI"]
+        ),
+        .library(
             name: "MHLogging",
             targets: ["MHLogging"]
+        ),
+        .library(
+            name: "MHLoggingUI",
+            targets: ["MHLoggingUI"]
         ),
         .library(
             name: "MHMutationFlow",
@@ -78,6 +86,14 @@ let package = Package(
         .library(
             name: "MHReviewPolicy",
             targets: ["MHReviewPolicy"]
+        ),
+        .library(
+            name: "MHReviewRequesting",
+            targets: ["MHReviewRequesting"]
+        ),
+        .library(
+            name: "MHReviewFlow",
+            targets: ["MHReviewFlow"]
         ),
 
         // Test support.
@@ -115,10 +131,14 @@ let package = Package(
                 "MHAppRuntimeAds",
                 "MHAppRuntimeDefaults",
                 "MHAppRuntimeLicenses",
+                "MHLoggingUI",
                 "MHMutationFlow",
                 "MHMutationLogging",
                 "MHPlatformCore",
-                "MHReviewPolicy"
+                "MHPreferencesUI",
+                "MHReviewFlow",
+                "MHReviewPolicy",
+                "MHReviewRequesting"
             ]
         ),
         .target(
@@ -210,19 +230,39 @@ let package = Package(
         .target(
             name: "MHPreferences"
         ),
-
-        // Optional workflow shells for app targets.
         .target(
-            name: "MHReviewPolicy",
+            name: "MHPreferencesUI",
+            dependencies: ["MHPreferences"]
+        ),
+
+        // Advanced review, workflow, and logging surfaces.
+        .target(
+            name: "MHReviewPolicy"
+        ),
+        .target(
+            name: "MHReviewRequesting",
+            dependencies: [
+                "MHLogging",
+                "MHReviewPolicy"
+            ]
+        ),
+        .target(
+            name: "MHReviewFlow",
             dependencies: [
                 "MHAppRuntime",
                 "MHLogging",
-                "MHMutationFlow"
+                "MHMutationFlow",
+                "MHReviewPolicy",
+                "MHReviewRequesting"
             ]
         ),
         .target(
             name: "MHLogging",
             dependencies: ["MHPreferences"]
+        ),
+        .target(
+            name: "MHLoggingUI",
+            dependencies: ["MHLogging"]
         ),
 
         // Test support.
@@ -233,6 +273,15 @@ let package = Package(
                 "MHLogging",
                 "MHNotificationPayloads"
             ]
+        ),
+        .target(
+            name: "MHPreferencesTestSupport",
+            dependencies: ["MHPreferences"],
+            path: "Tests/MHPreferencesTestSupport"
+        ),
+        .target(
+            name: "MHReviewTestSupport",
+            path: "Tests/MHReviewTestSupport"
         ),
 
         // Product export tests.
@@ -305,15 +354,42 @@ let package = Package(
         ),
         .testTarget(
             name: "MHPreferencesTests",
-            dependencies: ["MHPreferences"]
+            dependencies: [
+                "MHPreferences",
+                "MHPreferencesTestSupport"
+            ]
+        ),
+        .testTarget(
+            name: "MHPreferencesUITests",
+            dependencies: [
+                "MHPreferences",
+                "MHPreferencesTestSupport",
+                "MHPreferencesUI"
+            ]
         ),
         .testTarget(
             name: "MHReviewPolicyTests",
+            dependencies: ["MHReviewPolicy"]
+        ),
+        .testTarget(
+            name: "MHReviewRequestingTests",
+            dependencies: [
+                "MHLogging",
+                "MHReviewPolicy",
+                "MHReviewRequesting",
+                "MHReviewTestSupport"
+            ]
+        ),
+        .testTarget(
+            name: "MHReviewFlowTests",
             dependencies: [
                 "MHAppRuntime",
+                "MHLogging",
                 "MHMutationFlow",
+                "MHReviewFlow",
                 "MHReviewPolicy",
-                "MHLogging"
+                "MHReviewRequesting",
+                "MHReviewTestSupport"
             ]
         ),
         .testTarget(
@@ -322,6 +398,13 @@ let package = Package(
                 "MHLogging",
                 "MHPreferences",
                 "MHPlatformTesting"
+            ]
+        ),
+        .testTarget(
+            name: "MHLoggingUITests",
+            dependencies: [
+                "MHLogging",
+                "MHLoggingUI"
             ]
         ),
         .testTarget(

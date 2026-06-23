@@ -1,5 +1,6 @@
 import Foundation
 import MHPreferences
+@testable import MHPreferencesTestSupport
 import Testing
 
 extension MHPreferenceStoreTests {

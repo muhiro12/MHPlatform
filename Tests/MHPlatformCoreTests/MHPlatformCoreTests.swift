@@ -29,14 +29,12 @@ struct MHPlatformCoreTests {
             MHPreferenceDomainCleanupReport.self,
             MHPreferenceLifecycleOutcome.self,
             MHPreferenceLifecycleService.self,
-            MHOptionalCodablePreference<String>.self,
-            MHCodablePreference<String>.self,
             MHLogPolicy.self,
             MHLoggerFactory.self,
             MHLogRuntimeState.self,
             MHLoggingBootstrap.self
         ]
 
-        #expect(exportedCoreSafeTypes.count == 30)
+        #expect(exportedCoreSafeTypes.count == 28)
     }
 }

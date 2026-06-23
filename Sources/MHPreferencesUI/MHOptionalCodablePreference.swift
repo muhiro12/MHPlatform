@@ -1,25 +1,28 @@
 #if canImport(SwiftUI)
 import Foundation
+import MHPreferences
 import SwiftUI
 
-/// A SwiftUI wrapper that uses `AppStorage` to bridge a `UserDefaults`-backed codable preference.
+/// A SwiftUI wrapper that uses `AppStorage` to bridge an optional `UserDefaults`-backed codable preference.
 @propertyWrapper
-public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
+public struct MHOptionalCodablePreference<Value: Codable & Sendable>: DynamicProperty {
     @AppStorage private var storedData: Data?
 
-    private let defaultValue: Value
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
 
-    public var wrappedValue: Value {
+    public var wrappedValue: Value? {
         get {
             Self.decode(
                 storedData,
-                decoder: decoder,
-                defaultValue: defaultValue
+                decoder: decoder
             )
         }
         nonmutating set {
+            guard let newValue else {
+                storedData = nil
+                return
+            }
             guard let encodedData = Self.encode(
                 newValue,
                 encoder: encoder
@@ -30,8 +33,7 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
         }
     }
 
-    public var projectedValue: Binding<Value> {
-        let resolvedDefaultValue = self.defaultValue
+    public var projectedValue: Binding<Value?> {
         let preferenceEncoder = self.encoder
         let preferenceDecoder = self.decoder
         let storedDataBinding = self.$storedData
@@ -40,11 +42,14 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
             get: {
                 Self.decode(
                     storedDataBinding.wrappedValue,
-                    decoder: preferenceDecoder,
-                    defaultValue: resolvedDefaultValue
+                    decoder: preferenceDecoder
                 )
             },
             set: { newValue in
+                guard let newValue else {
+                    storedDataBinding.wrappedValue = nil
+                    return
+                }
                 guard let encodedData = Self.encode(
                     newValue,
                     encoder: preferenceEncoder
@@ -56,15 +61,13 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
         )
     }
 
-    /// Creates a codable preference bridge using a typed descriptor.
+    /// Creates an optional codable preference bridge using a typed descriptor.
     public init(
         _ descriptor: MHCodablePreferenceDescriptor<Value>,
-        default defaultValue: Value,
         store: UserDefaults? = nil,
         encoder: JSONEncoder = .init(),
         decoder: JSONDecoder = .init()
     ) {
-        self.defaultValue = defaultValue
         self.encoder = encoder
         self.decoder = decoder
         _storedData = AppStorage(
@@ -73,17 +76,15 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
         )
     }
 
-    /// Creates a codable preference bridge using the descriptor namespace.
+    /// Creates an optional codable preference bridge using the descriptor namespace.
     public init(
         _ keyPath: KeyPath<MHPreferenceDescriptors, MHCodablePreferenceDescriptor<Value>>,
-        default defaultValue: Value,
         store: UserDefaults? = nil,
         encoder: JSONEncoder = .init(),
         decoder: JSONDecoder = .init()
     ) {
         self.init(
             MHPreferenceDescriptors()[keyPath: keyPath],
-            default: defaultValue,
             store: store,
             encoder: encoder,
             decoder: decoder
@@ -91,17 +92,16 @@ public struct MHCodablePreference<Value: Codable & Sendable>: DynamicProperty {
     }
 }
 
-private extension MHCodablePreference {
+private extension MHOptionalCodablePreference {
     static func decode(
         _ storedData: Data?,
-        decoder: JSONDecoder,
-        defaultValue: Value
-    ) -> Value {
+        decoder: JSONDecoder
+    ) -> Value? {
         guard let storedData else {
-            return defaultValue
+            return nil
         }
 
-        return (try? decoder.decode(Value.self, from: storedData)) ?? defaultValue
+        return try? decoder.decode(Value.self, from: storedData)
     }
 
     static func encode(

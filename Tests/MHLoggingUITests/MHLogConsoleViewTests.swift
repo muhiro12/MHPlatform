@@ -1,6 +1,7 @@
 #if canImport(SwiftUI)
 import Foundation
-@testable import MHLogging
+import MHLogging
+@testable import MHLoggingUI
 import Testing
 
 struct MHLogConsoleViewTests {

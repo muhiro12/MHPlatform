@@ -3,7 +3,7 @@ import Testing
 
 struct MHPlatformTests {
     @Test
-    func full_platform_umbrella_matches_app_composition_surface() {
+    func full_platform_umbrella_exports_runtime_and_core_surface() {
         let runtimeSurface: [Any.Type] = [
             MHAppRuntime.self,
             MHAppRuntimeBootstrap.self
@@ -33,26 +33,40 @@ struct MHPlatformTests {
             MHPreferenceDomainCleanupReport.self,
             MHPreferenceLifecycleOutcome.self,
             MHPreferenceLifecycleService.self,
-            MHOptionalCodablePreference<String>.self,
-            MHCodablePreference<String>.self,
             MHLogPolicy.self,
             MHLoggerFactory.self,
             MHLogRuntimeState.self,
             MHLoggingBootstrap.self
+        ]
+        let exportedTypes =
+            runtimeSurface +
+            coreSurface
+
+        #expect(exportedTypes.count == 30)
+    }
+
+    @Test
+    func full_platform_umbrella_exports_optional_ui_and_shell_surface() {
+        let optionalUISurface: [Any.Type] = [
+            MHOptionalCodablePreference<String>.self,
+            MHCodablePreference<String>.self,
+            MHLogConsoleView.self
         ]
         let optionalShellSurface: [Any.Type] = [
             MHMutationAdapter<String>.self,
             MHMutationWorkflowLogger.self,
             MHMutationStepListBuilder.self,
             MHMutationRetryPolicy.self,
-            MHReviewPolicy.self
+            MHReviewPolicy.self,
+            MHReviewRequester.self,
+            MHReviewRequestOutcome.self,
+            MHReviewFlow.self
         ]
         let exportedTypes =
-            runtimeSurface +
-            coreSurface +
+            optionalUISurface +
             optionalShellSurface
 
-        #expect(exportedTypes.count == 37)
+        #expect(exportedTypes.count == 11)
     }
 
     @MainActor

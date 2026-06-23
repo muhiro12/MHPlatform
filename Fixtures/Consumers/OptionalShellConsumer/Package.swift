@@ -25,6 +25,10 @@ let kPackage = Package(
                     package: "MHPlatform"
                 ),
                 .product(
+                    name: "MHReviewFlow",
+                    package: "MHPlatform"
+                ),
+                .product(
                     name: "MHReviewPolicy",
                     package: "MHPlatform"
                 )

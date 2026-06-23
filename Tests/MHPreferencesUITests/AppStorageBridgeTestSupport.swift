@@ -1,6 +1,7 @@
 #if canImport(SwiftUI)
 import Foundation
 import MHPreferences
+import MHPreferencesUI
 import SwiftUI
 import Testing
 

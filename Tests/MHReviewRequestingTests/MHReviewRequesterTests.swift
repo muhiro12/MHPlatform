@@ -1,5 +1,7 @@
 @testable import MHLogging
 @testable import MHReviewPolicy
+@testable import MHReviewRequesting
+@testable import MHReviewTestSupport
 import Testing
 
 struct MHReviewRequesterTests {

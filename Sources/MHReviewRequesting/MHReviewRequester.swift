@@ -1,5 +1,6 @@
 import Foundation
 import MHLogging
+import MHReviewPolicy
 
 #if os(iOS)
 import UIKit
@@ -13,7 +14,7 @@ public enum MHReviewRequester {
     /// Closure used for sleeping before review requests.
     public typealias Sleep = @Sendable (Duration) async -> Void
 
-    struct RequestContext: Sendable {
+    package struct RequestContext: Sendable {
         let policy: MHReviewPolicy
         let randomValueProvider: RandomValueProvider
         let sleep: Sleep
@@ -21,6 +22,24 @@ public enum MHReviewRequester {
         let logger: MHLogger?
         let onOutcome: @Sendable (MHReviewRequestOutcome) -> Void
         let logMetadata: [String: String]
+
+        package init(
+            policy: MHReviewPolicy,
+            randomValueProvider: @escaping RandomValueProvider,
+            sleep: @escaping Sleep,
+            environment: MHReviewRequestEnvironment,
+            logger: MHLogger?,
+            onOutcome: @escaping @Sendable (MHReviewRequestOutcome) -> Void,
+            logMetadata: [String: String]
+        ) {
+            self.policy = policy
+            self.randomValueProvider = randomValueProvider
+            self.sleep = sleep
+            self.environment = environment
+            self.logger = logger
+            self.onOutcome = onOutcome
+            self.logMetadata = logMetadata
+        }
     }
 
     /// Requests an in-app review when the policy allows it.
@@ -115,7 +134,7 @@ public enum MHReviewRequester {
     }
 
     @MainActor
-    static func requestIfNeeded(
+    package static func requestIfNeeded(
         _ context: RequestContext
     ) async -> MHReviewRequestOutcome {
         guard context.policy.lotteryMaxExclusive > 0 else {
