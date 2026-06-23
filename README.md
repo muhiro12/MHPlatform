@@ -15,7 +15,7 @@ The package ships three main adoption pillars:
 The current 1.x beta baseline focuses on runtime startup, deep-link handoff,
 route execution, deterministic notification planning, notification payload
 routing, post-mutation side-effect orchestration, logging, preferences,
-persistence maintenance, and review policy.
+persistence maintenance, review policy, and opt-in UI/workflow shells.
 
 Minimum supported platforms:
 
@@ -90,8 +90,8 @@ Use [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md) as the
 source of truth before adding package dependencies.
 
 - Full-platform app targets should use `MHPlatform` when they intentionally
-  want the default runtime, core primitives, mutation shell, and review shell
-  from one import.
+  want the default runtime, core primitives, optional UI bridges, mutation
+  shell, logging bridge, and review shells from one import.
 - Advanced app-runtime targets should use `MHAppRuntime` when they want
   runtime/bootstrap mechanics without the full umbrella.
 - Shared logic packages and shared libraries should use `MHPlatformCore` or
@@ -123,18 +123,22 @@ Advanced runtime composition bundles:
 - `MHAppRuntimeAds`
 - `MHAppRuntimeLicenses`
 
-Granular core-safe products and optional shells:
+Granular core-safe products, optional UI bridges, and optional shells:
 
 - `MHDeepLinking`
 - `MHLogging`
+- `MHLoggingUI`
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
 - `MHRouteExecution`
 - `MHPersistenceMaintenance`
 - `MHPreferences`
+- `MHPreferencesUI`
 - `MHMutationFlow`
 - `MHMutationLogging`
 - `MHReviewPolicy`
+- `MHReviewRequesting`
+- `MHReviewFlow`
 
 Test support:
 
@@ -144,9 +148,14 @@ Test support:
 
 - `MHPlatform` remains a thin convenience umbrella over concrete modules.
 - `MHPlatformCore` must not pull in `MHAppRuntime`, app-root runtime adapters,
-  StoreKit, ads, licenses, mutation workflow, or review policy.
+  SwiftUI/UI bridge targets, StoreKit, ads, licenses, mutation workflow, or
+  review policy.
 - `MHAppRuntime` owns reusable runtime/bootstrap mechanics, not StoreKit, ads,
   license, or app-specific side-effect policy.
+- `MHPreferences` and `MHLogging` own core primitives; `MHPreferencesUI` and
+  `MHLoggingUI` own optional SwiftUI/UI bridge surfaces.
+- `MHReviewPolicy` owns pure review policy; `MHReviewRequesting` owns direct
+  platform requesting; `MHReviewFlow` owns runtime/mutation workflow wiring.
 - Route enum meaning, navigation destination meaning, notification copy,
   preference key meaning, persistence schema meaning, mutation result schemas,
   and concrete side effects stay app-owned.
@@ -169,7 +178,7 @@ Compile-backed reference adopters live under `Fixtures/Consumers/`.
 - `SharedLibraryConsumer` proves the `MHPlatformCore` shared-library path.
 - `RuntimeOnlyConsumer` proves the `MHAppRuntime` runtime/bootstrap-only path.
 - `SplitRuntimeConsumer` proves explicit runtime-bundle composition.
-- `OptionalShellConsumer` proves route/review/mutation shells stay opt-in.
+- `OptionalShellConsumer` proves review/mutation shells stay opt-in.
 - `SurfaceAdapterConsumer` proves the widget, App Intent, watch, and extension
   adapter path using only granular core-safe products.
 
@@ -182,10 +191,10 @@ consumer paths. `Example/MHPlatformExample/` remains the full-umbrella demo app.
   `MHPlatform` product in app composition targets.
 - `MHAppRuntime` is the shared runtime/startup surface used by app targets.
 - `MHRouteExecution`, `MHDeepLinking`, `MHNotificationPlans`,
-  `MHNotificationPayloads`, `MHPreferences`, `MHLogging`, `MHMutationFlow`, and
-  `MHReviewPolicy` provide reusable infrastructure while route meanings,
-  mutation effects, notification copy, review timing, and platform side effects
-  stay app-owned.
+  `MHNotificationPayloads`, `MHPreferences`, `MHLogging`, `MHMutationFlow`,
+  `MHReviewPolicy`, `MHReviewRequesting`, and `MHReviewFlow` provide reusable
+  infrastructure while route meanings, mutation effects, notification copy,
+  review timing, and platform side effects stay app-owned.
 - Shared-library and surface-adapter consumers should follow the consumer
   matrix instead of mirroring an app target's umbrella imports.
 

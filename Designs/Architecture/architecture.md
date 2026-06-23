@@ -12,18 +12,24 @@
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
 - `MHMutationFlow`
+- `MHMutationLogging`
 - `MHRouteExecution`
 - `MHPersistenceMaintenance`
 - `MHPreferences`
+- `MHPreferencesUI`
 - `MHReviewPolicy`
+- `MHReviewRequesting`
+- `MHReviewFlow`
 - `MHLogging`
+- `MHLoggingUI`
 - `MHPlatformTesting`
 
 `MHPlatform` is the full app umbrella. It re-exports `MHPlatformCore`,
-`MHAppRuntime`, `MHMutationFlow`, and `MHReviewPolicy`, and it keeps the
-one-step default runtime convenience APIs.
+`MHAppRuntime`, optional UI bridge products, mutation shells, logging bridge,
+and review shells, and it keeps the one-step default runtime convenience APIs.
 `MHPlatformCore` is the shared-package umbrella. It re-exports the shared-safe
-modules used by watch-capable and library-first package adopters.
+modules used by watch-capable and library-first package adopters, without
+SwiftUI/UI bridge targets or workflow shells.
 `MHAppRuntime` is the advanced app-runtime foundation for narrower app roots
 and explicit split-runtime-bundle composition.
 
@@ -36,6 +42,13 @@ and explicit split-runtime-bundle composition.
 - `MHRouteExecution`
 - `MHPersistenceMaintenance`
 - `MHPreferences`
+- `MHPreferencesUI`
+- `MHMutationFlow`
+- `MHMutationLogging`
+- `MHReviewPolicy`
+- `MHReviewRequesting`
+- `MHReviewFlow`
+- `MHLoggingUI`
 - `MHPlatformTesting`
 
 Consumers may either `import MHPlatform` for default app targets,
@@ -58,8 +71,9 @@ non-domain app infrastructure.
 - `MHAppRuntime` remains the shared runtime/startup foundation already used
   transitively through `MHPlatform` in both apps and available directly for
   narrower app-root composition.
-- `MHReviewPolicy` is shared today, but review triggers and surrounding
-  workflow decisions remain app-specific.
+- `MHReviewPolicy`, `MHReviewRequesting`, and `MHReviewFlow` are split so
+  pure review policy, direct platform requesting, and workflow wiring can be
+  adopted independently while review timing remains app-specific.
 - `MHRouteExecution` now includes both low-level queue/executor primitives and
   the higher-level `MHRouteLifecycle` helper. Both apps already use the
   lifecycle shell while route enums, parsing, and apply closures remain
@@ -82,12 +96,14 @@ non-domain app infrastructure.
   `MHPersistenceMaintenance`, and `MHPreferences`
 - Exists so shared packages can adopt one umbrella without picking up
   `MHAppRuntime` or third-party runtime adapters
-- Does not own `MHAppRuntime`, mutation workflow, or review workflow surfaces
+- Does not own `MHAppRuntime`, SwiftUI/UI bridge targets, mutation workflow,
+  or review workflow surfaces
 
 ### `MHPlatform`
 
-- Re-exports `MHAppRuntime`, `MHPlatformCore`, `MHMutationFlow`, and
-  `MHReviewPolicy`
+- Re-exports `MHAppRuntime`, `MHPlatformCore`, `MHPreferencesUI`,
+  `MHLoggingUI`, `MHMutationFlow`, `MHMutationLogging`, `MHReviewPolicy`,
+  `MHReviewRequesting`, and `MHReviewFlow`
 - Owns the one-step default app path through
   `MHAppRuntime(configuration:)` and
   `MHAppRuntimeBootstrap(configuration:...)`
@@ -225,9 +241,19 @@ Integration contract:
 [`MHPreferences`](integration-contracts.md#mhpreferences)
 
 - Owns typed preference descriptors and `UserDefaults`-backed store primitives
-- Owns SwiftUI wrappers built on `AppStorage` for primitive and `Date` descriptors
 - Stores codable values as `Data` without legacy string-format fallback
 - Does not define app-specific preference key names or policy
+
+### `MHPreferencesUI`
+
+Integration contract:
+[`MHPreferencesUI`](integration-contracts.md#mhpreferencesui)
+
+- Owns SwiftUI wrappers built on `AppStorage`:
+  `AppStorage` descriptor initializers, `MHCodablePreference`, and
+  `MHOptionalCodablePreference`
+- Depends on `MHPreferences` and does not introduce preference meaning,
+  defaults, or schema policy
 
 ### `MHReviewPolicy`
 
@@ -235,12 +261,31 @@ Integration contract:
 [`MHReviewPolicy`](integration-contracts.md#mhreviewpolicy)
 
 - Owns review-request policy primitives:
-  `MHReviewPolicy`, `MHReviewRequestOutcome`
-- Owns package-owned requester and orchestration surfaces:
-  `MHReviewRequester`, `MHReviewFlow`
-- Owns runtime-task and mutation-step integration helpers for review triggers
+  `MHReviewPolicy`
+- Does not own platform requesting, logging, runtime tasks, mutation steps, or
+  app-specific lifecycle triggers
+
+### `MHReviewRequesting`
+
+Integration contract:
+[`MHReviewRequesting`](integration-contracts.md#mhreviewrequesting)
+
+- Owns direct platform review requesting:
+  `MHReviewRequester`, `MHReviewRequestOutcome`
 - Uses platform-aware fallback behavior for non-iOS builds
-- Does not own app-specific lifecycle triggers or presentation timing policy beyond configured delay/lottery
+- Does not own runtime-task or mutation-step integration
+
+### `MHReviewFlow`
+
+Integration contract:
+[`MHReviewFlow`](integration-contracts.md#mhreviewflow)
+
+- Owns package-owned runtime-task and mutation-step integration helpers for
+  review triggers:
+  `MHReviewFlow.task(name:)`, `MHReviewFlow.step(name:)`
+- Owns optional review outcome logging through `MHLogging`
+- Does not own app-specific lifecycle triggers or presentation timing policy
+  beyond configured delay/lottery
 
 ### `MHLogging`
 
@@ -255,10 +300,18 @@ Integration contract:
   `MHLogSink`, `MHOSLogSink`
 - Owns a lightweight logger setup helper:
   `MHLoggerFactory`, `MHLoggingBootstrap`
+- Does not own app-specific PII masking policy, alerting policy, or external telemetry backend contracts
+
+### `MHLoggingUI`
+
+Integration contract:
+[`MHLoggingUI`](integration-contracts.md#mhloggingui)
+
 - Owns reusable log console UI:
   `MHLogConsoleView`, with watchOS-safe availability guards for unsupported
   selection and clipboard features
-- Does not own app-specific PII masking policy, alerting policy, or external telemetry backend contracts
+- Depends on `MHLogging` and does not own logging policy, sinks, PII masking,
+  alerting, or telemetry backend contracts
 
 ### `MHPlatformTesting`
 
@@ -276,8 +329,9 @@ Integration contract:
 - Module dependencies are intentionally flat for v1.
 - `MHPlatform` depends on `MHPlatformCore`, `MHAppRuntime`,
   `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`,
-  `MHMutationFlow`, and `MHReviewPolicy`, and must stay a thin aggregation
-  layer without independent runtime logic.
+  `MHLoggingUI`, `MHMutationFlow`, `MHMutationLogging`, `MHPreferencesUI`,
+  `MHReviewPolicy`, `MHReviewRequesting`, and `MHReviewFlow`, and must stay a
+  thin aggregation layer without independent runtime logic.
 - `MHPlatformCore` depends on `MHDeepLinking`, `MHLogging`,
   `MHNotificationPlans`, `MHNotificationPayloads`, `MHRouteExecution`,
   `MHPersistenceMaintenance`, and `MHPreferences`.
@@ -297,10 +351,16 @@ Integration contract:
   helpers and on `MHLogging` for `MHRouteLifecycle` outcome logging.
 - `MHPersistenceMaintenance` has no dependency on the other modules.
 - `MHPreferences` has no dependency on the other modules.
-- `MHReviewPolicy` depends on `MHAppRuntime`, `MHLogging`, and
-  `MHMutationFlow` for runtime-task, outcome logging, and mutation-step
-  integration.
-- `MHLogging` has no dependency on the other modules.
+- `MHPreferencesUI` depends on `MHPreferences` for SwiftUI descriptor
+  bindings.
+- `MHReviewPolicy` has no dependency on the other modules.
+- `MHReviewRequesting` depends on `MHReviewPolicy` and `MHLogging` for direct
+  request attempts and optional outcome logging.
+- `MHReviewFlow` depends on `MHAppRuntime`, `MHLogging`, `MHMutationFlow`,
+  `MHReviewPolicy`, and `MHReviewRequesting` for runtime-task and
+  mutation-step integration.
+- `MHLogging` depends on `MHPreferences` for session snapshot descriptors.
+- `MHLoggingUI` depends on `MHLogging` for the reusable log console.
 - `MHPlatformTesting` depends on `MHDeepLinking`, `MHLogging`, and
   `MHNotificationPayloads` to provide reusable doubles and recorders.
 - ExampleApp may import the full `MHPlatform` umbrella, but shared package

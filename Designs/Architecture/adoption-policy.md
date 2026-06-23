@@ -36,7 +36,9 @@ Advanced composition surfaces that should not be the default onboarding path:
 - concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
   `MHPreferences`
-- opt-in workflow shells: `MHMutationFlow`, `MHReviewPolicy`
+- optional UI bridges: `MHPreferencesUI`, `MHLoggingUI`
+- opt-in workflow shells: `MHMutationFlow`, `MHMutationLogging`,
+  `MHReviewPolicy`, `MHReviewRequesting`, `MHReviewFlow`
 
 See [Consumer Boundaries](./consumer-boundaries.md) for the consumer product
 matrix.
@@ -57,6 +59,8 @@ it should adopt `MHPlatformCore`.
 
 Do not keep the full `MHPlatform` umbrella in a shared library only because an
 app target happens to use it elsewhere.
+Do not add `MHPreferencesUI`, `MHLoggingUI`, or review workflow shells to a
+shared library unless that target is explicitly a UI or app workflow surface.
 
 ## Surface Adapter Selection Rule
 
@@ -75,8 +79,8 @@ specific granular product:
 - `MHRouteExecution` for readiness-gated route execution primitives
 
 Do not add `MHPlatform`, `MHAppRuntime`, `MHAppRuntimeDefaults`,
-`MHAppRuntimeAds`, `MHAppRuntimeLicenses`, or `MHReviewPolicy` to a surface
-adapter only to reach those core primitives.
+`MHAppRuntimeAds`, `MHAppRuntimeLicenses`, UI bridge products, or review shell
+products to a surface adapter only to reach those core primitives.
 
 ## Advanced Runtime Selection Rule
 
@@ -102,6 +106,11 @@ moving to the full `MHPlatform` umbrella.
   route drain wiring.
 - Prefer `MHReviewFlow` for review-trigger orchestration instead of rebuilding
   requester/task glue in app code.
+- Use `MHReviewPolicy` alone for pure policy decisions and
+  `MHReviewRequesting` for direct platform requests without runtime/mutation
+  wiring.
+- Use `MHPreferencesUI` only for SwiftUI descriptor bindings and
+  `MHLoggingUI` only for the reusable log console.
 - Use `View.mhAppRuntimeEnvironment(_:)` for previews and tests that should not
   start lifecycle tasks.
 - Keep lower-level primitives only when the app genuinely needs custom
@@ -112,6 +121,7 @@ moving to the full `MHPlatform` umbrella.
 - `MHAppRoutePipeline` and `mhRouteHandler` are optional route shells.
 - `MHMutationWorkflow` is an optional mutation shell.
 - `MHReviewFlow` is an optional review shell.
+- `MHPreferencesUI` and `MHLoggingUI` are optional UI bridge shells.
 
 Apps should add these shells only in the targets that own those concerns.
 They are not part of the minimum runtime/bootstrap baseline.

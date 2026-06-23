@@ -291,6 +291,7 @@ Trigger review policy only from meaningful success outcomes.
 
 ```swift
 import MHMutationFlow
+import MHReviewFlow
 import MHReviewPolicy
 
 struct SaveSummary: Sendable {
@@ -396,6 +397,7 @@ Use this pattern when you need in-app inspection and machine-assisted analysis f
 
 ```swift
 import MHLogging
+import MHLoggingUI
 import SwiftUI
 
 @MainActor
@@ -451,7 +453,8 @@ struct DebugLogView: View {
    store-file relocation / reset orchestration と typed preferences を
    統一する。
 6. 最後に `MHReviewPolicy` を `MHMutationOutcome.succeeded` 起点で接続する。
-7. `MHLogging` を導入し、Debug画面で `MHLogConsoleView` による検索と JSONL 抽出を提供する。
+7. `MHLogging` / `MHLoggingUI` を導入し、Debug画面で
+   `MHLogConsoleView` による検索と JSONL 抽出を提供する。
 
 ### Cookle 向け導入順
 

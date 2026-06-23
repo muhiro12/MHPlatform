@@ -427,11 +427,6 @@ This document is normative for integration design.
 
 - Typed reads/writes through `MHPreferenceStore`
 - Codable persistence as `Data` only
-- SwiftUI wrappers via:
-  - `AppStorage` initializers for primitive and `Date` descriptors
-  - `AppStorage` key-path initializers rooted at `MHPreferenceDescriptors`
-  - `MHOptionalCodablePreference`
-  - `MHCodablePreference`
 - Unknown-key cleanup through `MHUserDefaultsCleanupService`
 - Ordered preference migration through:
   - `MHLegacyStorageReference`
@@ -453,7 +448,6 @@ This document is normative for integration design.
 
 - Feature flags and settings
 - Lightweight app boot configuration
-- SwiftUI wrappers only when the caller is already in a SwiftUI surface
 
 ### Storage Rules (Normative)
 
@@ -464,10 +458,8 @@ This document is normative for integration design.
 - `MHPreferenceDescriptors` is a concrete app-extended namespace for
   key-path-based descriptor access such as `\.notificationsEnabled`.
 - Direct descriptor-based access remains supported; concrete descriptor
-  `AppStorage` overloads can infer the property type without an explicit type
-  annotation.
-- `AppStorage`, `MHCodablePreference`, and `MHOptionalCodablePreference` are
-  SwiftUI wrappers over the same `UserDefaults`-backed descriptors.
+  overloads in `MHPreferencesUI` can infer the property type without an
+  explicit type annotation.
 - `.notificationsEnabled`-style shorthand aliases are app-local sugar only;
   the package does not auto-generate descriptor statics.
 - Unknown-key cleanup uses caller-owned `knownDescriptors` only; the package does not
@@ -485,6 +477,35 @@ This document is normative for integration design.
   then eligible for removal.
 - Built-in move steps read from `MHLegacyStorageReference` and only write when
   the destination descriptor is still empty.
+
+## MHPreferencesUI
+
+### Required Inputs
+
+- Typed descriptors from `MHPreferences`
+- SwiftUI `AppStorage`
+- Optional backing `UserDefaults` for explicit store selection
+
+### Outputs
+
+- SwiftUI wrappers via:
+  - `AppStorage` initializers for primitive and `Date` descriptors
+  - `AppStorage` key-path initializers rooted at `MHPreferenceDescriptors`
+  - `MHOptionalCodablePreference`
+  - `MHCodablePreference`
+
+### Threading / Actor
+
+- Follows SwiftUI `DynamicProperty` / `AppStorage` behavior.
+
+### Intended Call Sites
+
+- SwiftUI view state and settings forms that need descriptor-backed bindings.
+
+### Boundary Rule (Normative)
+
+- `MHPreferencesUI` is a UI bridge over `MHPreferences`; it does not define
+  preference key meaning, defaults, migration, cleanup, or schema policy.
 
 ## MHPersistenceMaintenance
 
@@ -530,13 +551,68 @@ This document is normative for integration design.
 ### Required Inputs
 
 - `MHReviewPolicy`
+
+### Outputs
+
+- Pure gate decision (`shouldRequestReview(randomValue:)`)
+
+### Threading / Actor
+
+- `MHReviewPolicy` is pure and actor-agnostic.
+
+### Intended Call Sites
+
+- App-owned services that need a deterministic policy decision before choosing
+  whether to adopt package requesting or flow shells
+
+### Boundary Rule (Normative)
+
+- `MHReviewPolicy` does not own platform requesting, logging, runtime tasks,
+  mutation steps, or app-specific timing triggers.
+
+## MHReviewRequesting
+
+### Required Inputs
+
+- `MHReviewPolicy`
+- Optional random provider
+- Optional sleep provider
+- Optional outcome sink
+- Optional `MHLogger`
+
+### Outputs
+
+- `MHReviewRequestOutcome`
+- Direct requester:
+  - `MHReviewRequester.requestIfNeeded(...)`
+
+### Threading / Actor
+
+- `MHReviewRequester.requestIfNeeded` is `@MainActor`.
+
+### Intended Call Sites
+
+- Direct one-off review attempts from app-owned `MainActor` coordinators
+- App targets that want direct platform requesting without runtime/mutation
+  workflow integration
+
+### Boundary Rule (Normative)
+
+- `MHReviewRequesting` owns the platform request attempt and platform fallback
+  outcome, but not the app's trigger timing policy.
+
+## MHReviewFlow
+
+### Required Inputs
+
+- `MHReviewPolicy`
+- Optional `MHLogger`
+- Optional outcome sink
 - Optional random provider
 - Optional sleep provider
 
 ### Outputs
 
-- `MHReviewRequestOutcome`
-- Pure gate decision (`shouldRequestReview(randomValue:)`)
 - Workflow shell:
   - `MHReviewFlow`
     - `requestIfNeeded()`
@@ -545,8 +621,9 @@ This document is normative for integration design.
 
 ### Threading / Actor
 
-- `MHReviewPolicy` is pure and actor-agnostic.
-- `MHReviewRequester.requestIfNeeded` is `@MainActor`.
+- `MHReviewFlow.requestIfNeeded` is `@MainActor`.
+- Runtime-task and mutation-step closures call into the requester on the main
+  actor.
 
 ### Intended Call Sites
 
@@ -554,6 +631,12 @@ This document is normative for integration design.
 - MainActor workflow coordinators
 - Runtime/lifecycle entry points through `MHReviewFlow.task(name:)`
 - Successful mutation follow-up through `MHReviewFlow.step(name:)`
+
+### Boundary Rule (Normative)
+
+- `MHReviewFlow` wires review requests into package-owned runtime and mutation
+  shells; apps still decide which lifecycle or mutation milestones should
+  trigger a review attempt.
 
 ## MHLogging
 
@@ -589,21 +672,17 @@ This document is normative for integration design.
   `MHLoggerFactory`
 - Metadata dictionary helper:
   `MHLogMetadata`
-- Reusable console UI:
-  - `MHLogConsoleView`
 
 ### Threading / Actor
 
 - `MHLogStore` is an `actor`; record/query/export/clear are serialized.
 - `MHLogger` is value-typed and actor-agnostic; sync methods enqueue writes via `Task`.
-- Console UI fetches actor state asynchronously and updates on `MainActor`.
 
 ### Intended Call Sites
 
 - App startup and lifecycle diagnostics
 - Mutation or workflow event tracing
 - Shared app logger setup that still owns its policy/subsystem decisions locally
-- In-app debug console and incident triage
 - JSONL export for machine-assisted analysis
 - Optional last-session snapshot inspection when the app provides a storage key
 
@@ -612,6 +691,31 @@ This document is normative for integration design.
 - Debug default policy keeps verbose events in memory.
 - Release default policy keeps warning/error/critical events in memory.
 - Ring buffer uses latest-wins eviction when capacity is exceeded.
+
+## MHLoggingUI
+
+### Required Inputs
+
+- `MHLogStore` or `MHLoggingBootstrap`
+
+### Outputs
+
+- Reusable console UI:
+  - `MHLogConsoleView`
+
+### Threading / Actor
+
+- Console UI fetches actor state asynchronously and updates on `MainActor`.
+
+### Intended Call Sites
+
+- In-app debug console and incident triage surfaces
+
+### Boundary Rule (Normative)
+
+- `MHLoggingUI` is an optional UI bridge over `MHLogging`; it does not own log
+  capture policy, sink selection, PII masking, alerting, or telemetry backend
+  contracts.
 
 ## Canonical Naming Decision
 

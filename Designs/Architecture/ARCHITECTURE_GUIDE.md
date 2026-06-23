@@ -67,6 +67,8 @@ Apps still own the mutation result schema and follow-up policy.
 - Add reusable behavior to named modules, not to app-specific wrappers.
 - Keep app-specific route types, notification text, mutation metadata, and
   side-effect policy outside the package.
+- Keep optional UI bridges (`MHPreferencesUI`, `MHLoggingUI`) and review
+  workflow shells out of `MHPlatformCore`.
 - Prefer additive package-owned shells when the same integration shape appears
   in at least two apps.
 
@@ -84,6 +86,9 @@ Apps still own the mutation result schema and follow-up policy.
   shells stay opt-in instead of defining the platform baseline.
 - `Fixtures/Consumers/SurfaceAdapterConsumer/` proves widget, App Intent,
   watch, and extension-adapter adoption through core-safe products.
+- `Tests/MHPreferencesUITests/`, `Tests/MHLoggingUITests/`, and the review
+  shell test targets prove optional UI/shell behavior outside the core
+  umbrella.
 - `ci_scripts/tasks/test_consumer_fixtures.sh` compiles those fixture packages
   in CI so the documented consumer matrix stays build-backed.
 

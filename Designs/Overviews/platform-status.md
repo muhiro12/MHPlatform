@@ -42,7 +42,8 @@
   maintenance, preferences, review policy, and logging.
 - `MHAppRuntime` as the shared runtime/startup surface already used by app
   targets.
-- `MHReviewPolicy` as the shared review-request policy surface.
+- `MHReviewPolicy`, `MHReviewRequesting`, and `MHReviewFlow` as the split
+  review policy, direct requester, and workflow surfaces.
 - `MHDeepLinking` with URL grammar primitives plus codec-backed inbox,
   observable inbox, and store helpers for app-owned route handoff.
 - `MHRouteExecution` with readiness-aware execution, `MHRouteLifecycle`,
@@ -50,6 +51,8 @@
   `Route == Outcome` flows.
 - `MHLogging` with structured logging, query/export surfaces, and
   `MHLoggerFactory` for shared setup ergonomics.
+- `MHLoggingUI` with the reusable log console UI.
+- `MHPreferencesUI` with SwiftUI descriptor bindings over `MHPreferences`.
 - `MHPlatformTesting` with reusable notification, deep-link, logging, and
   route-execution test helpers.
 - `MHMutationFlow` with retry, cancellation, fixed `afterSuccess` steps, and
@@ -62,7 +65,8 @@
   surfaces, debug sample data, and review-trigger call sites.
 - Cookle imports `MHPlatform` in app bootstrap, root views, ads/store/license
   surfaces, debug sample data, and review-trigger call sites.
-- Both apps currently use `MHAppRuntime` and `MHReviewPolicy`.
+- Both apps currently use `MHAppRuntime` and review policy/requesting through
+  the `MHPlatform` umbrella.
 - Both apps already use `MHRouteLifecycle` as the route-execution shell while
   keeping route parsing and route application logic app-owned.
 - Deep-link handoff helpers are partially adopted today:

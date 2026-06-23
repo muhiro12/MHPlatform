@@ -29,7 +29,8 @@ Treat `MHPreferences` as a typed preference layer backed by `UserDefaults`.
 
 - `MHPreferenceStore` is the canonical non-SwiftUI access path.
 - `AppStorage`, `MHCodablePreference`, and `MHOptionalCodablePreference` are
-  SwiftUI wrappers layered over the same descriptors.
+  SwiftUI wrappers layered over the same descriptors and shipped through the
+  optional `MHPreferencesUI` product.
 - Public API naming remains centered on `Preferences` rather than being renamed
   to `UserDefaults`.
 - The concrete key-path namespace root is renamed from `MHPreferenceKeys` to

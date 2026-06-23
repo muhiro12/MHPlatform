@@ -173,7 +173,9 @@ Problem:
 Both apps have lightweight preference helpers, but they encode settings in different ways and with different abstractions.
 
 Why now:
-Implemented in this phase as `MHPreferences` to provide typed preference descriptors, `UserDefaults`-backed persistence, codable `Data` storage, and SwiftUI wrappers built on `AppStorage`.
+Implemented in this phase as `MHPreferences` plus optional `MHPreferencesUI`
+to provide typed preference descriptors, `UserDefaults`-backed persistence,
+codable `Data` storage, and SwiftUI wrappers built on `AppStorage`.
 
 Evidence:
 - `Incomes/IncomesLibrary/Sources/Common/AppStorageCodable.swift`
@@ -181,7 +183,7 @@ Evidence:
 - `Cookle/CookleLibrary/Sources/Common/CooklePreferences.swift`
 
 Recommended module:
-`MHPreferences` (implemented)
+`MHPreferences` and `MHPreferencesUI` (implemented)
 
 Minimal API sketch:
 - `MHPreferenceDescriptorProtocol`
@@ -218,12 +220,14 @@ sandbox files.
 ### P2. Review request policy unification was implemented
 
 Status:
-Implemented in this phase as `MHReviewPolicy`.
+Implemented in this phase as `MHReviewPolicy`, `MHReviewRequesting`, and
+`MHReviewFlow`.
 
 What was extracted:
 - review request policy model (`MHReviewPolicy`)
 - review request outcomes (`MHReviewRequestOutcome`)
-- high-level requester API (`MHReviewRequester`)
+- direct requester API (`MHReviewRequester`)
+- workflow shell (`MHReviewFlow`)
 - iOS live request path with guarded non-iOS fallback
 
 Evidence:
@@ -231,6 +235,8 @@ Evidence:
 - `Cookle/Cookle/Sources/Main/Services/MainReviewService.swift`
 - `Cookle/Cookle/Sources/Common/Services/CookleReviewRequester.swift`
 - `MHPlatform/Sources/MHReviewPolicy/`
+- `MHPlatform/Sources/MHReviewRequesting/`
+- `MHPlatform/Sources/MHReviewFlow/`
 
 Remaining work:
 - app-specific adoption in Incomes/Cookle call sites remains out of scope
@@ -242,19 +248,20 @@ ExampleApp validation:
 ### P2. Lightweight logging policy unification was implemented
 
 Status:
-Implemented in this phase as `MHLogging`.
+Implemented in this phase as `MHLogging` plus optional `MHLoggingUI`.
 
 What was extracted:
 - structured log event model and levels (`MHLogEvent`, `MHLogLevel`, `MHLogSource`)
 - logger and policy surface (`MHLogger`, `MHLogPolicy`)
 - queryable ring-buffer store (`MHLogStore`, `MHLogQuery`)
 - sink abstractions and adapters (`MHLogSink`, `MHOSLogSink`)
-- reusable log console UI (`MHLogConsoleView`)
+- reusable log console UI (`MHLogConsoleView`) in `MHLoggingUI`
 
 Evidence:
 - `Cookle/Cookle/Sources/Common/Logger.swift`
 - app-local logging call sites across Incomes and Cookle
 - `MHPlatform/Sources/MHLogging/`
+- `MHPlatform/Sources/MHLoggingUI/`
 
 Remaining work:
 - app-specific adoption in Incomes/Cookle call sites remains out of scope
