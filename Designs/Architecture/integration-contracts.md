@@ -376,37 +376,83 @@ This document is normative for integration design.
   - `MHNotificationRouteTargets`
 - Response context:
   - `MHNotificationResponseContext`
-- Optional bridge dependency:
-  - `MHNotificationCentering` (`UserNotifications` adapter surface)
-  - `MHDeepLinkURLDestination` (pending route handoff target)
-  - `MHNotificationIdentifierMatcher` (managed-request matching policy)
 
 ### Outputs
 
 - Payload codec (`MHNotificationPayloadCodec.encode/decode`)
 - Route resolution (`MHNotificationRouteResolver.resolveRouteURL`)
-- Route delivery (`MHNotificationOrchestrator.deliverRouteURL`)
-- Optional orchestration outcome (`MHNotificationRequestSyncOutcome`)
-- Value-typed managed request matcher (`MHNotificationIdentifierMatcher`)
 
 ### Threading / Actor
 
 - Payload codec + route resolver are pure/sync and actor-agnostic.
-- Orchestrator bridge helpers are async and not `MainActor`-bound.
 
 ### Intended Call Sites
 
-- Pure layer:
-  - payload composition and route mapping in app services
-- Bridge layer:
-  - category registration, auth request, pending request sync, notification tap handoff
+- Payload composition and route mapping in app services.
+- Shared libraries or surface adapters that only need notification route
+  payload codecs.
 
 ### Boundary Rule (Normative)
 
 - Payload composition/resolution is independent of `UNUserNotificationCenter`.
 - Request construction/scheduling responsibility stays in app adapter layer.
-- Route delivery may target a shared deep-link destination, but the app still owns
-  fallback policy and the chosen handoff primitive.
+
+## MHUserNotifications
+
+### Required Inputs
+
+- `MHNotificationPayloads` route payloads and response context.
+- `MHNotificationCentering` (`UserNotifications` adapter surface).
+- `MHNotificationIdentifierMatcher` (managed-request matching policy).
+
+### Outputs
+
+- UserNotifications descriptor bridges.
+- Route delivery by closure (`MHNotificationOrchestrator.deliverRouteURL`).
+- Optional orchestration outcome (`MHNotificationRequestSyncOutcome`).
+- Value-typed managed request matcher (`MHNotificationIdentifierMatcher`).
+
+### Threading / Actor
+
+- Notification-center helpers are `MainActor`-bound.
+- Route resolution and closure delivery are async and use the caller-provided
+  delivery isolation.
+
+### Intended Call Sites
+
+- Notification adapters that register categories, request authorization,
+  replace managed pending requests, or resolve notification tap payloads.
+
+### Boundary Rule (Normative)
+
+- `MHUserNotifications` adapts reusable payload primitives to
+  `UserNotifications`; it does not own notification copy, request construction,
+  scheduling policy, fallback route policy, or app route meaning.
+
+## MHNotificationDeepLinking
+
+### Required Inputs
+
+- `MHUserNotifications` route delivery outcome.
+- `MHDeepLinkURLDestination` (pending route handoff target).
+
+### Outputs
+
+- Notification route delivery into deep-link destinations.
+
+### Threading / Actor
+
+- Delivery follows `MHDeepLinkURLDestination` actor isolation.
+
+### Intended Call Sites
+
+- Notification adapters that want to store a resolved notification route in
+  the same pending deep-link destination used by app route plumbing.
+
+### Boundary Rule (Normative)
+
+- Route delivery may target a shared deep-link destination, but the app still
+  owns fallback policy, route meaning, and the chosen handoff primitive.
 
 ## MHPreferences
 
@@ -578,7 +624,6 @@ This document is normative for integration design.
 - Optional random provider
 - Optional sleep provider
 - Optional outcome sink
-- Optional `MHLogger`
 
 ### Outputs
 

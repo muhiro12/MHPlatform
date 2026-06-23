@@ -1,6 +1,6 @@
 #if canImport(UserNotifications)
 import Foundation
-import MHNotificationPayloads
+import MHUserNotifications
 import UserNotifications
 
 /// In-memory `MHNotificationCentering` double for notification orchestration tests.

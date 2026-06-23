@@ -1,8 +1,10 @@
 #if canImport(UserNotifications)
 import Foundation
 import MHDeepLinking
+import MHNotificationDeepLinking
 import MHNotificationPayloads
 import MHPlatformTesting
+import MHUserNotifications
 import Testing
 
 @MainActor

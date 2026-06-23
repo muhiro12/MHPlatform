@@ -2,6 +2,7 @@
 import Foundation
 import MHNotificationPayloads
 import MHPlatformTesting
+import MHUserNotifications
 import Testing
 import UserNotifications
 

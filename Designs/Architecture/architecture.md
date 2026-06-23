@@ -11,6 +11,8 @@
 - `MHDeepLinking`
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
+- `MHUserNotifications`
+- `MHNotificationDeepLinking`
 - `MHMutationFlow`
 - `MHMutationLogging`
 - `MHRouteExecution`
@@ -39,6 +41,8 @@ and explicit split-runtime-bundle composition.
 - `MHLogging`
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
+- `MHUserNotifications`
+- `MHNotificationDeepLinking`
 - `MHRouteExecution`
 - `MHPersistenceMaintenance`
 - `MHPreferences`
@@ -102,8 +106,9 @@ non-domain app infrastructure.
 ### `MHPlatform`
 
 - Re-exports `MHAppRuntime`, `MHPlatformCore`, `MHPreferencesUI`,
-  `MHLoggingUI`, `MHMutationFlow`, `MHMutationLogging`, `MHReviewPolicy`,
-  `MHReviewRequesting`, and `MHReviewFlow`
+  `MHLoggingUI`, `MHMutationFlow`, `MHMutationLogging`,
+  `MHNotificationDeepLinking`, `MHReviewPolicy`, `MHReviewRequesting`,
+  `MHReviewFlow`, and `MHUserNotifications`
 - Owns the one-step default app path through
   `MHAppRuntime(configuration:)` and
   `MHAppRuntimeBootstrap(configuration:...)`
@@ -180,12 +185,34 @@ Integration contract:
   `MHNotificationPayload`, `MHNotificationRouteTargets`, `MHNotificationPayloadCodec`
 - Owns action/category descriptors and route resolution:
   `MHNotificationActionDescriptor`, `MHNotificationCategoryDescriptor`, `MHNotificationRouteResolver`
-- Owns optional `UserNotifications` bridge and orchestration helpers behind `#if canImport(UserNotifications)`:
+- Does not own `UserNotifications` adapters, notification-center orchestration,
+  or deep-link destination delivery
+- Does not own notification text templates, attachment generation, or app-specific scheduling policy
+
+### `MHUserNotifications`
+
+Integration contract:
+[`MHUserNotifications`](integration-contracts.md#mhusernotifications)
+
+- Owns optional `UserNotifications` bridge and orchestration helpers behind
+  `#if canImport(UserNotifications)`:
   `MHNotificationCentering`, `MHNotificationOrchestrator`,
   `MHNotificationRequestSyncOutcome`
-- Owns notification-to-deep-link destination delivery helpers without taking
-  ownership of app-specific fallback policy or route semantics
-- Does not own notification text templates, attachment generation, or app-specific scheduling policy
+- Depends on `MHNotificationPayloads` for payload decoding and route
+  resolution
+- Does not own app-specific fallback policy, route semantics, notification
+  copy, or scheduling policy
+
+### `MHNotificationDeepLinking`
+
+Integration contract:
+[`MHNotificationDeepLinking`](integration-contracts.md#mhnotificationdeeplinking)
+
+- Owns notification-to-deep-link destination delivery helpers:
+  `MHNotificationOrchestrator.deliverRouteURL(... destination:)`
+- Depends on `MHUserNotifications` and `MHDeepLinking`
+- Does not own route meaning, destination choice, or app-specific fallback
+  policy
 
 ### `MHMutationFlow`
 
@@ -329,9 +356,10 @@ Integration contract:
 - Module dependencies are intentionally flat for v1.
 - `MHPlatform` depends on `MHPlatformCore`, `MHAppRuntime`,
   `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`,
-  `MHLoggingUI`, `MHMutationFlow`, `MHMutationLogging`, `MHPreferencesUI`,
-  `MHReviewPolicy`, `MHReviewRequesting`, and `MHReviewFlow`, and must stay a
-  thin aggregation layer without independent runtime logic.
+  `MHLoggingUI`, `MHMutationFlow`, `MHMutationLogging`,
+  `MHNotificationDeepLinking`, `MHPreferencesUI`, `MHReviewPolicy`,
+  `MHReviewRequesting`, `MHReviewFlow`, and `MHUserNotifications`, and must
+  stay a thin aggregation layer without independent runtime logic.
 - `MHPlatformCore` depends on `MHDeepLinking`, `MHLogging`,
   `MHNotificationPlans`, `MHNotificationPayloads`, `MHRouteExecution`,
   `MHPersistenceMaintenance`, and `MHPreferences`.
@@ -344,8 +372,11 @@ Integration contract:
 - `MHAppRuntimeLicenses` depends on `MHAppRuntime` and `LicenseList` (iOS).
 - `MHDeepLinking` has no dependency on the other modules.
 - `MHNotificationPlans` has no dependency on the other modules.
-- `MHNotificationPayloads` depends on `MHDeepLinking` for shared pending-route
-  destination delivery.
+- `MHNotificationPayloads` has no dependency on the other modules.
+- `MHUserNotifications` depends on `MHNotificationPayloads` for
+  UserNotifications adapter helpers.
+- `MHNotificationDeepLinking` depends on `MHDeepLinking` and
+  `MHUserNotifications` for pending-route destination delivery.
 - `MHMutationFlow` has no dependency on the other modules.
 - `MHRouteExecution` depends on `MHDeepLinking` for pending-source handoff
   helpers and on `MHLogging` for `MHRouteLifecycle` outcome logging.
@@ -354,15 +385,15 @@ Integration contract:
 - `MHPreferencesUI` depends on `MHPreferences` for SwiftUI descriptor
   bindings.
 - `MHReviewPolicy` has no dependency on the other modules.
-- `MHReviewRequesting` depends on `MHReviewPolicy` and `MHLogging` for direct
-  request attempts and optional outcome logging.
+- `MHReviewRequesting` depends on `MHReviewPolicy` for direct request attempts.
 - `MHReviewFlow` depends on `MHAppRuntime`, `MHLogging`, `MHMutationFlow`,
   `MHReviewPolicy`, and `MHReviewRequesting` for runtime-task and
   mutation-step integration.
 - `MHLogging` depends on `MHPreferences` for session snapshot descriptors.
 - `MHLoggingUI` depends on `MHLogging` for the reusable log console.
-- `MHPlatformTesting` depends on `MHDeepLinking`, `MHLogging`, and
-  `MHNotificationPayloads` to provide reusable doubles and recorders.
+- `MHPlatformTesting` depends on `MHDeepLinking`, `MHLogging`,
+  `MHNotificationPayloads`, and `MHUserNotifications` to provide reusable
+  doubles and recorders.
 - ExampleApp may import the full `MHPlatform` umbrella, but shared package
   targets should prefer `MHPlatformCore` or granular modules.
 - Adopting `MHPlatform` does not make third-party wrapper symbols public; those

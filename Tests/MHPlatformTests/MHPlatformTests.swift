@@ -53,6 +53,8 @@ struct MHPlatformTests {
             MHLogConsoleView.self
         ]
         let optionalShellSurface: [Any.Type] = [
+            MHNotificationIdentifierMatcher.self,
+            MHNotificationOrchestrator.self,
             MHMutationAdapter<String>.self,
             MHMutationWorkflowLogger.self,
             MHMutationStepListBuilder.self,
@@ -66,7 +68,7 @@ struct MHPlatformTests {
             optionalUISurface +
             optionalShellSurface
 
-        #expect(exportedTypes.count == 11)
+        #expect(exportedTypes.count == 13)
     }
 
     @MainActor

@@ -3,10 +3,12 @@ import Foundation
 import MHDeepLinking
 import MHLogging
 import MHMutationFlow
+import MHNotificationDeepLinking
 import MHNotificationPayloads
 import MHPlatformTesting
 import MHPreferences
 import MHRouteExecution
+import MHUserNotifications
 import SwiftUI
 import Testing
 

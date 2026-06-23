@@ -1,5 +1,6 @@
 #if canImport(UserNotifications)
 import Foundation
+import MHNotificationPayloads
 import UserNotifications
 
 /// Shared orchestration helpers for notification-center workflows.

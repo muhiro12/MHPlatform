@@ -38,8 +38,9 @@
 ## Implemented in MHPlatform
 
 - Umbrella product `MHPlatform` plus modular products for runtime, deep links,
-  notification planning/payloads, mutation flow, route execution, persistence
-  maintenance, preferences, review policy, and logging.
+  notification planning/payloads/UserNotifications/deep-link delivery,
+  mutation flow, route execution, persistence maintenance, preferences, review
+  policy, and logging.
 - `MHAppRuntime` as the shared runtime/startup surface already used by app
   targets.
 - `MHReviewPolicy`, `MHReviewRequesting`, and `MHReviewFlow` as the split

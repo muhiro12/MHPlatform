@@ -100,16 +100,57 @@ private extension MHReviewFlow {
     func requestIfNeeded(
         logMetadata: [String: String]
     ) async -> MHReviewRequestOutcome {
-        await MHReviewRequester.requestIfNeeded(
+        let outcome = await MHReviewRequester.requestIfNeeded(
             .init(
                 policy: policy,
                 randomValueProvider: randomValueProvider,
                 sleep: sleep,
                 environment: environment,
-                logger: logger,
-                onOutcome: onOutcome,
-                logMetadata: logMetadata
+                onOutcome: onOutcome
             )
         )
+        await logOutcome(
+            outcome,
+            metadata: logMetadata
+        )
+        return outcome
+    }
+
+    func logOutcome(
+        _ outcome: MHReviewRequestOutcome,
+        metadata: [String: String]
+    ) async {
+        guard let logger else {
+            return
+        }
+
+        switch outcome {
+        case .requested:
+            await logger.logImmediately(
+                .notice,
+                "review request invoked",
+                metadata: metadata
+            )
+        case .skippedInvalidLotteryRange:
+            await logger.logImmediately(
+                .warning,
+                "review request skipped because the lottery range was invalid",
+                metadata: metadata
+            )
+        case .skippedNoForegroundScene:
+            await logger.logImmediately(
+                .info,
+                "review request skipped because no foreground scene was available",
+                metadata: metadata
+            )
+        case .unsupportedPlatform:
+            await logger.logImmediately(
+                .info,
+                "review request skipped because the platform is unsupported",
+                metadata: metadata
+            )
+        case .skippedByPolicy:
+            break
+        }
     }
 }

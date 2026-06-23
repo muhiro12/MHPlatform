@@ -130,10 +130,12 @@ Granular core-safe products, optional UI bridges, and optional shells:
 - `MHLoggingUI`
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
+- `MHNotificationDeepLinking`
 - `MHRouteExecution`
 - `MHPersistenceMaintenance`
 - `MHPreferences`
 - `MHPreferencesUI`
+- `MHUserNotifications`
 - `MHMutationFlow`
 - `MHMutationLogging`
 - `MHReviewPolicy`
@@ -154,6 +156,9 @@ Test support:
   license, or app-specific side-effect policy.
 - `MHPreferences` and `MHLogging` own core primitives; `MHPreferencesUI` and
   `MHLoggingUI` own optional SwiftUI/UI bridge surfaces.
+- `MHNotificationPayloads` owns platform-agnostic payload codecs and route
+  resolution; `MHUserNotifications` owns UserNotifications adapters;
+  `MHNotificationDeepLinking` owns notification-to-deep-link delivery helpers.
 - `MHReviewPolicy` owns pure review policy; `MHReviewRequesting` owns direct
   platform requesting; `MHReviewFlow` owns runtime/mutation workflow wiring.
 - Route enum meaning, navigation destination meaning, notification copy,
@@ -180,7 +185,7 @@ Compile-backed reference adopters live under `Fixtures/Consumers/`.
 - `SplitRuntimeConsumer` proves explicit runtime-bundle composition.
 - `OptionalShellConsumer` proves review/mutation shells stay opt-in.
 - `SurfaceAdapterConsumer` proves the widget, App Intent, watch, and extension
-  adapter path using only granular core-safe products.
+  adapter path using only granular products without app-runtime dependencies.
 
 Package tests and integration tests cover the module behavior behind those
 consumer paths. `Example/MHPlatformExample/` remains the full-umbrella demo app.
@@ -191,10 +196,12 @@ consumer paths. `Example/MHPlatformExample/` remains the full-umbrella demo app.
   `MHPlatform` product in app composition targets.
 - `MHAppRuntime` is the shared runtime/startup surface used by app targets.
 - `MHRouteExecution`, `MHDeepLinking`, `MHNotificationPlans`,
-  `MHNotificationPayloads`, `MHPreferences`, `MHLogging`, `MHMutationFlow`,
-  `MHReviewPolicy`, `MHReviewRequesting`, and `MHReviewFlow` provide reusable
-  infrastructure while route meanings, mutation effects, notification copy,
-  review timing, and platform side effects stay app-owned.
+  `MHNotificationPayloads`, `MHUserNotifications`,
+  `MHNotificationDeepLinking`, `MHPreferences`, `MHLogging`,
+  `MHMutationFlow`, `MHReviewPolicy`, `MHReviewRequesting`, and
+  `MHReviewFlow` provide reusable infrastructure while route meanings,
+  mutation effects, notification copy, review timing, and platform side
+  effects stay app-owned.
 - Shared-library and surface-adapter consumers should follow the consumer
   matrix instead of mirroring an app target's umbrella imports.
 

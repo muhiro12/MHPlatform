@@ -52,6 +52,14 @@ let package = Package(
             targets: ["MHNotificationPayloads"]
         ),
         .library(
+            name: "MHUserNotifications",
+            targets: ["MHUserNotifications"]
+        ),
+        .library(
+            name: "MHNotificationDeepLinking",
+            targets: ["MHNotificationDeepLinking"]
+        ),
+        .library(
             name: "MHRouteExecution",
             targets: ["MHRouteExecution"]
         ),
@@ -134,11 +142,13 @@ let package = Package(
                 "MHLoggingUI",
                 "MHMutationFlow",
                 "MHMutationLogging",
+                "MHNotificationDeepLinking",
                 "MHPlatformCore",
                 "MHPreferencesUI",
                 "MHReviewFlow",
                 "MHReviewPolicy",
-                "MHReviewRequesting"
+                "MHReviewRequesting",
+                "MHUserNotifications"
             ]
         ),
         .target(
@@ -204,8 +214,18 @@ let package = Package(
             name: "MHNotificationPlans"
         ),
         .target(
-            name: "MHNotificationPayloads",
-            dependencies: ["MHDeepLinking"]
+            name: "MHNotificationPayloads"
+        ),
+        .target(
+            name: "MHUserNotifications",
+            dependencies: ["MHNotificationPayloads"]
+        ),
+        .target(
+            name: "MHNotificationDeepLinking",
+            dependencies: [
+                "MHDeepLinking",
+                "MHUserNotifications"
+            ]
         ),
         .target(
             name: "MHMutationFlow"
@@ -241,10 +261,7 @@ let package = Package(
         ),
         .target(
             name: "MHReviewRequesting",
-            dependencies: [
-                "MHLogging",
-                "MHReviewPolicy"
-            ]
+            dependencies: ["MHReviewPolicy"]
         ),
         .target(
             name: "MHReviewFlow",
@@ -271,7 +288,8 @@ let package = Package(
             dependencies: [
                 "MHDeepLinking",
                 "MHLogging",
-                "MHNotificationPayloads"
+                "MHNotificationPayloads",
+                "MHUserNotifications"
             ]
         ),
         .target(
@@ -321,10 +339,24 @@ let package = Package(
         ),
         .testTarget(
             name: "MHNotificationPayloadsTests",
+            dependencies: ["MHNotificationPayloads"]
+        ),
+        .testTarget(
+            name: "MHUserNotificationsTests",
             dependencies: [
                 "MHNotificationPayloads",
+                "MHPlatformTesting",
+                "MHUserNotifications"
+            ]
+        ),
+        .testTarget(
+            name: "MHNotificationDeepLinkingTests",
+            dependencies: [
                 "MHDeepLinking",
-                "MHPlatformTesting"
+                "MHNotificationDeepLinking",
+                "MHNotificationPayloads",
+                "MHPlatformTesting",
+                "MHUserNotifications"
             ]
         ),
         .testTarget(
@@ -374,7 +406,6 @@ let package = Package(
         .testTarget(
             name: "MHReviewRequestingTests",
             dependencies: [
-                "MHLogging",
                 "MHReviewPolicy",
                 "MHReviewRequesting",
                 "MHReviewTestSupport"
@@ -414,10 +445,12 @@ let package = Package(
                 "MHDeepLinking",
                 "MHLogging",
                 "MHMutationFlow",
+                "MHNotificationDeepLinking",
                 "MHNotificationPayloads",
                 "MHPlatformTesting",
                 "MHPreferences",
-                "MHRouteExecution"
+                "MHRouteExecution",
+                "MHUserNotifications"
             ]
         )
     ]

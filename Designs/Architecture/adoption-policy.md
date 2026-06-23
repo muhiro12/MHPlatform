@@ -36,6 +36,7 @@ Advanced composition surfaces that should not be the default onboarding path:
 - concrete modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
   `MHPreferences`
+- surface adapter modules: `MHUserNotifications`, `MHNotificationDeepLinking`
 - optional UI bridges: `MHPreferencesUI`, `MHLoggingUI`
 - opt-in workflow shells: `MHMutationFlow`, `MHMutationLogging`,
   `MHReviewPolicy`, `MHReviewRequesting`, `MHReviewFlow`
@@ -75,6 +76,9 @@ specific granular product:
 - `MHDeepLinking` for route URL building and pending-route handoff
 - `MHNotificationPlans` for deterministic schedule planning
 - `MHNotificationPayloads` for notification route payload resolution
+- `MHUserNotifications` for notification-center orchestration adapters
+- `MHNotificationDeepLinking` for notification route delivery into deep-link
+  destinations
 - `MHPreferences` for `UserDefaults`-backed app group preference access
 - `MHRouteExecution` for readiness-gated route execution primitives
 

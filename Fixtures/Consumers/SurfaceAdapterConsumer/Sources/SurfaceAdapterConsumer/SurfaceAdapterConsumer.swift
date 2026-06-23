@@ -1,9 +1,11 @@
 import Foundation
 import MHDeepLinking
+import MHNotificationDeepLinking
 import MHNotificationPayloads
 import MHNotificationPlans
 import MHPreferences
 import MHRouteExecution
+import MHUserNotifications
 
 enum SurfaceAdapterConsumer {
     private enum Constants {
@@ -107,6 +109,14 @@ enum SurfaceAdapterConsumer {
         )
     }
 
+    static func makeNotificationUserInfo() -> [AnyHashable: Any] {
+        guard let payload = makeNotificationPayload() else {
+            return [:]
+        }
+
+        return MHNotificationPayloadCodec().encode(payload)
+    }
+
     static func resolveDefaultNotificationRoute() -> Route? {
         guard let payload = makeNotificationPayload() else {
             return nil
@@ -120,6 +130,37 @@ enum SurfaceAdapterConsumer {
         }
 
         return makeCodec().parse(routeURL)
+    }
+
+    static func resolveNotificationUserInfoRoute(
+        userInfo: [AnyHashable: Any],
+        actionIdentifier: String
+    ) -> Route? {
+        guard let routeURL = MHNotificationOrchestrator.resolveRouteURL(
+            userInfo: userInfo,
+            actionIdentifier: actionIdentifier
+        ) else {
+            return nil
+        }
+
+        return makeCodec().parse(routeURL)
+    }
+
+    @discardableResult
+    static func deliverDefaultNotificationRoute(
+        to destination: MHDeepLinkStore
+    ) async -> MHNotificationRouteDeliveryOutcome? {
+        guard let payload = makeNotificationPayload() else {
+            return nil
+        }
+
+        return await MHNotificationOrchestrator.deliverRouteURL(
+            payload: payload,
+            response: .init(
+                actionIdentifier: "com.apple.UNNotificationDefaultActionIdentifier"
+            ),
+            destination: destination
+        )
     }
 
     static func makeReminderPlans(

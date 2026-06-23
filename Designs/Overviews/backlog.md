@@ -118,7 +118,8 @@ Run a sample mutation with retry, side-effect failure, and cancellation toggles.
 ### P1. Notification payload routing core was implemented
 
 Status:
-Implemented in this phase as `MHNotificationPayloads` (routing core + orchestration adapter).
+Implemented in this phase as `MHNotificationPayloads`, `MHUserNotifications`,
+and `MHNotificationDeepLinking`.
 
 What was extracted:
 - payload route model (`default`, `fallback`, action map)
@@ -128,12 +129,15 @@ What was extracted:
 - optional `UserNotifications` bridge helpers
 - notification-center abstraction and adapter (`MHNotificationCentering`)
 - orchestration helpers (`MHNotificationOrchestrator`, `MHNotificationRequestSyncOutcome`)
+- notification-to-deep-link destination delivery helpers
 
 Evidence:
 - `Incomes/Incomes/Sources/Notification/Models/NotificationService.swift`
 - `Cookle/Cookle/Sources/Notification/Services/RecipeSuggestionNotificationComposer.swift`
 - `Cookle/Cookle/Sources/Notification/Services/NotificationService.swift`
 - `MHPlatform/Sources/MHNotificationPayloads/`
+- `MHPlatform/Sources/MHUserNotifications/`
+- `MHPlatform/Sources/MHNotificationDeepLinking/`
 
 Remaining work:
 - app-specific notification copy templates

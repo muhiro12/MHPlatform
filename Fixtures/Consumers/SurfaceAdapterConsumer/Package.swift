@@ -29,7 +29,15 @@ let kPackage = Package(
                     package: "MHPlatform"
                 ),
                 .product(
+                    name: "MHNotificationDeepLinking",
+                    package: "MHPlatform"
+                ),
+                .product(
                     name: "MHNotificationPlans",
+                    package: "MHPlatform"
+                ),
+                .product(
+                    name: "MHUserNotifications",
                     package: "MHPlatform"
                 ),
                 .product(

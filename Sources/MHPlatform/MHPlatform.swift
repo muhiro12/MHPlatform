@@ -2,8 +2,10 @@
 @_exported import MHLoggingUI
 @_exported import MHMutationFlow
 @_exported import MHMutationLogging
+@_exported import MHNotificationDeepLinking
 @_exported import MHPlatformCore
 @_exported import MHPreferencesUI
 @_exported import MHReviewFlow
 @_exported import MHReviewPolicy
 @_exported import MHReviewRequesting
+@_exported import MHUserNotifications

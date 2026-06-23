@@ -1,5 +1,6 @@
 #if canImport(UserNotifications)
 import Foundation
+import MHNotificationPayloads
 import UserNotifications
 
 public extension MHNotificationActionDescriptor {

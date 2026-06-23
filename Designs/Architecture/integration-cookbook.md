@@ -256,7 +256,9 @@ Optional bridge layer (app adapter responsibility):
 ```swift
 #if canImport(UserNotifications)
 import MHDeepLinking
+import MHNotificationDeepLinking
 import MHNotificationPayloads
+import MHUserNotifications
 import UserNotifications
 
 func syncRequests(

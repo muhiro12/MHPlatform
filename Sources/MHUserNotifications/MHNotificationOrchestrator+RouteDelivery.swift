@@ -1,6 +1,6 @@
 #if canImport(UserNotifications)
 import Foundation
-import MHDeepLinking
+import MHNotificationPayloads
 
 public extension MHNotificationOrchestrator {
     /// Resolves a route URL directly from userInfo and action identifier.
@@ -57,28 +57,6 @@ public extension MHNotificationOrchestrator {
         return outcome
     }
 
-    /// Resolves a route URL, applies app-specific fallback policy, and stores it
-    /// in a pending deep-link destination.
-    static func deliverRouteURL<Destination: MHDeepLinkURLDestination>(
-        payload: MHNotificationPayload?,
-        response: MHNotificationResponseContext,
-        destination: Destination,
-        clearPendingURLWhenNoRoute: Bool = false,
-        fallbackRouteURL: @Sendable (MHNotificationPayload?, MHNotificationResponseContext) -> URL? = { _, _ in nil }
-    ) async -> MHNotificationRouteDeliveryOutcome {
-        let outcome = routeDeliveryOutcome(
-            payload: payload,
-            response: response,
-            fallbackRouteURL: fallbackRouteURL
-        )
-
-        return await deliverRouteURL(
-            outcome,
-            destination: destination,
-            clearPendingURLWhenNoRoute: clearPendingURLWhenNoRoute
-        )
-    }
-
     /// Resolves a route URL, applies app-specific fallback policy, and delivers it.
     static func deliverRouteURL(
         userInfo: sending [AnyHashable: Any],
@@ -106,31 +84,35 @@ public extension MHNotificationOrchestrator {
         )
     }
 
-    /// Resolves a route URL, applies app-specific fallback policy, and stores it
-    /// in a pending deep-link destination.
-    static func deliverRouteURL<Destination: MHDeepLinkURLDestination>(
-        userInfo: sending [AnyHashable: Any],
-        actionIdentifier: String,
-        destination: Destination,
-        codec: MHNotificationPayloadCodec = .init(),
-        clearPendingURLWhenNoRoute: Bool = false,
-        fallbackRouteURL: @Sendable (MHNotificationPayload?, MHNotificationResponseContext) -> URL? = { _, _ in nil },
-        defaultActionIdentifier: String = "com.apple.UNNotificationDefaultActionIdentifier",
-        dismissActionIdentifier: String = "com.apple.UNNotificationDismissActionIdentifier"
-    ) async -> MHNotificationRouteDeliveryOutcome {
-        let outcome = routeDeliveryOutcome(
-            userInfo: userInfo,
-            actionIdentifier: actionIdentifier,
-            codec: codec,
-            fallbackRouteURL: fallbackRouteURL,
-            defaultActionIdentifier: defaultActionIdentifier,
-            dismissActionIdentifier: dismissActionIdentifier
-        )
+    /// Resolves a route URL and returns the delivery outcome without performing delivery.
+    static func routeDeliveryOutcome(
+        payload: MHNotificationPayload?,
+        response: MHNotificationResponseContext,
+        fallbackRouteURL: @Sendable (MHNotificationPayload?, MHNotificationResponseContext) -> URL? = { _, _ in nil }
+    ) -> MHNotificationRouteDeliveryOutcome {
+        if let routeURL = resolveRouteURL(
+            payload: payload,
+            response: response
+        ) {
+            return .init(
+                routeURL: routeURL,
+                source: .payload
+            )
+        }
 
-        return await deliverRouteURL(
-            outcome,
-            destination: destination,
-            clearPendingURLWhenNoRoute: clearPendingURLWhenNoRoute
+        if let routeURL = fallbackRouteURL(
+            payload,
+            response
+        ) {
+            return .init(
+                routeURL: routeURL,
+                source: .fallback
+            )
+        }
+
+        return .init(
+            routeURL: nil,
+            source: .noRoute
         )
     }
 
@@ -168,53 +150,6 @@ public extension MHNotificationOrchestrator {
         }
 
         return outcome
-    }
-
-    /// Delivers a previously resolved route delivery outcome into a pending
-    /// deep-link destination.
-    static func deliverRouteURL<Destination: MHDeepLinkURLDestination>(
-        _ outcome: MHNotificationRouteDeliveryOutcome,
-        destination: Destination,
-        clearPendingURLWhenNoRoute: Bool = false
-    ) async -> MHNotificationRouteDeliveryOutcome {
-        if clearPendingURLWhenNoRoute || outcome.routeURL != nil {
-            await destination.setPendingURL(outcome.routeURL)
-        }
-
-        return outcome
-    }
-}
-
-private extension MHNotificationOrchestrator {
-    static func routeDeliveryOutcome(
-        payload: MHNotificationPayload?,
-        response: MHNotificationResponseContext,
-        fallbackRouteURL: @Sendable (MHNotificationPayload?, MHNotificationResponseContext) -> URL?
-    ) -> MHNotificationRouteDeliveryOutcome {
-        if let routeURL = resolveRouteURL(
-            payload: payload,
-            response: response
-        ) {
-            return .init(
-                routeURL: routeURL,
-                source: .payload
-            )
-        }
-
-        if let routeURL = fallbackRouteURL(
-            payload,
-            response
-        ) {
-            return .init(
-                routeURL: routeURL,
-                source: .fallback
-            )
-        }
-
-        return .init(
-            routeURL: nil,
-            source: .noRoute
-        )
     }
 }
 #endif

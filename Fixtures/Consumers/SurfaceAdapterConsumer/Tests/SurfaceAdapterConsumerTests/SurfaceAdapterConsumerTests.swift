@@ -36,6 +36,41 @@ struct SurfaceAdapterConsumerTests {
     }
 
     @Test
+    func notification_user_notifications_bridge_resolves_route_without_runtime_products() {
+        let userInfo = SurfaceAdapterConsumer.makeNotificationUserInfo()
+
+        #expect(
+            SurfaceAdapterConsumer.resolveNotificationUserInfoRoute(
+                userInfo: userInfo,
+                actionIdentifier: "com.apple.UNNotificationDefaultActionIdentifier"
+            ) == .item("surface-item")
+        )
+    }
+
+    @Test
+    func notification_deep_link_bridge_stores_route_without_runtime_products() async throws {
+        let suiteName = "surface-adapter-notification-tests-\(UUID().uuidString)"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        defer {
+            userDefaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let store = SurfaceAdapterConsumer.makeRouteStore(
+            userDefaults: userDefaults
+        )
+        let outcome = try #require(
+            await SurfaceAdapterConsumer.deliverDefaultNotificationRoute(to: store)
+        )
+
+        #expect(outcome.source == .payload)
+        #expect(
+            store.consumeLatest(
+                using: SurfaceAdapterConsumer.makeCodec()
+            ) == .item("surface-item")
+        )
+    }
+
+    @Test
     func reminder_planning_uses_core_safe_notification_products() throws {
         let now = Date(timeIntervalSinceReferenceDate: .zero)
         var calendar = Calendar(identifier: .gregorian)

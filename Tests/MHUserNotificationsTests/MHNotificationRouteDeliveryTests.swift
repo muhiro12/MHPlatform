@@ -1,6 +1,7 @@
 #if canImport(UserNotifications)
 import Foundation
 import MHNotificationPayloads
+import MHUserNotifications
 import Testing
 
 @MainActor

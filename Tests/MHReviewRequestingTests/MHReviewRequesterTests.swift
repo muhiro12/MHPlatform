@@ -1,4 +1,3 @@
-@testable import MHLogging
 @testable import MHReviewPolicy
 @testable import MHReviewRequesting
 @testable import MHReviewTestSupport
@@ -12,6 +11,9 @@ struct MHReviewRequesterTests {
             lotteryMaxExclusive: 0,
             requestDelay: .seconds(2)
         )
+        let ignoreOutcome: @Sendable (MHReviewRequestOutcome) -> Void = { _ in
+            // no-op
+        }
 
         let outcome = await MHReviewRequester.requestIfNeeded(
             .init(
@@ -24,11 +26,7 @@ struct MHReviewRequesterTests {
                     state.recordSleepCall()
                 },
                 environment: .live,
-                logger: nil,
-                onOutcome: { _ in
-                    // no-op
-                },
-                logMetadata: [:]
+                onOutcome: ignoreOutcome
             )
         )
 
@@ -60,6 +58,9 @@ struct MHReviewRequesterTests {
             lotteryMaxExclusive: 5,
             requestDelay: .seconds(2)
         )
+        let ignoreOutcome: @Sendable (MHReviewRequestOutcome) -> Void = { _ in
+            // no-op
+        }
 
         let outcome = await MHReviewRequester.requestIfNeeded(
             .init(
@@ -72,11 +73,7 @@ struct MHReviewRequesterTests {
                     state.recordSleepCall()
                 },
                 environment: .live,
-                logger: nil,
-                onOutcome: { _ in
-                    // no-op
-                },
-                logMetadata: [:]
+                onOutcome: ignoreOutcome
             )
         )
 
@@ -118,6 +115,9 @@ struct MHReviewRequesterTests {
             state.recordEvent("request")
             return .requested
         }
+        let ignoreOutcome: @Sendable (MHReviewRequestOutcome) -> Void = { _ in
+            // no-op
+        }
 
         let outcome = await MHReviewRequester.requestIfNeeded(
             .init(
@@ -131,11 +131,7 @@ struct MHReviewRequesterTests {
                     state.recordEvent("sleep")
                 },
                 environment: environment,
-                logger: nil,
-                onOutcome: { _ in
-                    // no-op
-                },
-                logMetadata: [:]
+                onOutcome: ignoreOutcome
             )
         )
 
@@ -167,13 +163,10 @@ struct MHReviewRequesterTests {
                 policy: policy,
                 randomValueProvider: randomValueProvider,
                 sleep: sleep,
-                environment: environment,
-                logger: nil,
-                onOutcome: { reportedOutcome in
-                    state.recordEvent(String(describing: reportedOutcome))
-                },
-                logMetadata: [:]
-            )
+                environment: environment
+            ) { reportedOutcome in
+                state.recordEvent(String(describing: reportedOutcome))
+            }
         )
 
         #expect(outcome == .requested)
@@ -207,59 +200,4 @@ struct MHReviewRequesterTests {
         #expect(outcome == .unsupportedPlatform)
     }
     #endif
-
-    @Test
-    func logOutcome_logs_expected_messages_for_terminal_outcomes() async {
-        let store = MHLogStore(
-            policy: .init(
-                minimumLevel: .debug,
-                maximumInMemoryEvents: 20
-            )
-        )
-        let logger = MHLogger(
-            #fileID,
-            store: store,
-            subsystem: "tests.review"
-        )
-
-        await MHReviewRequester.logOutcome(
-            .requested,
-            logger: logger,
-            metadata: [:]
-        )
-        await MHReviewRequester.logOutcome(
-            .skippedInvalidLotteryRange,
-            logger: logger,
-            metadata: [:]
-        )
-        await MHReviewRequester.logOutcome(
-            .skippedNoForegroundScene,
-            logger: logger,
-            metadata: [:]
-        )
-        await MHReviewRequester.logOutcome(
-            .unsupportedPlatform,
-            logger: logger,
-            metadata: [:]
-        )
-        await MHReviewRequester.logOutcome(
-            .skippedByPolicy,
-            logger: logger,
-            metadata: [:]
-        )
-
-        let events = await store.events()
-        #expect(events.map(\.level) == [
-            .notice,
-            .warning,
-            .info,
-            .info
-        ])
-        #expect(events.map(\.message) == [
-            "review request invoked",
-            "review request skipped because the lottery range was invalid",
-            "review request skipped because no foreground scene was available",
-            "review request skipped because the platform is unsupported"
-        ])
-    }
 }

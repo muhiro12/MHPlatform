@@ -13,7 +13,7 @@ For product-selection rationale and current selection rules, pair it with
 | Full-platform app target | `FooApp`, `FooWatch`, other UI/composition roots that want the full platform surface | `MHPlatform` | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow`, `MHPlatformTesting` in tests | Direct split runtime bundles unless custom composition is intentional |
 | Advanced app runtime target | App root that wants runtime, lifecycle, environment injection, and optional route plumbing without the full umbrella | `MHAppRuntime` | `MHAppRuntimeDefaults`, `MHAppRuntimeAds`, `MHAppRuntimeLicenses`, `MHPreferencesUI`, `MHLoggingUI`, `MHMutationFlow`, `MHReviewFlow`, concrete core modules | Pulling `MHPlatform` only to reach bootstrap helpers when the narrower runtime surface is intentional |
 | Shared logic package / shared library | `FooLibrary`, watch-capable shared logic package, reusable package target | `MHPlatformCore` or granular core-safe modules | Concrete modules such as `MHDeepLinking`, `MHPreferences`, `MHNotificationPlans`, `MHPersistenceMaintenance` | `MHPlatform`, `MHAppRuntime`, `MHPreferencesUI`, `MHLoggingUI`, `MHReviewPolicy`, `MHReviewRequesting`, `MHReviewFlow` |
-| Widget / App Intent / extension adapter | WidgetKit bundles, App Intent adapters, notification/content extensions, Shortcuts adapters | App shared library first, then `MHPlatformCore` or granular core-safe modules for direct platform primitives | `MHDeepLinking`, `MHNotificationPlans`, `MHNotificationPayloads`, `MHPreferences`, `MHRouteExecution` | `MHPlatform`, `MHAppRuntime`, split runtime bundles, ads/license/runtime adapters, UI/review shells |
+| Widget / App Intent / extension adapter | WidgetKit bundles, App Intent adapters, notification/content extensions, Shortcuts adapters | App shared library first, then `MHPlatformCore` or granular products for direct platform primitives | `MHDeepLinking`, `MHNotificationPlans`, `MHNotificationPayloads`, `MHUserNotifications`, `MHNotificationDeepLinking`, `MHPreferences`, `MHRouteExecution` | `MHPlatform`, `MHAppRuntime`, split runtime bundles, ads/license/runtime adapters, UI/review shells |
 | Lightweight watch companion surface | Watch app surfaces that mirror shared state or preferences without owning the full app runtime | App shared library, `MHPreferences`, `MHPlatformCore`, or granular core-safe modules | `MHDeepLinking`, `MHNotificationPayloads`, `MHRouteExecution` when the watch surface owns route handoff | Full umbrella adoption unless the watch target intentionally owns an app-root runtime/shell surface |
 | Granular core-safe consumer | Target that only needs one focused concern | Concrete module product | `MHPlatformTesting` in tests | Umbrellas when a single module is enough |
 | Optional shell adopter | App target already on one of the app-facing paths above | `MHAppRoutePipeline` / `mhRouteHandler`, `MHMutationWorkflow`, `MHReviewFlow` | Keep app-owned route meaning, mutation semantics, and review policy inputs outside MHPlatform | Treating route, review, or mutation shells as mandatory platform baseline |
@@ -40,6 +40,7 @@ Advanced composition surfaces:
 - concrete core modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
   `MHPreferences`
+- surface adapter modules: `MHUserNotifications`, `MHNotificationDeepLinking`
 - optional UI bridges: `MHPreferencesUI`, `MHLoggingUI`
 - opt-in workflow shells: `MHMutationFlow`, `MHMutationLogging`,
   `MHReviewPolicy`, `MHReviewRequesting`, `MHReviewFlow`
@@ -60,7 +61,7 @@ advanced composition around one focused concern.
 - Widget, App Intent, watch, and extension adapters should call the app's
   shared APIs first. MHPlatform should only appear directly in those surfaces
   when they need reusable platform primitives, and then through
-  `MHPlatformCore` or granular core-safe modules.
+  `MHPlatformCore` or granular products.
 - `MHPlatform` remains the only one-step default runtime path. Keep the full
   umbrella when the target wants package-owned StoreKit, ads, or license
   integrations without manual composition.
@@ -74,13 +75,17 @@ advanced composition around one focused concern.
 - `MHReviewPolicy`, `MHReviewRequesting`, and `MHReviewFlow` are split so pure
   policy, direct platform requesting, and runtime/mutation workflow wiring can
   be adopted independently.
+- `MHNotificationPayloads`, `MHUserNotifications`, and
+  `MHNotificationDeepLinking` are split so payload codecs, UserNotifications
+  orchestration, and deep-link destination delivery can be adopted
+  independently.
 - Shared packages must not depend on `MHPlatform`, `MHAppRuntime`, or
   review/UI shell products. Shared packages should stop at `MHPlatformCore` or
   granular core-safe modules unless a focused standalone product is genuinely
   required.
 - Surface adapters must not adopt `MHPlatform` or `MHAppRuntime` just to build
   route URLs, read preferences, plan notifications, resolve notification route
-  payloads, or hand off pending routes.
+  payloads, bridge UserNotifications, or hand off pending routes.
 
 ## What Stays App-Owned
 
@@ -105,7 +110,7 @@ advanced composition around one focused concern.
    Use `MHPlatformCore` or a concrete module.
 4. Is this a widget, App Intent, watch, or extension adapter?
    Call the app shared library first; use `MHPlatformCore` or granular
-   core-safe modules only for direct platform primitives.
+   products only for direct platform primitives.
 5. Is the target only adding route, mutation, or review workflow shells?
    Add those shells explicitly instead of switching umbrellas.
 6. Does the app want package-owned StoreKit, ads, or license integrations
@@ -128,6 +133,9 @@ advanced composition around one focused concern.
 - Full umbrella tests: `Tests/MHPlatformTests/`
 - Optional UI bridge tests: `Tests/MHPreferencesUITests/`,
   `Tests/MHLoggingUITests/`
+- Notification split tests: `Tests/MHNotificationPayloadsTests/`,
+  `Tests/MHUserNotificationsTests/`,
+  `Tests/MHNotificationDeepLinkingTests/`
 - Review shell tests: `Tests/MHReviewPolicyTests/`,
   `Tests/MHReviewRequestingTests/`, `Tests/MHReviewFlowTests/`
 - Runtime split composition tests: `Tests/MHAppRuntimeTests/`
