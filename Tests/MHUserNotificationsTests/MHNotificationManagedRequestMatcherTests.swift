@@ -1,5 +1,4 @@
 #if canImport(UserNotifications)
-import MHNotificationPayloads
 import MHPlatformTesting
 import MHUserNotifications
 import Testing

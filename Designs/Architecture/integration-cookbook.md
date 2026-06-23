@@ -444,34 +444,13 @@ struct DebugLogView: View {
 
 ## Adoption Notes
 
-### Incomes 向け導入順
+Adopting apps should sequence granular products according to the surface they
+are proving instead of importing the full umbrella everywhere. Keep these
+responsibilities app-owned:
 
-1. `MHDeepLinking` + `MHRouteExecution` を先行導入し、起動直後の deep link 取りこぼしを防ぐ。
-2. `MHNotificationPlans` を導入し、既存通知候補から deterministic な `Plan` を生成する。
-3. `MHNotificationPayloads` を導入し、payload codec と route resolver を統一する。
-4. `MHMutationWorkflow` と `MHMutationAdapter` で更新系ワークフローの
-   ordered follow-up steps と default failure mapping を標準化する。
-5. `MHPersistenceMaintenance` と `MHPreferences` を段階導入し、
-   store-file relocation / reset orchestration と typed preferences を
-   統一する。
-6. 最後に `MHReviewPolicy` を `MHMutationOutcome.succeeded` 起点で接続する。
-7. `MHLogging` / `MHLoggingUI` を導入し、Debug画面で
-   `MHLogConsoleView` による検索と JSONL 抽出を提供する。
-
-### Cookle 向け導入順
-
-1. `MHPreferences` と `MHNotificationPayloads` を先に入れて設定/通知の契約を安定化する。
-2. `MHDeepLinking` + `MHRouteExecution` を導入し、widget/push 入口を readiness-aware に統合する。
-3. `MHNotificationPlans` を導入して候補選定を deterministic 化する。
-4. `MHMutationWorkflow` を保存系処理へ適用し、app-owned effect metadata を
-   ordered follow-up steps へ寄せる。
-5. `MHPersistenceMaintenance` を導入して store-file relocation と reset
-   orchestration を共通化する。
-6. `MHReviewPolicy` は成功体験フローに限定して接続する。
-7. `MHLogging` を導入し、`Logger(#file)` 相当の呼び出しを `MHLogger` に統一する。
-
-### 役割分離（必須）
-
-- domain rules は各アプリ/ドメインライブラリが保持する。
-- UI state（画面遷移、sheet/focus、view model state）は各アプリが保持する。
-- SwiftData query と `ModelContext` 利用方針は各アプリが保持する。
+- Domain rules and business result meanings.
+- UI state, navigation state, sheets, focus, and view model state.
+- Persistence schema ownership, query shape, and `ModelContext` policy.
+- Notification copy, scheduling candidates, fallback route policy, and route
+  meanings.
+- Review timing inputs and product-specific success definitions.

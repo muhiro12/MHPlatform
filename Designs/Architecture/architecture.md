@@ -197,6 +197,7 @@ Integration contract:
 - Owns optional `UserNotifications` bridge and orchestration helpers behind
   `#if canImport(UserNotifications)`:
   `MHNotificationCentering`, `MHNotificationOrchestrator`,
+  `MHNotificationRouteDeliveryOutcome`,
   `MHNotificationRequestSyncOutcome`
 - Depends on `MHNotificationPayloads` for payload decoding and route
   resolution

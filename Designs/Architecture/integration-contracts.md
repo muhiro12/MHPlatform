@@ -409,6 +409,7 @@ This document is normative for integration design.
 
 - UserNotifications descriptor bridges.
 - Route delivery by closure (`MHNotificationOrchestrator.deliverRouteURL`).
+- Route delivery outcome (`MHNotificationRouteDeliveryOutcome`).
 - Optional orchestration outcome (`MHNotificationRequestSyncOutcome`).
 - Value-typed managed request matcher (`MHNotificationIdentifierMatcher`).
 
