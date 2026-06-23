@@ -88,7 +88,7 @@ final class DeepLinkRoutePipelineDemoModel {
     @ObservationIgnored private var isSynchronizingReadiness = false
     @ObservationIgnored private var sequence = 0
 
-    init() {
+    convenience init() {
         self.init(
             routeInbox: .init(),
             notificationInbox: .init()

@@ -2,7 +2,7 @@ import MHPlatform
 import SwiftUI
 
 struct DeepLinkingDemoView: View {
-    private enum ExampleRoute: Hashable, MHDeepLinkRoute {
+    nonisolated private enum ExampleRoute: Hashable, Sendable, MHDeepLinkRoute {
         case root
         case item(String)
         case search(String?)
