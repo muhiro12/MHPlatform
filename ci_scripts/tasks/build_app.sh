@@ -50,7 +50,12 @@ SWIFTPM_CONFIG_PATH="$swiftpm_config_directory" \
 PLL_SOURCE_PACKAGES_PATH="$repository_root/.build" \
 swift build
 
+package_workspace_path="$repository_root/.swiftpm/xcode/package.xcworkspace"
 example_project_path="$repository_root/Example/MHPlatformExample.xcodeproj"
+if [[ ! -d "$package_workspace_path" ]]; then
+  echo "Package workspace not found: $package_workspace_path" >&2
+  exit 1
+fi
 if [[ ! -d "$example_project_path" ]]; then
   echo "Example project not found. Skipping MHPlatformExample build."
   exit 0
@@ -117,7 +122,7 @@ SWIFTPM_CACHE_PATH="$swiftpm_cache_directory" \
 SWIFTPM_CONFIG_PATH="$swiftpm_config_directory" \
 PLL_SOURCE_PACKAGES_PATH="$cloned_source_packages_directory" \
 xcodebuild \
-  -project "$example_project_path" \
+  -workspace "$package_workspace_path" \
   -scheme "MHPlatform" \
   -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath "$derived_data_path" \
@@ -138,7 +143,7 @@ SWIFTPM_CACHE_PATH="$swiftpm_cache_directory" \
 SWIFTPM_CONFIG_PATH="$swiftpm_config_directory" \
 PLL_SOURCE_PACKAGES_PATH="$cloned_source_packages_directory" \
 xcodebuild \
-  -project "$example_project_path" \
+  -workspace "$package_workspace_path" \
   -scheme "MHPlatform" \
   -destination 'generic/platform=watchOS Simulator' \
   -derivedDataPath "$derived_data_path" \

@@ -421,16 +421,23 @@ Integration contract:
 
 - Changes stay inside `MHPlatform/`.
 - `Incomes/` and `Cookle/` remain read-only reference material.
-- Prefer XcodeBuildMCP for Apple build, test, run, Simulator, runtime log,
-  screenshot, and UI snapshot evidence.
-- Use XcodeBuildMCP `build_sim` / `test_sim` with
-  `.swiftpm/xcode/package.xcworkspace` and the `MHPlatform-Package` scheme for
-  package compile and test evidence.
-- Use XcodeBuildMCP `build_sim` / `build_run_sim` with
-  `Example/MHPlatformExample.xcodeproj` and the `MHPlatformExample` scheme for
-  example app compile or runtime evidence.
+- Prefer the available Xcode-native integration for workspace and project
+  discovery, selection, build, test, run, runtime-log, Preview, live UI, and
+  screenshot evidence.
+- Use its build and test capabilities with
+  `.swiftpm/xcode/package.xcworkspace`, the `MHPlatform-Package` scheme, and a
+  discovered iPhone Simulator destination for package compile and test
+  evidence.
+- Use its build or run capabilities with
+  `Example/MHPlatformExample.xcodeproj`, the `MHPlatformExample` scheme, and a
+  discovered iPhone Simulator destination for example app compile or runtime
+  evidence.
+- Use its build capability with `.swiftpm/xcode/package.xcworkspace`, the
+  `MHPlatform` scheme, and a discovered compatible iOS or watchOS Simulator
+  destination for package umbrella compile evidence.
 - Run `bash ci_scripts/tasks/check_repository_rules.sh` for retained SwiftLint,
   models-directory consistency, and consumer fixture checks.
 - Treat direct shell build/test scripts and `verify_*` scripts as compatibility
-  or fallback wrappers when MCP is unavailable or not sufficient for a check.
+  or fallback wrappers when the Xcode-native integration is unavailable or
+  does not cover a required check.
 - Inspect `.build/ci/runs/<RUN_ID>/` artifacts when verification fails.

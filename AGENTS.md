@@ -54,31 +54,39 @@ bash ci_scripts/tasks/format_swift.sh
 
 ## Verification Contract
 
-Agents MUST prefer XcodeBuildMCP for Apple build, test, run, Simulator, runtime
-log, screenshot, and UI snapshot verification.
+Agents MUST prefer the Xcode-native integration available in the current agent
+environment for workspace and project discovery, active scheme and destination
+selection, build, test, run, runtime logs, Preview rendering, live UI
+inspection, and screenshots.
 
-Before the first XcodeBuildMCP build, test, or run call in a session, run
-XcodeBuildMCP `session_show_defaults`. If defaults do not point at MHPlatform,
-set them for the current session instead of relying on shell wrappers.
+Before changing Xcode's active selection, discover the open workspaces and
+projects, schemes, and run destinations. Identify the MHPlatform package
+workspace or example project required by the check, record the original active
+scheme and destination, and switch only to values returned by discovery. After
+verification, restore the original scheme first, rediscover its valid
+destinations, restore the original destination, and confirm the final
+selection. Report any selection that cannot be restored.
 
-For package compile checks, use XcodeBuildMCP `build_sim` with:
+For package compile checks, use the available Xcode-native build capability
+with:
 
 - Workspace: `.swiftpm/xcode/package.xcworkspace`
 - Scheme: `MHPlatform-Package`
-- Simulator: an available iPhone simulator
+- Destination: a discovered iPhone Simulator
 
-For package tests, use XcodeBuildMCP `test_sim` with the same workspace and
-scheme.
+For package tests, use the available Xcode-native test capability with the
+same workspace, scheme, and destination family.
 
-For example app compile or runtime checks, use XcodeBuildMCP `build_sim` or
-`build_run_sim` with:
+For example app compile or runtime checks, use the available Xcode-native build
+or run capability with:
 
 - Project: `Example/MHPlatformExample.xcodeproj`
 - Scheme: `MHPlatformExample`
-- Simulator: an available iPhone simulator
+- Destination: a discovered iPhone Simulator
 
-For package umbrella compile checks through the example project, use the same
-project with the `MHPlatform` scheme.
+For package umbrella compile checks, use the available Xcode-native build
+capability with `.swiftpm/xcode/package.xcworkspace`, the `MHPlatform`
+scheme, and a discovered compatible iOS or watchOS Simulator destination.
 
 Treat package tests, consumer fixture checks, example builds, and runtime/UI
 evidence as separate verification capabilities. Choose the smallest set that
@@ -90,8 +98,9 @@ StoreKit, ads, route delivery, or visible example-app behavior are affected.
 - For consumer boundary changes, run the retained repository rule checks below.
 - For app-runtime or adopter-facing integration changes, also build the example
   project or the affected example scheme.
-- For visible runtime behavior in the example app, use targeted XcodeBuildMCP
-  run, UI snapshot, or screenshot evidence.
+- For visible runtime behavior in the example app, use a targeted Xcode-native
+  run with runtime-log review and Preview, live UI, or screenshot evidence
+  appropriate to the change.
 
 Agents should also run the retained repository rule checks:
 
@@ -100,16 +109,16 @@ bash ci_scripts/tasks/check_repository_rules.sh
 ```
 
 `check_repository_rules.sh` runs SwiftLint, the models-directory consistency
-check, and consumer fixture checks that are not naturally covered by
-XcodeBuildMCP.
+check, and consumer fixture checks that are not naturally covered by the
+available Xcode-native integration.
 SwiftLint is resolved from the `SwiftLintPlugins` package declared in
 `Package.swift`, not from a separately installed `swiftlint` binary.
 
 `verify_task_completion.sh`, `verify_repository_state.sh`, `verify_pre_push.sh`,
 and `verify.sh` are compatibility wrappers around retained repository rules.
-Direct shell build and package-test scripts are compatibility or fallback tools;
-do not treat them as the primary agent verification surface when MCP is
-available.
+Direct shell build and package-test scripts are compatibility or fallback
+tools; do not treat them as the primary agent verification surface when the
+Xcode-native integration is available.
 
 Compatibility scripts may write disposable data under `.build/ci/shared/` or
 `.build/ci/runs/<RUN_ID>/`.

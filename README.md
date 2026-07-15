@@ -224,7 +224,8 @@ duplicating narrower paths inside the demo app.
 
 ## Requirements
 
-- Xcode 16 or later with the iOS 18, macOS 15, and watchOS 11 SDKs installed.
+- An Xcode toolchain with Swift 6.2 support and the iOS 18, macOS 15, and
+  watchOS 11 SDKs installed.
 - SwiftPM package resolution for the repository-managed SwiftLint plugin used
   by retained rule scripts.
 
@@ -239,20 +240,25 @@ duplicating narrower paths inside the demo app.
 
 ## Build and Test
 
-Use Xcode and XcodeBuildMCP for Apple build, test, run, Simulator, runtime log,
-screenshot, and UI snapshot verification.
+Use Xcode and the Xcode-native integration available in the agent environment
+for build, test, run, runtime-log, Preview, live UI, and screenshot evidence.
+Follow the selection and restoration contract in `AGENTS.md`.
 
-For MHPlatform package compile checks, use XcodeBuildMCP `build_sim` with
-`.swiftpm/xcode/package.xcworkspace` and the `MHPlatform-Package` scheme. For
-package tests, use XcodeBuildMCP `test_sim` with the same workspace and scheme.
+For MHPlatform package compile and test checks, select
+`.swiftpm/xcode/package.xcworkspace`, the `MHPlatform-Package` scheme, and a
+discovered iPhone Simulator destination, then use the available Xcode-native
+build or test capability.
 
-For example app compile or runtime checks, use XcodeBuildMCP `build_sim` or
-`build_run_sim` with `Example/MHPlatformExample.xcodeproj` and the
-`MHPlatformExample` scheme. Use the `MHPlatform` scheme from the same project
-when the package umbrella needs an example-project compile check.
+For example app compile or runtime checks, select
+`Example/MHPlatformExample.xcodeproj`, the `MHPlatformExample` scheme, and a
+discovered iPhone Simulator destination, then use the available Xcode-native
+build or run capability. For package umbrella compile checks, use
+`.swiftpm/xcode/package.xcworkspace`, the `MHPlatform` scheme, and a
+discovered compatible iOS or watchOS Simulator destination.
 
-The remaining helper scripts in `ci_scripts/` are retained for repository rules
-and compatibility wrappers that are not naturally covered by XcodeBuildMCP.
+The remaining helper scripts in `ci_scripts/` are retained for repository
+rules and compatibility wrappers that are not naturally covered by the
+available Xcode-native integration.
 
 The retained scripts resolve SwiftLint from the `SwiftLintPlugins` package
 declared in `Package.swift`; they do not require a separately installed
@@ -296,8 +302,8 @@ bash ci_scripts/tasks/verify.sh
 ```
 
 The aggregate shell build and package-test wrappers are kept for fallback use
-when MCP is unavailable or when a check is not yet covered by the available MCP
-tool surface:
+when the Xcode-native integration is unavailable or does not cover a required
+check:
 
 ```sh
 bash ci_scripts/tasks/build_app.sh

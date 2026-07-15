@@ -2,38 +2,44 @@
 
 This document is intentionally durable guidance, not a manually maintained run
 log.
-XcodeBuildMCP owns MCP build, test, runtime, screenshot, and UI evidence.
+The Xcode-native integration available in the agent environment owns Apple
+build, test, runtime-log, Preview, live UI, and screenshot evidence.
 Compatibility shell run history lives under `.build/ci/runs/<RUN_ID>/` when a
 fallback wrapper uses the run artifact helper.
 
-## MCP-First Verification Contract
+## Xcode-Native Verification Contract
 
-Use XcodeBuildMCP as the standard evidence surface for Apple build, test, run,
-Simulator, runtime log, screenshot, and UI snapshot verification.
+Resolve current actions by capability from the runtime tool inventory. Follow
+the active-selection capture and restoration contract in the repository
+`AGENTS.md`; do not encode a volatile namespace or action name here.
 
 For package compile checks:
 
-- XcodeBuildMCP `build_sim`
+- Capability: Xcode-native build
 - Workspace: `.swiftpm/xcode/package.xcworkspace`
 - Scheme: `MHPlatform-Package`
-- Simulator: an available iPhone simulator
+- Destination: a discovered iPhone Simulator
 
 For package tests:
 
-- XcodeBuildMCP `test_sim`
+- Capability: Xcode-native test
 - Workspace: `.swiftpm/xcode/package.xcworkspace`
 - Scheme: `MHPlatform-Package`
-- Simulator: an available iPhone simulator
+- Destination: a discovered iPhone Simulator
 
 For example app compile or runtime evidence:
 
-- XcodeBuildMCP `build_sim` or `build_run_sim`
+- Capability: Xcode-native build or bounded run with runtime-log review
 - Project: `Example/MHPlatformExample.xcodeproj`
 - Scheme: `MHPlatformExample`
-- Simulator: an available iPhone simulator
+- Destination: a discovered iPhone Simulator
 
-Use the `MHPlatform` scheme from `Example/MHPlatformExample.xcodeproj` when the
-package umbrella needs an example-project compile check.
+For package umbrella compile evidence:
+
+- Capability: Xcode-native build
+- Workspace: `.swiftpm/xcode/package.xcworkspace`
+- Scheme: `MHPlatform`
+- Destination: a discovered compatible iOS or watchOS Simulator
 
 ## Retained Shell Checks
 
@@ -45,7 +51,7 @@ bash ci_scripts/tasks/check_repository_rules.sh
 
 `check_repository_rules.sh` runs SwiftLint, the models-directory consistency
 check, and consumer fixture checks that are not naturally covered by
-XcodeBuildMCP.
+the available Xcode-native integration.
 
 The following scripts are compatibility wrappers around retained repository
 rules:
@@ -56,8 +62,8 @@ rules:
 - `bash ci_scripts/tasks/verify.sh`
 
 The aggregate shell build and package-test wrappers remain fallback tools when
-MCP is unavailable or when a check is not yet covered by the available MCP tool
-surface:
+the Xcode-native integration is unavailable or does not cover a required
+check:
 
 - `bash ci_scripts/tasks/build_app.sh`
 - `bash ci_scripts/tasks/test_shared_library.sh`
