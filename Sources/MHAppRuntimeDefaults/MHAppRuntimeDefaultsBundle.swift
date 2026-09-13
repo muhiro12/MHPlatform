@@ -33,11 +33,7 @@ public struct MHAppRuntimeDefaultsBundle {
             store.open(
                 groupID: normalizedSubscriptionGroupID,
                 productIDs: normalizedSubscriptionProductIDs,
-                purchasedProductIDsDidSet: { purchasedProductIDs in
-                    Task { @MainActor in
-                        purchasedProductIDsDidSet(purchasedProductIDs)
-                    }
-                },
+                purchasedProductIDsDidSet: purchasedProductIDsDidSet,
                 purchasedSubscriptionsDidSet: nil
             )
         }

@@ -280,7 +280,7 @@ extension MHAppRuntimeTests {
 @MainActor
 private extension MHAppRuntimeTests {
     func makeRuntime(
-        startStore: @escaping (@MainActor (Set<String>) -> Void) -> Void = { _ in
+        startStore: @escaping MHAppRuntime.StartStore = { _ in
             // no-op
         }
     ) -> MHAppRuntime {

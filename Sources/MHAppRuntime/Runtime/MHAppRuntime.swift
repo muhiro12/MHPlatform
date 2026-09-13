@@ -8,8 +8,8 @@ import SwiftUI
 @preconcurrency
 @Observable
 public final class MHAppRuntime {
-    /// Startup bridge that reports the current purchased product identifiers.
-    public typealias StartStore = (
+    /// Main-actor startup bridge that reports the current purchased product identifiers.
+    public typealias StartStore = @MainActor (
         @escaping @MainActor (Set<String>) -> Void
     ) -> Void
     /// Startup bridge for ads initialization.

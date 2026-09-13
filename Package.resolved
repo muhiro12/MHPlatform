@@ -1,5 +1,5 @@
 {
-  "originHash" : "8f890cd3f14320c0828ecc76aac311feacdc38f15d5c9f5c86112244d3212613",
+  "originHash" : "0054fd7129074f89f3f251003fe6b236db7906407292e83be2c2ea2f55567237",
   "pins" : [
     {
       "identity" : "googlemobileadswrapper",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/muhiro12/StoreKitWrapper.git",
       "state" : {
-        "revision" : "84b92dd375b97fc77e7cddc6c683790f9b59456f",
-        "version" : "1.3.0"
+        "revision" : "d82ee5bc733faf5ce14bc3e7139839eb0136f4d6",
+        "version" : "1.4.0"
       }
     },
     {
