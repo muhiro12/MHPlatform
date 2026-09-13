@@ -35,16 +35,33 @@ struct MHAppRuntimeBundleTests {
     }
 
     @MainActor
-    @Test
-    func ads_bundle_disables_ads_without_ad_unit() {
+    @Test(arguments: [nil, "", " \n\t"] as [String?])
+    func ads_bundle_disables_ads_without_ad_unit(adUnitID: String?) {
         let bundle = MHAppRuntimeAdsBundle(
             configuration: .init(
-                subscriptionProductIDs: ["premium.monthly"]
+                subscriptionProductIDs: ["premium.monthly"],
+                nativeAdUnitID: adUnitID
             )
         )
 
         #expect(bundle.startAds == nil)
         #expect(bundle.nativeAdFactory == nil)
+    }
+
+    @MainActor
+    @Test(arguments: ["ad-unit", "  ad-unit\n"])
+    func ads_bundle_provides_both_bridges_on_supported_platforms(adUnitID: String) {
+        let bundle = MHAppRuntimeAdsBundle(
+            configuration: .init(nativeAdUnitID: adUnitID)
+        )
+
+        #if canImport(GoogleMobileAdsWrapper)
+        #expect(bundle.startAds != nil)
+        #expect(bundle.nativeAdFactory != nil)
+        #else
+        #expect(bundle.startAds == nil)
+        #expect(bundle.nativeAdFactory == nil)
+        #endif
     }
 
     @MainActor

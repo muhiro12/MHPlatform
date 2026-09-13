@@ -43,4 +43,40 @@ struct MHAppRuntimePremiumTests {
         #expect(runtime.premiumStatus == .inactive)
         #expect(runtime.adsAvailability == .available)
     }
+
+    @MainActor
+    @Test
+    func native_ad_view_forwards_sizes_only_while_ads_are_available() {
+        var purchasedProductIDsDidSet: (@MainActor (Set<String>) -> Void)?
+        var requestedSizes = [MHNativeAdSize]()
+        let runtime = MHAppRuntime(
+            configuration: .init(
+                subscriptionProductIDs: ["premium.monthly"],
+                nativeAdUnitID: "ad-unit"
+            ),
+            preferenceStore: .init(),
+            startStore: { purchasedProductIDsDidSet = $0 },
+            subscriptionSectionFactory: .init {
+                EmptyView()
+            },
+            startAds: nil,
+            nativeAdFactory: .init { size in
+                requestedSizes.append(size)
+                return EmptyView()
+            }
+        )
+        runtime.startIfNeeded()
+
+        _ = runtime.nativeAdView(size: .small)
+        _ = runtime.nativeAdView(size: .medium)
+        #expect(requestedSizes == [.small, .medium])
+
+        purchasedProductIDsDidSet?(["premium.monthly"])
+        _ = runtime.nativeAdView(size: .small)
+        #expect(requestedSizes == [.small, .medium])
+
+        purchasedProductIDsDidSet?([])
+        _ = runtime.nativeAdView(size: .medium)
+        #expect(requestedSizes == [.small, .medium, .medium])
+    }
 }
