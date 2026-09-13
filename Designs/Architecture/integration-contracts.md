@@ -85,11 +85,24 @@ This document is normative for integration design.
 ### Threading / Actor
 
 - `MHAppRuntime` is `@MainActor` and `@Observable`.
+- `MHAppRuntime.StartStore` and its purchased-product-identifier callback are
+  `@MainActor`. Custom startup bridges must preserve that isolation; callers
+  invoking a stored bridge directly must run on the main actor or await it.
 - `MHAppRuntimeBootstrap` is `@MainActor` and keeps runtime/lifecycle/root
   route integration on main actor.
 - Startup side effects and runtime state transitions are serialized on main actor.
 - `MHAppRuntimeLifecycle` is `@MainActor` and runs ordered lifecycle tasks on
   the main actor.
+
+### StoreKit and Ads State
+
+- `MHAppRuntimeDefaultsBundle` reports verified purchased product identifiers
+  independently of product metadata. Missing price or display information
+  must not be interpreted as a loss of premium access.
+- The runtime compares those identifiers with the configured
+  `subscriptionProductIDs` and suppresses ads while premium status is active.
+- `MHAppRuntimeAdsBundle` maps `MHNativeAdSize` to the wrapper's typed size API.
+  Consumers continue to use `.small` and `.medium` without importing SDK types.
 
 ### Intended Call Sites
 

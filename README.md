@@ -236,8 +236,8 @@ Adopting apps must supply their own app IDs and ad configuration.
 
 ## Requirements
 
-- An Xcode toolchain with Swift 6.2 support and the iOS 18, macOS 15, and
-  watchOS 11 SDKs installed.
+- An Xcode toolchain with Swift 6.2 support and SDKs for the target platforms.
+- Minimum deployment targets: iOS 18, macOS 15, and watchOS 11.
 - SwiftPM package resolution for the repository-managed SwiftLint plugin used
   by retained rule scripts.
 
