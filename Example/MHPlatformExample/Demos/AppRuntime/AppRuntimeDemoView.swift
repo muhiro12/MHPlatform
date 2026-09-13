@@ -2,10 +2,6 @@ import MHPlatform
 import SwiftUI
 
 struct AppRuntimeDemoView: View {
-    private enum Layout {
-        static let minimumAdHeight = CGFloat(Int("72") ?? .zero)
-    }
-
     @Environment(MHAppRuntime.self)
     private var runtime
 
@@ -55,11 +51,10 @@ struct AppRuntimeDemoView: View {
             }
             .pickerStyle(.segmented)
 
-            runtime.nativeAdView(size: nativeAdSize)
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: Layout.minimumAdHeight)
-
-            if runtime.adsAvailability != .available {
+            if runtime.adsAvailability == .available {
+                runtime.nativeAdView(size: nativeAdSize)
+                    .frame(maxWidth: .infinity)
+            } else {
                 Text("Ad rendering is disabled for the current runtime state.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
