@@ -32,13 +32,14 @@ public struct MHAppRuntimeDefaultsBundle {
         startStore = { purchasedProductIDsDidSet in
             store.open(
                 groupID: normalizedSubscriptionGroupID,
-                productIDs: normalizedSubscriptionProductIDs
-            ) { products in
-                let purchasedProductIDs = Set(products.map(\.id))
-                Task { @MainActor in
-                    purchasedProductIDsDidSet(purchasedProductIDs)
-                }
-            }
+                productIDs: normalizedSubscriptionProductIDs,
+                purchasedProductIDsDidSet: { purchasedProductIDs in
+                    Task { @MainActor in
+                        purchasedProductIDsDidSet(purchasedProductIDs)
+                    }
+                },
+                purchasedSubscriptionsDidSet: nil
+            )
         }
         subscriptionSectionFactory = .init {
             store.buildSubscriptionSection()
