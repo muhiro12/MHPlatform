@@ -1,0 +1,39 @@
+{
+  "identifier": "63D7F519",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {},
+  "subscriptionGroups": [
+    {
+      "id": "925AE2D6",
+      "localizations": [],
+      "name": "Example Premium",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "displayPrice": "1.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "52F94A78",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Explore premium status and ad suppression in the example app.",
+              "displayName": "Example Premium Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.example.mhplatform.premium.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Example Premium Monthly",
+          "subscriptionGroupID": "925AE2D6",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

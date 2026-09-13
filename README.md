@@ -222,6 +222,18 @@ It includes cross-module demos for:
 Consumer-specific minimal adopters live in `Fixtures/Consumers/` instead of
 duplicating narrower paths inside the demo app.
 
+The shared `MHPlatformExample` scheme enables the local
+`Example/MHPlatformExample/Configuration/Products.storekit` catalog for its Run
+action. Run the example from Xcode to load the sample monthly subscription and
+explore premium status and ad suppression with StoreKit Testing. The catalog
+uses local test transactions; it does not require App Store Connect products.
+
+The native ad demo uses Google's official test ad unit. Its app ID and
+`SKAdNetworkItems` are configured in `Example/MHPlatformExample-Info.plist`
+following
+[Google's setup guide](https://developers.google.com/admob/ios/quick-start).
+Adopting apps must supply their own app IDs and ad configuration.
+
 ## Requirements
 
 - An Xcode toolchain with Swift 6.2 support and the iOS 18, macOS 15, and
