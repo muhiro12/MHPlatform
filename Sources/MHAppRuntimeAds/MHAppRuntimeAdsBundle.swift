@@ -32,7 +32,13 @@ public struct MHAppRuntimeAdsBundle {
             controller.start()
         }
         nativeAdFactory = .init { size in
-            controller.buildNativeAd(size.wrapperSizeID)
+            let nativeAdSize: NativeAdSize = switch size {
+            case .small:
+                .small
+            case .medium:
+                .medium
+            }
+            controller.buildNativeAd(nativeAdSize)
         }
         #else
         startAds = nil
