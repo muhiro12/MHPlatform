@@ -135,21 +135,27 @@ struct MHUserDefaultsCleanupServiceTests {
 
         #expect(report.removedStorageKeys == [Constants.unknownStorageKey])
         #expect(userDefaults.object(forKey: key.storageKey) != nil)
+        #expect(report.knownStorageKeys == [key.storageKey])
     }
 
     @Test
     func removeUnknownKeys_is_noop_for_empty_domain() throws {
         let domainName = makeDomainName(suffix: "empty-domain")
         let userDefaults = try makeSuiteUserDefaults(domainName: domainName)
+        let descriptor = MHRawStorageDescriptor(
+            storageKey: Constants.rawStorageKey,
+            defaultSelection: .suite(domainName)
+        )
 
         let report = MHUserDefaultsCleanupService.removeUnknownKeys(
             from: userDefaults,
             domainName: domainName,
-            knownDescriptors: []
+            knownDescriptors: [descriptor]
         )
 
         #expect(report.didRun)
         #expect(report.removedStorageKeys.isEmpty)
+        #expect(report.knownStorageKeys == [descriptor.storageKey])
     }
 
     @Test

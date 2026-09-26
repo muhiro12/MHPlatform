@@ -46,7 +46,8 @@ private extension MHUserDefaultsCleanupService {
 
         guard storedDomain.isEmpty == false else {
             return .init(
-                removedStorageKeys: []
+                removedStorageKeys: [],
+                knownStorageKeys: Array(knownStorageKeys)
             )
         }
 
@@ -70,7 +71,8 @@ private extension MHUserDefaultsCleanupService {
         }
 
         return .init(
-            removedStorageKeys: removedStorageKeys.sorted()
+            removedStorageKeys: removedStorageKeys.sorted(),
+            knownStorageKeys: Array(knownStorageKeys)
         )
     }
 }

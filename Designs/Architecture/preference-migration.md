@@ -77,6 +77,35 @@ Logging uses `MHLogSnapshotStorageDescriptors` with explicit `current` and
 contents; the package does not append suffixes. Converting an older snapshot
 representation requires an app-owned migration before logging starts.
 
+## Keep External Keys and Inspect Cleanup
+
+Use raw descriptors as an explicit cleanup exclusion list. For dynamic keys,
+obtain the exact current keys from their owner and map them to raw descriptors
+before running lifecycle work. Do not derive this list from all keys already in
+the defaults domain: that would also preserve stale keys.
+
+```swift
+let externalKeys = ["external.feature-state"]
+let externalDescriptors = externalKeys.map { storageKey in
+    MHRawStorageDescriptor(storageKey: storageKey, defaultSelection: .standard)
+}
+let descriptors: [any MHStorageDescriptorProtocol] =
+    AppPreferences.current + externalDescriptors
+```
+
+Pass the combined array to `MHPreferenceLifecycleService.run`. Raw descriptors
+protect the exact key in their selected domain and imply no migration steps.
+For the lower-level cleanup service, `domainName` selects the domain; the
+caller must supply only that domain's known descriptors.
+
+Each lifecycle cleanup report identifies its `selection` and `domainName`.
+The nested report includes sorted `knownStorageKeys` and `removedStorageKeys`:
+every removed key was present in that persistent domain and absent from its
+allowlist. The allowlist includes the migration-state descriptor in its own
+domain, deduplicates keys, and is reported even when the domain is empty.
+No preference values are included. Key names may still contain app data;
+apply the app's logging policy before exporting diagnostics.
+
 ## Run Lifecycle Work Before Preference Consumers
 
 Stored-property and property-wrapper initialization happens before the body of
