@@ -164,9 +164,53 @@ automatically convert previously stored property-list objects. The UI Codable
 wrappers are convenience bindings with fallback behavior, not a migration
 error-reporting interface.
 
-Bare-member aliases such as `.isDebugOn` must have a concrete descriptor type
-that Swift can infer. Enum representables remain usable with a qualified case;
-key paths rooted at `MHPreferenceDescriptors` are another supported option.
+## Use Bare-member Enum Shorthand
+
+Keep the enum as the source of descriptor definitions and expose an app-owned
+static alias on the concrete descriptor type. The existing concrete AppStorage
+initializers can infer both the descriptor and the wrapped value:
+
+```swift
+enum BoolPreference: MHBoolPrefDescriptorRepresentable {
+    case isDebugOn
+
+    var preferenceDescriptor: MHBoolPreferenceDescriptor {
+        .init(storageKey: "debug.enabled", defaultSelection: .standard)
+    }
+}
+
+extension MHBoolPreferenceDescriptor {
+    static var isDebugOn: Self {
+        BoolPreference.isDebugOn.preferenceDescriptor
+    }
+}
+
+struct DebugSettingsView: View {
+    @AppStorage(.isDebugOn) private var isDebugOn
+
+    var body: some View {
+        Toggle("Debug", isOn: $isDebugOn)
+    }
+}
+```
+
+This retains the enum's descriptor and default selection. Use
+`MHIntPreferenceDescriptor` and `MHStringPreferenceDescriptor` aliases for the
+corresponding enum-backed preferences. Int representables construct a descriptor
+with an explicit default; preserve the intended fallback in that alias.
+Explicit `store:` overrides remain available on all three concrete types.
+
+Give aliases the visibility needed by their call sites and avoid competing
+aliases with the same name in the same scope. Without aliases, qualify the
+representable case as `BoolPreference.isDebugOn`. Key paths rooted at
+`MHPreferenceDescriptors` remain another supported option.
+
+Swift also supports [constrained protocol static lookup][static-member-lookup],
+but forwarding a protocol alias to an identically named enum case makes that
+reference ambiguous. Concrete descriptor aliases avoid this collision and do
+not require a new wrapper or changes to the enum's case names.
+
+[static-member-lookup]: https://github.com/swiftlang/swift-evolution/blob/main/proposals/0299-extend-generic-static-member-lookup.md
 
 ## Defaults Ownership and Explicit Overrides
 
