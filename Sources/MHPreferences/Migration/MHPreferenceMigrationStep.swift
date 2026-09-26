@@ -5,6 +5,7 @@ public struct MHPreferenceMigrationStep: Sendable {
     public let id: String
 
     let action: @Sendable () async throws -> Void
+    let synchronousAction: (@Sendable () throws -> Void)?
 
     /// Creates a migration step with a stable identifier.
     @preconcurrency
@@ -15,6 +16,28 @@ public struct MHPreferenceMigrationStep: Sendable {
         precondition(id.isEmpty == false)
         self.id = id
         self.action = action
+        self.synchronousAction = nil
+    }
+
+    private init(
+        id: String,
+        synchronousAction: @escaping @Sendable () throws -> Void
+    ) {
+        precondition(id.isEmpty == false)
+        self.id = id
+        self.synchronousAction = synchronousAction
+        self.action = {
+            try synchronousAction()
+        }
+    }
+
+    /// Creates a step that can run through either synchronous or async lifecycle APIs.
+    @preconcurrency
+    public static func synchronous(
+        id: String,
+        action: @escaping @Sendable () throws -> Void
+    ) -> Self {
+        .init(id: id, synchronousAction: action)
     }
 
     /// Moves a boolean value from a legacy storage slot when the destination is still empty.
@@ -149,7 +172,7 @@ public struct MHPreferenceMigrationStep: Sendable {
                 defaultSelection: descriptor.defaultSelection
             )
         }
-        return .init(id: id) {
+        return .synchronous(id: id) {
             _ = MHUserDefaultsCleanupService.removeUnknownKeys(
                 from: sendableUserDefaults.userDefaults,
                 domainName: domainName,
@@ -174,7 +197,7 @@ public struct MHPreferenceMigrationStep: Sendable {
                 defaultSelection: descriptor.defaultSelection
             )
         }
-        return .init(id: id) {
+        return .synchronous(id: id) {
             _ = MHUserDefaultsCleanupService.removeUnknownKeys(
                 from: sendableUserDefaults.userDefaults,
                 domainName: domainName,
@@ -194,7 +217,7 @@ private extension MHPreferenceMigrationStep {
         action: @escaping @Sendable () -> Void,
         targetCheck: @escaping @Sendable () -> Bool
     ) -> Self {
-        .init(id: id) {
+        .synchronous(id: id) {
             guard targetCheck() == false else {
                 return
             }

@@ -46,6 +46,20 @@ public enum MHPreferenceLifecycleService {
             onEvent: onMigrationEvent
         )
 
+        return finish(
+            migrationOutcome: migrationOutcome,
+            descriptors: descriptors,
+            migrationStateDescriptor: migrationStateDescriptor,
+            standardDomainName: standardDomainName
+        )
+    }
+
+    static func finish(
+        migrationOutcome: MHPreferenceMigrationOutcome,
+        descriptors: [any MHStorageDescriptorProtocol],
+        migrationStateDescriptor: MHPreferenceMigrationStateDescriptor,
+        standardDomainName: String?
+    ) -> MHPreferenceLifecycleOutcome {
         guard case .succeeded = migrationOutcome else {
             return .init(
                 migrationOutcome: migrationOutcome,

@@ -14,6 +14,7 @@ the normative storage rules.
 | SwiftUI bindings | `MHPreferencesUI`, `AppStorage` descriptor initializers |
 | Codable bindings | `MHCodablePreference`, `MHOptionalCodablePreference` |
 | Descriptor-driven migration and cleanup | `MHPreferenceLifecycleService` |
+| App-owned schema and synchronous startup | `MHPreferenceRegistry` |
 | Custom migration | `MHPreferenceMigrationService` |
 | Shared-library umbrella | `MHPlatformCore` |
 | Full application umbrella, including UI bridges | `MHPlatform` |
@@ -114,10 +115,37 @@ defaults before lifecycle code placed in that initializer. A `Task` launched
 from `App.init()` also does not block subsequent reads. A view's `.task` runs
 after that view has been constructed.
 
-The current lifecycle API is asynchronous. Use an app-owned loading state that
-does not read preferences, await lifecycle completion, inspect the outcome,
-and only then construct the settings-dependent root view and runtime services.
-Keep preference wrappers in the gated child, not in the `App` or loading root.
+Collect the complete current descriptor set and migration-state slot in an
+`MHPreferenceRegistry`. Registry construction performs no defaults access.
+For built-in moves, run synchronously before constructing preference consumers:
+
+```swift
+let registry = MHPreferenceRegistry(
+    descriptors: AppPreferences.current,
+    migrationStateDescriptor: AppPreferences.migrationState
+)
+let startupOutcome = registry.runSynchronously()
+```
+
+Inspect `startupOutcome.migrationOutcome` before continuing startup. This runs
+on the caller's thread, with no `Task`, semaphore, or hidden defaults override.
+Keep work small; a synchronous migration can delay app startup. Calling it in
+`App.init()` does not move it ahead of that app's stored-property initializers.
+Keep preference wrappers in a child constructed after successful preparation,
+or explicitly initialize their backing storage after preparation.
+
+Custom descriptors can return `MHPreferenceMigrationStep.synchronous(id:action:)`
+steps. An unfinished async-only step returns
+`MHPreferenceSynchronousMigrationError.asynchronousStep` before any step runs
+or cleanup occurs. Already-completed async-only steps remain skippable. A
+throwing synchronous step stops the run; successful earlier steps remain
+recorded, and cleanup is skipped. This is ordered migration, not a transaction.
+
+For genuinely asynchronous migration, use `await registry.run()` or the
+lower-level lifecycle service. Use an app-owned loading state that does not
+read preferences, await completion, inspect the outcome, and only then
+construct the settings-dependent root view and runtime services. Keep
+preference wrappers in the gated child, not in the `App` or loading root.
 
 ```swift
 let outcome = await MHPreferenceLifecycleService.run(

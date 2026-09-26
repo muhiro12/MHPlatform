@@ -492,6 +492,7 @@ For descriptor-first upgrades and startup ordering, read the
 - Codable persistence as `Data` only
 - Unknown-key cleanup through `MHUserDefaultsCleanupService`
 - Ordered preference migration through:
+  - `MHPreferenceRegistry`
   - `MHLegacyStorageReference`
   - `MHPreferenceLifecycleService`
   - `MHPreferenceLifecycleOutcome`
@@ -531,6 +532,11 @@ For descriptor-first upgrades and startup ordering, read the
   `domainName`.
 - Preference migration records completed step IDs in a caller-owned
   `MHPreferenceMigrationStateDescriptor`.
+- `MHPreferenceRegistry` groups the complete current descriptor allowlist and
+  migration-state descriptor. Its `runSynchronously` supports built-in moves and
+  explicit synchronous custom steps without an asynchronous blocking bridge.
+- Synchronous execution rejects unfinished async-only steps before running any
+  step or cleanup. `run` retains the asynchronous lifecycle path.
 - Current typed descriptors may declare legacy storage slots through
   `legacySources`.
 - `MHPreferenceLifecycleService` derives migration steps from the current
