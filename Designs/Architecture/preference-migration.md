@@ -152,6 +152,25 @@ For previews and tests, create an isolated suite and explicitly inject the same
 store to SwiftUI; do not rely on `.defaultAppStorage` to redirect them.
 Remove only the temporary test domain during teardown.
 
+When a selection is already available, use `MHPreferenceStore(selection:)`.
+For deep-link handoff, use `MHDeepLinkStore(selection:key:)` with the exact
+persisted key, or `MHDeepLinkStore(key:)` with a raw descriptor:
+
+```swift
+import MHDeepLinking
+import MHPreferences
+
+let selection = MHUserDefaultsSelection.suite("group.com.example.app")
+let preferences = MHPreferenceStore(selection: selection)
+let pendingLinks = MHDeepLinkStore(selection: selection, key: "pendingURL")
+```
+
+These bound stores use the selection's existing validation. If configuration
+can be invalid, call `selection.makeUserDefaults()` first and handle `nil`
+before using the `userDefaults:` initializer. An invalid suite never silently
+falls back to standard defaults. The same explicit injection pattern applies
+to runtime services receiving these stores.
+
 A bound store redirects all descriptors used through that store. It does not
 rewrite descriptor selections or the lifecycle service's cleanup targets.
 For lifecycle tests, construct descriptors, legacy references, and migration

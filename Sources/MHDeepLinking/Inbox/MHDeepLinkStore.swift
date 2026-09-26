@@ -15,12 +15,25 @@ public final class MHDeepLinkStore: @unchecked Sendable {
         self.key = key
     }
 
+    /// Creates a persistent deep-link store in an explicitly selected defaults domain.
+    ///
+    /// Uses the same validation as `MHUserDefaultsSelection.resolveUserDefaults()`.
+    public convenience init(
+        selection: MHUserDefaultsSelection,
+        key: String
+    ) {
+        self.init(
+            userDefaults: selection.resolveUserDefaults(),
+            key: key
+        )
+    }
+
     /// Creates a persistent deep-link store backed by the descriptor's default selection.
     public convenience init(
         key: MHRawStorageDescriptor
     ) {
         self.init(
-            userDefaults: key.defaultSelection.resolveUserDefaults(),
+            selection: key.defaultSelection,
             key: key.storageKey
         )
     }
