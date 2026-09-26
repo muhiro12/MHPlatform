@@ -47,6 +47,8 @@ Read these first when choosing products or integrating a consumer:
   bootstrap path.
 - [Integration Contracts](Designs/Architecture/integration-contracts.md):
   module-by-module public contracts.
+- [Preference Migration](Designs/Architecture/preference-migration.md):
+  descriptor-first adoption, startup ordering, and explicit defaults overrides.
 
 Use these when changing architecture or reviewing durable decisions:
 

@@ -470,6 +470,9 @@ This document is normative for integration design.
 
 ## MHPreferences
 
+For descriptor-first upgrades and startup ordering, read the
+[Preference Migration Guide](preference-migration.md).
+
 ### Required Inputs
 
 - Typed descriptors identified by `storageKey`:
