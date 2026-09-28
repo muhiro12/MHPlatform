@@ -12,7 +12,7 @@ The package ships three main adoption pillars:
 - `MHAppRuntime`: advanced app-root runtime/bootstrap surface for explicit
   composition.
 
-The current 1.x beta baseline focuses on runtime startup, deep-link handoff,
+The current baseline focuses on runtime startup, deep-link handoff,
 route execution, deterministic notification planning, notification payload
 routing, post-mutation side-effect orchestration, logging, preferences,
 persistence maintenance, review policy, and opt-in UI/workflow shells.
@@ -25,22 +25,51 @@ Minimum supported platforms:
 
 ## Versioning Posture
 
-- `1.x` is treated as beta. Public APIs may change while the shared surface is
-  still being shaped.
-- MHPlatform does not keep app-upgrade fallback paths, compatibility aliases,
-  or historical shell support solely to ease SDK updates during `1.x`.
-- Caller-owned relocation or migration primitives remain in scope when they
-  operate on the app's current configuration and schema policy stays in the
-  app.
-- Adopters should follow the current documentation and current public surface
-  on each update.
+Releases use `MAJOR.MINOR.PATCH`. Pushes to `main` automatically publish the
+next minor version with the patch reset to zero. A manual release can select an
+explicit major or patch version. Legacy `MAJOR.MINOR` tags are treated as
+`MAJOR.MINOR.0`; rerunning an already tagged commit does not create another release.
+
+From this transition onward, incompatible public API changes require a major
+version, compatible features a minor version, and fixes a patch version.
+Version 1.14.0 is an explicit transition exception: it replaces the beta native
+ad size API while retaining the requested minor version increment.
+
+### Migrating Native Ads to 1.14.0
+
+Replace `MHNativeAdSize.small` / `.medium` with
+`MHNativeAdLayout.compact` / `.media`, and change the argument label:
+
+```swift
+// Before
+runtime.nativeAdView(size: .small)
+runtime.nativeAdView(size: .medium)
+
+// After
+runtime.nativeAdView(layout: .compact)
+runtime.nativeAdView(layout: .media)
+```
+
+Custom `MHRuntimeNativeAdViewFactory` closures now receive `MHNativeAdLayout`;
+its `makeView(size:)` method becomes `makeView(layout:)`.
+The removed types and labels have no compatibility aliases.
+Ads use the available width and their natural height. Apply app-owned padding,
+background, and optional `.frame` constraints at the call site; recheck any
+fixed heights previously chosen for Small or Medium.
+
+GoogleMobileAdsWrapper 2.0.0 and Google Mobile Ads 13.10.0 provide the new
+code-built native ad views. SDK initialization completes before the adapter
+creates an ad request. This update does not add consent orchestration or Privacy
+Options UI: complete applicable consent and audience configuration before
+starting the runtime or displaying ads. Shared integration remains tracked in
+[issue #14](https://github.com/muhiro12/MHPlatform/issues/14).
 
 ## Documentation Map
 
 Read these first when choosing products or integrating a consumer:
 
 - [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md):
-  normative 1.x consumer matrix.
+  normative consumer matrix.
 - [Consumer Adoption](Designs/Architecture/adoption-policy.md):
   product-selection rationale and current shell preferences.
 - [Minimal App Setup](Designs/Architecture/minimal-app-setup.md): compact app

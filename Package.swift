@@ -117,7 +117,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/muhiro12/GoogleMobileAdsWrapper",
-            "1.4.0"..<"2.0.0"
+            "2.0.0"..<"3.0.0"
         ),
         .package(
             url: "https://github.com/cybozu/LicenseList",
@@ -127,7 +127,7 @@ let package = Package(
         // Tooling-only command plugin used by retained repository rule scripts.
         .package(
             url: "https://github.com/SimplyDanny/SwiftLintPlugins",
-            "0.64.0"..<"1.0.0"
+            "0.65.1"..<"1.0.0"
         )
     ],
     targets: [

@@ -2,21 +2,21 @@ import SwiftUI
 
 /// Erased runtime-owned view factory for native ad views.
 public struct MHRuntimeNativeAdViewFactory {
-    private let makeAnyView: (MHNativeAdSize) -> AnyView
+    private let makeAnyView: (MHNativeAdLayout) -> AnyView
 
     /// Creates a runtime-owned native ad view factory from a view builder.
     public init<Content: View>(
-        @ViewBuilder _ makeView: @escaping (MHNativeAdSize) -> Content
+        @ViewBuilder _ makeView: @escaping (MHNativeAdLayout) -> Content
     ) {
-        makeAnyView = { size in
-            AnyView(makeView(size))
+        makeAnyView = { layout in
+            AnyView(makeView(layout))
         }
     }
 
-    /// Builds the runtime-owned native ad view for the requested size.
+    /// Builds the runtime-owned native ad view for the requested layout.
     public func makeView(
-        size: MHNativeAdSize
+        layout: MHNativeAdLayout
     ) -> some View {
-        makeAnyView(size)
+        makeAnyView(layout)
     }
 }

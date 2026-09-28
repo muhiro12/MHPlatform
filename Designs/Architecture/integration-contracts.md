@@ -77,7 +77,7 @@ This document is normative for integration design.
   - `adsAvailability`
 - Runtime-owned views:
   - `subscriptionSectionView()`
-  - `nativeAdView(size:)`
+  - `nativeAdView(layout:)`
   - `licensesView()`
 - Preferences helper:
   - `preferenceStore`
@@ -101,8 +101,14 @@ This document is normative for integration design.
   must not be interpreted as a loss of premium access.
 - The runtime compares those identifiers with the configured
   `subscriptionProductIDs` and suppresses ads while premium status is active.
-- `MHAppRuntimeAdsBundle` maps `MHNativeAdSize` to the wrapper's typed size API.
-  Consumers continue to use `.small` and `.medium` without importing SDK types.
+- `MHAppRuntimeAdsBundle` maps `MHNativeAdLayout.compact` and `.media` to
+  GoogleMobileAdsWrapper 2.x without exposing SDK types. Ad requests wait for SDK
+  initialization, and the view uses its proposed width and natural height.
+  Apps own backgrounds, padding, and optional frame constraints.
+- Consent orchestration and Privacy Options integration are not automatic.
+  Apps must complete applicable consent and audience configuration before
+  starting the runtime or displaying ads. Shared orchestration is tracked in
+  [issue #14](https://github.com/muhiro12/MHPlatform/issues/14).
 
 ### Intended Call Sites
 

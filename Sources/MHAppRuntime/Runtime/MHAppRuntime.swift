@@ -138,10 +138,10 @@ public final class MHAppRuntime {
 
     /// Builds a runtime-owned native ad view.
     @ViewBuilder
-    public func nativeAdView(size: MHNativeAdSize) -> some View {
+    public func nativeAdView(layout: MHNativeAdLayout) -> some View {
         if adsAvailability == .available,
            let nativeAdFactory {
-            nativeAdFactory.makeView(size: size)
+            nativeAdFactory.makeView(layout: layout)
         } else {
             EmptyView()
         }

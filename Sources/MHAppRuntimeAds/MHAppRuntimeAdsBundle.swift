@@ -1,5 +1,6 @@
 import Foundation
 import MHAppRuntime
+import OSLog
 import SwiftUI
 
 #if canImport(GoogleMobileAdsWrapper)
@@ -24,21 +25,18 @@ public struct MHAppRuntimeAdsBundle {
             return
         }
 
-        let controller = GoogleMobileAdsController(
-            adUnitID: normalizedNativeAdUnitID
-        )
-
         startAds = {
-            controller.start()
-        }
-        nativeAdFactory = .init { size in
-            let nativeAdSize: NativeAdSize = switch size {
-            case .small:
-                .small
-            case .medium:
-                .medium
+            Task { @MainActor in
+                do {
+                    try await GoogleMobileAdsController.start()
+                } catch {
+                    Logger(subsystem: "MHPlatform", category: "Ads")
+                        .error("Ads initialization failed: \(error.localizedDescription)")
+                }
             }
-            controller.buildNativeAd(nativeAdSize)
+        }
+        nativeAdFactory = .init { layout in
+            MHRuntimeNativeAdView(adUnitID: normalizedNativeAdUnitID, layout: layout)
         }
         #else
         startAds = nil

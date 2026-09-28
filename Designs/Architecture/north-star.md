@@ -66,8 +66,8 @@ It provides reusable primitives for app plumbing, not app domain behavior.
 
 ## Adoption Posture
 
-- `1.x` is treated as beta, so breaking changes are acceptable while the public
-  surface is still being shaped.
+- Follow semantic versioning: incompatible public API changes require a major
+  release, apart from the documented 1.14.0 transition exception.
 - API coherence is prioritized over temporary compatibility aliases, historical
   fallback shells, and SDK-update helpers that only preserve old SDK surface.
 - Caller-owned persistence relocation primitives remain in scope when current

@@ -1,9 +1,9 @@
 # MHPlatform Consumer Adoption
 
 This note summarizes current product-selection rules for MHPlatform consumers.
-`1.x` is treated as beta, so adopters should follow the current public surface
-instead of expecting upgrade-specific compatibility layers or historical
-fallback shells inside MHPlatform.
+Follow the semantic versioning policy and migration notes in the README.
+Major releases may remove obsolete APIs instead of retaining historical
+compatibility shells inside MHPlatform.
 
 ## Consumer Rules
 

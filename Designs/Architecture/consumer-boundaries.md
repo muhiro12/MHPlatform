@@ -1,6 +1,6 @@
 # MHPlatform Consumer Boundaries
 
-This note is the normative 1.x consumer matrix for MHPlatform.
+This note is the normative consumer matrix for MHPlatform.
 Use it to decide which product each adopter should depend on before adding any
 module import.
 For product-selection rationale and current selection rules, pair it with

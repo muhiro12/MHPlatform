@@ -5,7 +5,7 @@ struct AppRuntimeDemoView: View {
     @Environment(MHAppRuntime.self)
     private var runtime
 
-    @State private var nativeAdSize: MHNativeAdSize = .small
+    @State private var nativeAdLayout: MHNativeAdLayout = .compact
 
     var body: some View {
         NavigationStack {
@@ -45,14 +45,14 @@ struct AppRuntimeDemoView: View {
 
     private var nativeAdSection: some View {
         Section("Native Ad") {
-            Picker("Ad Size", selection: $nativeAdSize) {
-                Text("Small").tag(MHNativeAdSize.small)
-                Text("Medium").tag(MHNativeAdSize.medium)
+            Picker("Ad Layout", selection: $nativeAdLayout) {
+                Text("Compact").tag(MHNativeAdLayout.compact)
+                Text("Media").tag(MHNativeAdLayout.media)
             }
             .pickerStyle(.segmented)
 
             if runtime.adsAvailability == .available {
-                runtime.nativeAdView(size: nativeAdSize)
+                runtime.nativeAdView(layout: nativeAdLayout)
                     .frame(maxWidth: .infinity)
             } else {
                 Text("Ad rendering is disabled for the current runtime state.")
