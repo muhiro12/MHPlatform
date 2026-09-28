@@ -25,7 +25,8 @@ public extension MHAppRuntime {
             subscriptionSectionFactory: defaultsBundle.subscriptionSectionFactory,
             startAds: adsBundle.startAds,
             nativeAdFactory: adsBundle.nativeAdFactory,
-            licensesFactory: licensesBundle.licensesFactory
+            licensesFactory: licensesBundle.licensesFactory,
+            adsConsent: adsBundle.adsConsent
         )
     }
 }

@@ -62,6 +62,28 @@ struct MHAppRuntimeBundleTests {
         #expect(bundle.startAds == nil)
         #expect(bundle.nativeAdFactory == nil)
         #endif
+        #expect(bundle.adsConsent == nil)
+    }
+
+    @MainActor
+    @Test
+    func ads_bundle_provides_consent_bridge_only_when_consent_is_configured() {
+        let withoutAdUnit = MHAppRuntimeAdsBundle(
+            configuration: .init(adsConsent: .init())
+        )
+        let withConsent = MHAppRuntimeAdsBundle(
+            configuration: .init(
+                nativeAdUnitID: "ad-unit",
+                adsConsent: .init(debugGeography: .eea)
+            )
+        )
+
+        #expect(withoutAdUnit.adsConsent == nil)
+        #if canImport(GoogleMobileAdsWrapper)
+        #expect(withConsent.adsConsent != nil)
+        #else
+        #expect(withConsent.adsConsent == nil)
+        #endif
     }
 
     @MainActor

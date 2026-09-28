@@ -13,6 +13,8 @@ public struct MHAppRuntimeAdsBundle {
     public let startAds: MHAppRuntime.StartAds?
     /// Factory for runtime-owned native ad views when ads are configured.
     public let nativeAdFactory: MHRuntimeNativeAdViewFactory?
+    /// UMP-backed consent bridge when ads and `adsConsent` are both configured.
+    public let adsConsent: MHAdsConsentBridge?
 
     /// Creates package-owned ads runtime defaults.
     public init(configuration: MHAppConfiguration) {
@@ -22,6 +24,7 @@ public struct MHAppRuntimeAdsBundle {
         ) else {
             startAds = nil
             nativeAdFactory = nil
+            adsConsent = nil
             return
         }
 
@@ -38,9 +41,13 @@ public struct MHAppRuntimeAdsBundle {
         nativeAdFactory = .init { layout in
             MHRuntimeNativeAdView(adUnitID: normalizedNativeAdUnitID, layout: layout)
         }
+        adsConsent = configuration.adsConsent.map { consentConfiguration in
+            .googleMobileAds(configuration: consentConfiguration)
+        }
         #else
         startAds = nil
         nativeAdFactory = nil
+        adsConsent = nil
         #endif
     }
 }

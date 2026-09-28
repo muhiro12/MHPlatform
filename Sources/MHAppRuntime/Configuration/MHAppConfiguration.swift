@@ -12,16 +12,21 @@ public struct MHAppConfiguration: Sendable, Hashable {
     /// Controls whether the runtime exposes license screens.
     public let showsLicenses: Bool
 
+    /// Opts into consent-managed ads when set. `nil` keeps ads independent of consent.
+    public let adsConsent: MHAdsConsentConfiguration?
+
     /// Creates a runtime configuration.
     public init(
         subscriptionProductIDs: [String] = [],
         subscriptionGroupID: String? = nil,
         nativeAdUnitID: String? = nil,
-        showsLicenses: Bool = true
+        showsLicenses: Bool = true,
+        adsConsent: MHAdsConsentConfiguration? = nil
     ) {
         self.subscriptionProductIDs = subscriptionProductIDs
         self.subscriptionGroupID = subscriptionGroupID
         self.nativeAdUnitID = nativeAdUnitID
         self.showsLicenses = showsLicenses
+        self.adsConsent = adsConsent
     }
 }

@@ -63,10 +63,40 @@ fixed heights previously chosen for Small or Medium.
 
 GoogleMobileAdsWrapper 2.0.0 and Google Mobile Ads 13.10.0 provide the new
 code-built native ad views. SDK initialization completes before the adapter
-creates an ad request. This update does not add consent orchestration or Privacy
-Options UI: complete applicable consent and audience configuration before
-starting the runtime or displaying ads. Shared integration remains tracked in
-[issue #14](https://github.com/muhiro12/MHPlatform/issues/14).
+creates an ad request. 1.14.0 itself adds no consent orchestration; see
+[Consent-managed Ads](#consent-managed-ads) for the opt-in lifecycle.
+
+## Consent-managed Ads
+
+Set `adsConsent` to let the runtime run Google's User Messaging Platform before
+it starts advertising:
+
+```swift
+MHAppConfiguration(
+    subscriptionProductIDs: ["premium.monthly"],
+    nativeAdUnitID: adUnitID,
+    adsConsent: .init()
+)
+```
+
+- The runtime waits for premium status. Premium users see no consent form and
+  trigger no ads SDK work.
+- For other users it requests consent information once per session, presents a
+  form only when the SDK requires one, and starts ads only when the SDK reports
+  that ads can be requested. Consent from an earlier session starts ads while
+  the update runs.
+- Reserve ad placements with `canDisplayAds` rather than `adsAvailability`;
+  `adsConsentStatus` reports the consent side.
+- When `adsPrivacyOptionsRequirement == .required`, show a control that calls
+  `presentAdsPrivacyOptions()`.
+- A failed update falls back to the SDK's stored state. Call
+  `refreshAdsConsent()` to retry; the runtime does not retry on its own.
+- If the app removes unknown keys from its standard defaults domain, add
+  `MHAdsConsentStorage.currentDescriptors()` from `MHAppRuntimeAds` to the
+  cleanup allowlist. Otherwise stored consent is erased on every launch.
+
+Apps keep ownership of AdMob Privacy & messaging, regional policy, the under-age
+tag, ATT, and disclosures. Use `debugGeography` only in debug builds.
 
 ## Documentation Map
 

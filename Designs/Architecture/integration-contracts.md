@@ -24,12 +24,14 @@ This document is normative for integration design.
     - `subscriptionGroupID`
     - `nativeAdUnitID`
     - `showsLicenses`
+    - optional `adsConsent` (`MHAdsConsentConfiguration`)
   - `MHPreferenceStore`
   - `startStore`
   - `MHRuntimeViewFactory` for `subscriptionSectionFactory`
   - optional `startAds`
   - optional `MHRuntimeNativeAdViewFactory`
   - optional `MHRuntimeViewFactory` for `licensesFactory`
+  - optional `MHAdsConsentBridge` for `adsConsent`
 - For the one-step default app path imported through `MHPlatform`:
   - `MHAppConfiguration`
   - package-owned composition of:
@@ -45,7 +47,7 @@ This document is normative for integration design.
 - Advanced runtime foundation:
   - `MHAppRuntime`
     - `init(runtimeOnly:)`
-    - `init(configuration:preferenceStore:startStore:subscriptionSectionFactory:startAds:nativeAdFactory:licensesFactory:)`
+    - `init(configuration:preferenceStore:startStore:subscriptionSectionFactory:startAds:nativeAdFactory:licensesFactory:adsConsent:)`
 - Bootstrap shell:
   - `MHAppRuntimeBootstrap`
     - `runtime`
@@ -75,6 +77,14 @@ This document is normative for integration design.
   - `hasStarted`
   - `premiumStatus`
   - `adsAvailability`
+  - `adsConsentStatus`
+  - `adsPrivacyOptionsRequirement`
+  - `canDisplayAds`
+- Consent APIs:
+  - `refreshAdsConsent()`
+  - `presentAdsPrivacyOptions()`
+- Ads storage helper from `MHAppRuntimeAds`:
+  - `MHAdsConsentStorage.currentDescriptors(in:)`
 - Runtime-owned views:
   - `subscriptionSectionView()`
   - `nativeAdView(layout:)`
@@ -105,10 +115,25 @@ This document is normative for integration design.
   GoogleMobileAdsWrapper 2.x without exposing SDK types. Ad requests wait for SDK
   initialization, and the view uses its proposed width and natural height.
   Apps own backgrounds, padding, and optional frame constraints.
-- Consent orchestration and Privacy Options integration are not automatic.
-  Apps must complete applicable consent and audience configuration before
-  starting the runtime or displaying ads. Shared orchestration is tracked in
-  [issue #14](https://github.com/muhiro12/MHPlatform/issues/14).
+- Consent management is opt-in through `MHAppConfiguration.adsConsent`.
+  Without it, `adsConsentStatus` stays `.notManaged` and ads start with the
+  runtime, as before.
+- With it, the runtime waits for premium status to resolve as inactive, then
+  requests consent information once per session, presents a form only when the
+  SDK requires one, and starts ads only when the SDK reports `canRequestAds`.
+  Premium users trigger no consent or ads SDK work. Consent stored by an earlier
+  session starts ads while the update runs.
+- Eligibility comes from the SDK's current state, never from a stored flag.
+  Duplicate premium callbacks evaluate and start ads at most once.
+- A failed update falls back to the SDK's stored state without automatic
+  retries; call `refreshAdsConsent()` to retry. `presentAdsPrivacyOptions()`
+  re-evaluates eligibility after completion and after failure.
+- `canDisplayAds` combines `adsAvailability` with consent. Use it to reserve ad
+  placements; `nativeAdView(layout:)` renders nothing while it is false.
+- Apps that remove unknown keys from their standard defaults domain must add
+  `MHAdsConsentStorage.currentDescriptors(in:)` to the cleanup allowlist.
+- Apps own AdMob Privacy & messaging setup, regional policy, the under-age tag,
+  ATT, presentation copy for the privacy options control, and disclosures.
 
 ### Intended Call Sites
 
