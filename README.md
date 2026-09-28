@@ -51,7 +51,8 @@ runtime.nativeAdView(layout: .media)
 ```
 
 Custom `MHRuntimeNativeAdViewFactory` closures now receive `MHNativeAdLayout`;
-its `makeView(size:)` method becomes `makeView(layout:)`.
+its `makeView(size:)` method becomes `makeView(layout:)`. The factory callback
+and `makeView(layout:)` run on `MainActor`, matching SwiftUI view creation.
 The removed types and labels have no compatibility aliases.
 If an app persists the old enum raw values, migrate `"small"` to `"compact"`
 and `"medium"` to `"media"` before decoding the new enum. MHPlatform does not
