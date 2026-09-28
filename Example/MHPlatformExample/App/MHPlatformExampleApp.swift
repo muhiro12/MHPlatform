@@ -9,7 +9,8 @@ struct MHPlatformExampleApp: App {
                 "com.example.mhplatform.premium.monthly"
             ],
             nativeAdUnitID: MHPlatformExampleAdMobConfiguration.nativeAdUnitID,
-            showsLicenses: true
+            showsLicenses: true,
+            adsConsent: MHPlatformExampleAdMobConfiguration.adsConsent
         )
     )
 

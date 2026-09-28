@@ -31,6 +31,12 @@ struct AppRuntimeDemoView: View {
             LabeledContent("Ads Availability") {
                 Text(runtime.adsAvailability.rawValue)
             }
+            LabeledContent("Ads Consent") {
+                Text(runtime.adsConsentStatus.rawValue)
+            }
+            LabeledContent("Privacy Options") {
+                Text(runtime.adsPrivacyOptionsRequirement.rawValue)
+            }
         }
     }
 
@@ -40,6 +46,14 @@ struct AppRuntimeDemoView: View {
                 runtime.startIfNeeded()
             }
             .disabled(runtime.hasStarted)
+
+            if runtime.adsPrivacyOptionsRequirement == .required {
+                Button("Privacy Options") {
+                    Task {
+                        try? await runtime.presentAdsPrivacyOptions()
+                    }
+                }
+            }
         }
     }
 
@@ -51,7 +65,7 @@ struct AppRuntimeDemoView: View {
             }
             .pickerStyle(.segmented)
 
-            if runtime.adsAvailability == .available {
+            if runtime.canDisplayAds {
                 runtime.nativeAdView(layout: nativeAdLayout)
                     .frame(maxWidth: .infinity)
             } else {
@@ -84,7 +98,8 @@ struct AppRuntimeDemoView: View {
                 configuration: .init(
                     subscriptionProductIDs: ["com.example.mhplatform.premium.monthly"],
                     nativeAdUnitID: MHPlatformExampleAdMobConfiguration.nativeAdUnitID,
-                    showsLicenses: true
+                    showsLicenses: true,
+                    adsConsent: MHPlatformExampleAdMobConfiguration.adsConsent
                 )
             )
         )
