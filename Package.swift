@@ -121,7 +121,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/cybozu/LicenseList",
-            "2.0.0"..<"3.0.0"
+            "2.5.0"..<"3.0.0"
         ),
 
         // Tooling-only command plugin used by retained repository rule scripts.
