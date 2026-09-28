@@ -53,6 +53,9 @@ runtime.nativeAdView(layout: .media)
 Custom `MHRuntimeNativeAdViewFactory` closures now receive `MHNativeAdLayout`;
 its `makeView(size:)` method becomes `makeView(layout:)`.
 The removed types and labels have no compatibility aliases.
+If an app persists the old enum raw values, migrate `"small"` to `"compact"`
+and `"medium"` to `"media"` before decoding the new enum. MHPlatform does not
+automatically rewrite app-owned preferences.
 Ads use the available width and their natural height. Apply app-owned padding,
 background, and optional `.frame` constraints at the call site; recheck any
 fixed heights previously chosen for Small or Medium.
