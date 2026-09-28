@@ -96,6 +96,11 @@ let descriptors: [any MHStorageDescriptorProtocol] =
 
 Pass the combined array to `MHPreferenceLifecycleService.run`. Raw descriptors
 protect the exact key in their selected domain and imply no migration steps.
+
+For consent-managed ads, `MHAppRuntimeAds` supplies the consent SDK's keys:
+`MHAdsConsentStorage.currentDescriptors(in:)` returns the keys the SDK records
+plus current keys in the IAB consent namespaces. Collect them when building the
+registry at launch, before cleanup runs.
 For the lower-level cleanup service, `domainName` selects the domain; the
 caller must supply only that domain's known descriptors.
 

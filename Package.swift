@@ -188,6 +188,7 @@ let package = Package(
             name: "MHAppRuntimeAds",
             dependencies: [
                 "MHAppRuntime",
+                "MHPreferences",
                 .product(
                     name: "GoogleMobileAdsWrapper",
                     package: "GoogleMobileAdsWrapper",
