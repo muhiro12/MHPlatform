@@ -1,54 +1,49 @@
 name: Release
 
+# Every push to main publishes the next minor version with the patch reset.
+# Run the workflow manually with an explicit version for a major or patch release.
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Explicit MAJOR.MINOR.PATCH version; leave empty for the next minor version
+        required: false
+        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
   contents: write
 
-concurrency:
-  group: release-${{ github.ref_name }}
-  cancel-in-progress: false
-
 jobs:
   release:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Calculate next release tag
-        id: release_tag
-        shell: bash
+      - name: Test version selection
+        run: python3 .github/scripts/test_next_version.py
+
+      - name: Select version
+        id: version
         run: |
-          set -euo pipefail
-
-          latest_release_tag=$(
-            git tag --list '[0-9]*.[0-9]*' --sort=version:refname \
-              | grep -E '^[0-9]+\.[0-9]+$' \
-              | tail -n 1 || true
-          )
-
-          if [[ -z "$latest_release_tag" ]]; then
-            next_release_tag="1.0"
-          else
-            IFS='.' read -r major_version minor_version <<<"$latest_release_tag"
-            next_release_tag="${major_version}.$((minor_version + 1))"
-          fi
-
-          echo "next_tag=$next_release_tag" >>"$GITHUB_OUTPUT"
-          echo "Publishing release tag ${next_release_tag} for ${GITHUB_SHA}."
-
-      - name: Create GitHub release
+          version=$(.github/scripts/next-version.sh "$REQUESTED_VERSION")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          gh release create "${{ steps.release_tag.outputs.next_tag }}" \
-            --target "${GITHUB_SHA}" \
-            --generate-notes
+          REQUESTED_VERSION: ${{ inputs.version }}
+
+      - name: Create tag and GitHub release
+        if: steps.version.outputs.version != ''
+        run: gh release create "$VERSION" --target "$GITHUB_SHA" --generate-notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
