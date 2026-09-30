@@ -11,7 +11,12 @@ public extension MHPreferenceMigrationService {
     ) -> MHPreferenceMigrationOutcome {
         precondition(Set(steps.map(\.id)).count == steps.count)
         let completedDescriptor = stateDescriptor.completedStepIDsDescriptor
-        var completedStepIDSet = Set(stateStore.codable(for: completedDescriptor) ?? [])
+        var completedStepIDSet: Set<String>
+        do {
+            completedStepIDSet = Set(try stateStore.codableResult(for: completedDescriptor).get() ?? [])
+        } catch {
+            return failedStateRead(error, descriptor: completedDescriptor, onEvent: onEvent)
+        }
 
         if let unsupportedStep = steps.first(where: { step in
             step.synchronousAction == nil && completedStepIDSet.contains(step.id) == false
@@ -40,7 +45,7 @@ public extension MHPreferenceMigrationService {
                 // Preflight guarantees an action for every unfinished step.
                 try step.synchronousAction?()
                 completedStepIDSet.insert(step.id)
-                stateStore.setCodable(completedStepIDSet.sorted(), for: completedDescriptor)
+                try stateStore.setCodableResult(completedStepIDSet.sorted(), for: completedDescriptor).get()
                 completedStepIDs.append(step.id)
                 onEvent(.stepSucceeded(id: step.id))
             } catch {

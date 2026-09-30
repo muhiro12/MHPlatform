@@ -146,10 +146,10 @@ public struct MHPreferenceMigrationStep: Sendable {
             defaultSelection: source.selection
         )
         return makeMoveStep(id: id) {
-            guard let value = store.codable(for: sourceDescriptor) else {
+            guard let value = try store.codableResult(for: sourceDescriptor).get() else {
                 return
             }
-            store.setCodable(value, for: target)
+            try store.setCodableResult(value, for: target).get()
             store.remove(sourceDescriptor)
         } targetCheck: {
             store.contains(target)
@@ -214,7 +214,7 @@ private extension MHPreferenceMigrationStep {
 
     static func makeMoveStep(
         id: String,
-        action: @escaping @Sendable () -> Void,
+        action: @escaping @Sendable () throws -> Void,
         targetCheck: @escaping @Sendable () -> Bool
     ) -> Self {
         .synchronous(id: id) {
@@ -222,7 +222,7 @@ private extension MHPreferenceMigrationStep {
                 return
             }
 
-            action()
+            try action()
         }
     }
 }

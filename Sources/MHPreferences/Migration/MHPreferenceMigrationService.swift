@@ -25,9 +25,12 @@ public enum MHPreferenceMigrationService {
         precondition(stepIDsAreUnique(in: steps))
 
         let completedDescriptor = stateDescriptor.completedStepIDsDescriptor
-        var completedStepIDSet = Set(
-            stateStore.codable(for: completedDescriptor) ?? []
-        )
+        var completedStepIDSet: Set<String>
+        do {
+            completedStepIDSet = Set(try stateStore.codableResult(for: completedDescriptor).get() ?? [])
+        } catch {
+            return failedStateRead(error, descriptor: completedDescriptor, onEvent: onEvent)
+        }
         var completedStepIDs = [String]()
         var skippedStepIDs = [String]()
 
@@ -43,10 +46,11 @@ public enum MHPreferenceMigrationService {
             do {
                 try await step.action()
                 completedStepIDSet.insert(step.id)
-                stateStore.setCodable(
+                try stateStore.setCodableResult(
                     completedStepIDSet.sorted(),
                     for: completedDescriptor
                 )
+                .get()
                 completedStepIDs.append(step.id)
                 onEvent(.stepSucceeded(id: step.id))
             } catch {
@@ -69,6 +73,22 @@ public enum MHPreferenceMigrationService {
         return .succeeded(
             completedStepIDs: completedStepIDs,
             skippedStepIDs: skippedStepIDs
+        )
+    }
+}
+
+extension MHPreferenceMigrationService {
+    static func failedStateRead(
+        _ error: any Error & Sendable,
+        descriptor: MHCodablePreferenceDescriptor<[String]>,
+        onEvent: @Sendable (MHPreferenceMigrationEvent) -> Void
+    ) -> MHPreferenceMigrationOutcome {
+        onEvent(.stepFailed(id: descriptor.storageKey, message: String(describing: error)))
+        return .failed(
+            error: error,
+            failedStepID: descriptor.storageKey,
+            completedStepIDs: [],
+            skippedStepIDs: []
         )
     }
 }
