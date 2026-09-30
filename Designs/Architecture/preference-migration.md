@@ -70,13 +70,56 @@ domains. Its descriptor list is a complete cleanup allowlist, not just the
 preferences changed in this release. Register externally owned exact keys as
 `MHRawStorageDescriptor` values. Avoid whole-domain cleanup when the app cannot
 enumerate the domain's owners. A reported migration failure skips cleanup;
-validate legacy Codable data before migration because the convenience Codable
-read returns `nil` for missing or undecodable data.
+built-in Codable moves report decoding or encoding failure and retain the
+source. An unreadable migration-state slot fails before any step runs, with its
+storage key reported as `failedStepID`. Completion-state writes must also
+succeed before a step is reported as complete. Custom steps should use the
+result-returning store APIs because convenience Codable reads return `nil`
+for missing or undecodable data.
 
 Logging uses `MHLogSnapshotStorageDescriptors` with explicit `current` and
 `previous` descriptors. Preserve the actual historical keys when retaining their
-contents; the package does not append suffixes. Converting an older snapshot
-representation requires an app-owned migration before logging starts.
+contents; the package does not append suffixes. Use the explicit migration helper below to convert an older single-slot
+snapshot before logging starts.
+
+## Migrate Legacy Logging Snapshots
+
+`MHLogging` provides `MHLogSnapshotMigration.step(id:from:to:store:)` for an
+explicit legacy slot. It accepts JSON `Data` containing `[MHLogEvent]` or the
+historical envelope with `sessionIdentifier` and `events`. It does not infer
+keys or convert JSON Lines files. Supply the actual historical key and domain:
+
+```swift
+import MHLogging
+import MHPreferences
+
+let snapshots = MHLogSnapshotStorageDescriptors(
+    current: .init(storageKey: "logs.current", defaultSelection: .standard),
+    previous: .init(storageKey: "logs.previous", defaultSelection: .standard)
+)
+let step = MHLogSnapshotMigration.step(
+    id: "logging.single-slot-to-sessions.v1",
+    from: .init(storageKey: "legacy.logs", selection: .standard),
+    to: snapshots
+)
+let outcome = MHPreferenceMigrationService.runSynchronously(
+    steps: [step],
+    stateDescriptor: AppPreferences.migrationState
+)
+```
+
+Inspect `outcome` before constructing `MHLoggingBootstrap` or running registry
+cleanup. The helper writes legacy events to the previous session, leaving the
+current slot for the new bootstrap. Both destination slots must be empty and
+have different keys from the source. An occupied destination throws
+`MHLogSnapshotMigration.MigrationError.destinationOccupied`; the app owns any
+conflict resolution. Decode and encode failures retain the source. A missing
+source is a no-op, and completed step IDs prevent repeated migration.
+
+Register both snapshot descriptors and the migration-state descriptor in the
+cleanup allowlist. Preserve the source key until migration succeeds. The helper
+can also be returned by an app-owned descriptor's `migrationSteps(store:)` to
+participate in registry startup; keep every touched domain's allowlist complete.
 
 ## Keep External Keys and Inspect Cleanup
 
