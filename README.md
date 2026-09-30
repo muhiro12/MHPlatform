@@ -81,10 +81,12 @@ MHAppConfiguration(
 
 - The runtime waits for premium status. Premium users see no consent form and
   trigger no ads SDK work.
-- For other users it requests consent information once per session, presents a
+- For other users it requests fresh consent information, presents a
   form only when the SDK requires one, and starts ads only when the SDK reports
   that ads can be requested. Consent from an earlier session starts ads while
-  the update runs.
+  the update runs. Fresh eligibility is applied before a required form finishes.
+  If premium becomes active during the update, the form is deferred until premium
+  ends. Cancelled evaluations stop further work and can be retried explicitly.
 - Reserve ad placements with `canDisplayAds` rather than `adsAvailability`;
   `adsConsentStatus` reports the consent side.
 - When `adsPrivacyOptionsRequirement == .required`, show a control that calls

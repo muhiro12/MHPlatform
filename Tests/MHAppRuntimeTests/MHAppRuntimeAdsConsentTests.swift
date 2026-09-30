@@ -244,42 +244,32 @@ struct MHAppRuntimeAdsConsentTests {
         }
         #expect(runtime.adsConsentStatus == .cannotRequestAds)
     }
-
-    @MainActor
-    @Test
-    func consent_bridge_is_ignored_when_ads_are_not_configured() async {
-        let consent = FakeAdsConsent(snapshotAfterForm: .allowed)
-        let runtime = MHAppRuntime(
-            configuration: .init(),
-            preferenceStore: .init(),
-            startStore: { $0([]) },
-            subscriptionSectionFactory: .init {
-                EmptyView()
-            },
-            startAds: nil,
-            nativeAdFactory: nil,
-            adsConsent: consent.bridge
-        )
-
-        runtime.startIfNeeded()
-        await settle()
-
-        #expect(runtime.adsConsentStatus == .notManaged)
-        #expect(runtime.adsAvailability == .notConfigured)
-        #expect(runtime.canDisplayAds == false)
-        #expect(consent.updateCount == .zero)
-    }
 }
 
-private extension MHAppRuntimeAdsConsentTests {
+extension MHAppRuntimeAdsConsentTests {
     static let settleYieldCount = 20
 
     @MainActor
     func makeRuntime(
         consent: FakeAdsConsent?,
         startAds: @escaping MHAppRuntime.StartAds,
+        purchasedProductIDsDidSet: @escaping MHAppRuntime.StartStore
+    ) -> MHAppRuntime {
+        makeRuntime(
+            consent: consent,
+            startAds: startAds,
+            purchasedProductIDsDidSet: purchasedProductIDsDidSet
+        ) { _ in
+            ()
+        }
+    }
+
+    @MainActor
+    func makeRuntime(
+        consent: FakeAdsConsent?,
+        startAds: @escaping MHAppRuntime.StartAds,
         purchasedProductIDsDidSet: @escaping MHAppRuntime.StartStore,
-        onNativeAd: @escaping @MainActor (MHNativeAdLayout) -> Void = { _ in () }
+        onNativeAd: @escaping @MainActor (MHNativeAdLayout) -> Void
     ) -> MHAppRuntime {
         .init(
             configuration: .init(

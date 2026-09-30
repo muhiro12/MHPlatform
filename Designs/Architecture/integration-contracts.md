@@ -119,12 +119,16 @@ This document is normative for integration design.
   Without it, `adsConsentStatus` stays `.notManaged` and ads start with the
   runtime, as before.
 - With it, the runtime waits for premium status to resolve as inactive, then
-  requests consent information once per session, presents a form only when the
+  requests fresh consent information, presents a form only when the
   SDK requires one, and starts ads only when the SDK reports `canRequestAds`.
   Premium users trigger no consent or ads SDK work. Consent stored by an earlier
-  session starts ads while the update runs.
+  session starts ads while the update runs. The fresh update result is applied
+  before waiting for a required form. If premium becomes active during the
+  update, presentation is deferred until premium ends. A cancelled evaluation
+  does not advance to presentation or start ads; it can be retried explicitly.
+  SDK operations already in flight may still finish.
 - Eligibility comes from the SDK's current state, never from a stored flag.
-  Duplicate premium callbacks evaluate and start ads at most once.
+  Duplicate premium callbacks do not repeat a completed evaluation or SDK startup.
 - A failed update falls back to the SDK's stored state without automatic
   retries; call `refreshAdsConsent()` to retry. `presentAdsPrivacyOptions()`
   re-evaluates eligibility after completion and after failure.

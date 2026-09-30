@@ -275,6 +275,11 @@ private extension MHAppRuntime {
             return
         }
 
+        guard premiumStatus == .inactive, Task.isCancelled == false else {
+            hasEvaluatedAdsConsent = false
+            return
+        }
+
         isEvaluatingAdsConsent = true
         defer {
             isEvaluatingAdsConsent = false
@@ -288,8 +293,21 @@ private extension MHAppRuntime {
         }
 
         do {
-            _ = try await adsConsent.requestUpdate()
-            applyAdsConsent(try await adsConsent.presentFormIfRequired())
+            let updatedSnapshot = try await adsConsent.requestUpdate()
+            try Task.checkCancellation()
+            applyAdsConsent(updatedSnapshot)
+
+            guard premiumStatus == .inactive else {
+                hasEvaluatedAdsConsent = false
+                return
+            }
+
+            let formSnapshot = try await adsConsent.presentFormIfRequired()
+            try Task.checkCancellation()
+            applyAdsConsent(formSnapshot)
+        } catch is CancellationError {
+            // A cancelled caller must not advance to presentation or start ads.
+            hasEvaluatedAdsConsent = false
         } catch {
             // After a failure, the SDK state still reflects earlier consent.
             applyAdsConsent(adsConsent.currentSnapshot())

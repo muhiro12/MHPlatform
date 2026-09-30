@@ -12,6 +12,7 @@ final class FakeAdsConsent {
     var snapshotAfterPrivacyOptions = MHAdsConsentSnapshot.allowed
     var updateError: Failure?
     var privacyOptionsError: Failure?
+    var onUpdate: @MainActor () async throws -> Void = { () }
     var onForm: @MainActor () -> Void = { () }
 
     private(set) var updateCount = 0
@@ -25,6 +26,7 @@ final class FakeAdsConsent {
             },
             requestUpdate: { [self] in
                 updateCount += 1
+                try await onUpdate()
                 if let updateError {
                     throw updateError
                 }
