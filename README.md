@@ -321,7 +321,12 @@ Adopting apps must supply their own app IDs and ad configuration.
 
 Use Xcode and the Xcode-native integration available in the agent environment
 for build, test, run, runtime-log, Preview, live UI, and screenshot evidence.
-Follow the selection and restoration contract in `AGENTS.md`.
+
+Before changing Xcode selection, record the original scheme and destination,
+switch only to discovered values, and end sessions or runs started solely for
+verification. Restore the original scheme first, rediscover its destinations,
+restore the original destination, and confirm the selection. Report failed
+restoration.
 
 For MHPlatform package compile and test checks, select
 `.swiftpm/xcode/package.xcworkspace`, the `MHPlatform-Package` scheme, and a
@@ -334,6 +339,19 @@ discovered iPhone Simulator destination, then use the available Xcode-native
 build or run capability. For package umbrella compile checks, use
 `.swiftpm/xcode/package.xcworkspace`, the `MHPlatform` scheme, and a
 discovered compatible iOS or watchOS Simulator destination.
+
+Choose evidence by the changed boundary. Package source or product changes
+need package build/test evidence. Consumer-boundary changes also need retained
+repository rules and their consumer fixtures. App-runtime or adopter-facing
+integration changes also need the example-app build. Visible example behavior
+needs a targeted run and runtime-log review, plus Preview, live UI, or screenshot
+evidence appropriate to the change. These capabilities remain separate.
+Read the normative [Consumer Boundaries](Designs/Architecture/consumer-boundaries.md)
+before changing product dependencies; adopting apps continue to own domain
+behavior and adapter policy.
+
+Follow the repository SwiftLint configuration and existing Swift source style.
+Markdown follows the [markdownlint rules](https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md).
 
 The remaining helper scripts in `ci_scripts/` are retained for repository
 rules and compatibility wrappers that are not naturally covered by the

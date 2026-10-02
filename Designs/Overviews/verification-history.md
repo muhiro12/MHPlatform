@@ -10,8 +10,9 @@ fallback wrapper uses the run artifact helper.
 ## Xcode-Native Verification Contract
 
 Resolve current actions by capability from the runtime tool inventory. Follow
-the active-selection capture and restoration contract in the repository
-`AGENTS.md`; do not encode a volatile namespace or action name here.
+[Build and Test](../../README.md#build-and-test) for selection capture,
+restoration, and boundary-based evidence selection; do not encode a volatile
+namespace or action name here.
 
 For package compile checks:
 
