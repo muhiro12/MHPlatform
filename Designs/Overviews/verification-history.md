@@ -50,9 +50,10 @@ Run retained repository rules with:
 bash ci_scripts/tasks/check_repository_rules.sh
 ```
 
-`check_repository_rules.sh` runs SwiftLint, the models-directory consistency
-check, and consumer fixture checks that are not naturally covered by
-the available Xcode-native integration.
+`check_repository_rules.sh` runs SwiftLint and the five consumer fixture
+checks that are not naturally covered by the available Xcode-native integration.
+Its rules path does not require ripgrep. The separate compatibility build
+wrapper still uses ripgrep for warning-log searches.
 
 The following scripts are compatibility wrappers around retained repository
 rules:

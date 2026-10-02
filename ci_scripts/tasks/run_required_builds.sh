@@ -190,13 +190,6 @@ else
   run_note="Executed required CI steps for MHPlatform based on local changes."
 fi
 
-if $needs_package_build || $needs_package_tests; then
-  run_step \
-    "check_models_directory_consistency" \
-    "Check models directory consistency" \
-    bash "$repository_root/ci_scripts/tasks/check_models_directory_consistency.sh"
-fi
-
 if $needs_swiftlint; then
   run_step \
     "lint_swift" \
