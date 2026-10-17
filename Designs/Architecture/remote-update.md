@@ -46,3 +46,22 @@ Evaluation returns `updateRequired`, `notRequired`, or `unavailable`.
 An inactive policy, an installed version meeting the minimum, or a confirmed
 public version below the minimum returns `notRequired`. Missing publication
 evidence for an otherwise active requirement returns `unavailable`.
+
+## Public Version Lookup and Evaluation
+
+`MHAppStoreVersionLookup(session:)` uses the official
+[ID-based Lookup API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/LookupExamples.html).
+Its caller supplies the app ID, expected bundle identifier, and two-letter
+storefront country code. A 2xx HTTP response, decodable result, matching app ID
+and bundle ID, and valid numeric version are all required. The session can be
+injected for request configuration and deterministic `URLProtocol` tests.
+Transport, HTTP, decoding, and identity errors remain observable to the app.
+Lookup confirms storefront metadata, not that every device can download an update.
+
+`MHRemoteUpdateEvaluator` accepts installed-version, clock, and async public-version
+providers. The app fetches and decodes its own configuration first. The evaluator
+has no remote-config endpoint, schema, storage, runtime, or UI dependency. It skips
+unneeded publication requests and evaluates time again after a lookup completes.
+Missing policy or an invalid installed version yields `unavailable`; lookup errors
+throw, allowing the app to log and explicitly select recovery. Cancellation throws
+`CancellationError` rather than producing an update decision.
