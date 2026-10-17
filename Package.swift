@@ -40,6 +40,10 @@ let package = Package(
 
         // Advanced concrete modules and optional shells.
         .library(
+            name: "MHRemoteUpdate",
+            targets: ["MHRemoteUpdate"]
+        ),
+        .library(
             name: "MHDeepLinking",
             targets: ["MHDeepLinking"]
         ),
@@ -229,6 +233,9 @@ let package = Package(
             ]
         ),
         .target(
+            name: "MHRemoteUpdate"
+        ),
+        .target(
             name: "MHMutationFlow"
         ),
         .target(
@@ -314,6 +321,10 @@ let package = Package(
         ),
 
         // Runtime and module behavior tests.
+        .testTarget(
+            name: "MHRemoteUpdateTests",
+            dependencies: ["MHRemoteUpdate"]
+        ),
         .testTarget(
             name: "MHAppRuntimeTests",
             dependencies: [
