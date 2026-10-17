@@ -45,6 +45,10 @@ let kPackage = Package(
                     package: "MHPlatform"
                 ),
                 .product(
+                    name: "MHRemoteUpdate",
+                    package: "MHPlatform"
+                ),
+                .product(
                     name: "MHRouteExecution",
                     package: "MHPlatform"
                 )
@@ -52,7 +56,13 @@ let kPackage = Package(
         ),
         .testTarget(
             name: "SurfaceAdapterConsumerTests",
-            dependencies: ["SurfaceAdapterConsumer"]
+            dependencies: [
+                "SurfaceAdapterConsumer",
+                .product(
+                    name: "MHRemoteUpdate",
+                    package: "MHPlatform"
+                )
+            ]
         )
     ]
 )

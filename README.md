@@ -173,6 +173,12 @@ Avoid `MHPlatform`, `MHAppRuntime`, split runtime bundles, ads, license, and
 review dependencies in surface adapters unless the target intentionally owns an
 app-root runtime surface.
 
+Remote update consumers can adopt the standalone `MHRemoteUpdate` product for
+version comparison, bounded activation, identity-validated App Store lookup, and
+operation preconditions. See the
+[remote update adoption guide](Designs/Architecture/remote-update.md) for the
+Incomes and Cookle migration paths and app-owned policy boundaries.
+
 ## Public Products
 
 Default adoption pillars:
@@ -192,6 +198,7 @@ Advanced runtime composition bundles:
 
 Granular core-safe products, optional UI bridges, and optional shells:
 
+- `MHRemoteUpdate`
 - `MHDeepLinking`
 - `MHLogging`
 - `MHLoggingUI`

@@ -65,3 +65,77 @@ unneeded publication requests and evaluates time again after a lookup completes.
 Missing policy or an invalid installed version yields `unavailable`; lookup errors
 throw, allowing the app to log and explicitly select recovery. Cancellation throws
 `CancellationError` rather than producing an update decision.
+
+## Adoption Without Changing Release Policy
+
+### Incomes
+
+1. Add the `MHRemoteUpdate` product to the shared library.
+2. Replace `VersionComparator` / `RemoteConfigurationOperations` comparison with
+   `MHAppVersionComparison.numericStringsRequireUpdate(currentVersion:minimumVersion:)`.
+   Keep the existing operations facade if app adapters depend on it.
+3. Keep `.config.json`, `requiredVersion` decoding, bundle/playground checks,
+   logging, and alert state in the app. Preserve the existing fetch-error behavior,
+   including previously loaded configuration remaining available after a failed
+   refresh. A missing configuration/version must not become a validated decision.
+4. Do not silently add a window, publication lookup, stricter parsing, or normalized
+   missing components. Those are separate product changes requiring app approval.
+
+The existing Incomes numeric-ordering tests and unequal-component-count cases are
+covered by the shared comparison tests. The typed evaluator is available for a
+future deliberately chosen policy migration, rather than a prerequisite for this
+behavior-preserving extraction.
+
+### Cookle
+
+1. Add the `MHRemoteUpdate` product to the shared library or app adapter as needed.
+   Replace `AppVersion` with `MHAppVersion`.
+2. Decode the existing optional `forceUpdate` document in the app. Construct
+   `MHUpdateActivationWindow` with the existing app-owned maximum of 72 hours;
+   reject invalid windows. Construct `MHRemoteUpdatePolicy` with
+   `requiresPublicVersion: true` and that interval.
+3. Replace reusable lookup plumbing with `MHAppStoreVersionLookup(session:)`.
+   Pass the existing app ID, injected expected bundle identifier, and country.
+   Preserve the app's playground exclusion before making a request.
+4. Inject the existing installed-version and clock providers into
+   `MHRemoteUpdateEvaluator`; its public-version closure calls the lookup.
+5. Preserve `isUpdateRequired = false` before refresh and map only
+   `updateRequired` to `true`. An absent `forceUpdate` means no requirement in
+   Cookle's schema; malformed policy or failed lookup remains distinguishable
+   internally even when the app presents neither as an update alert.
+   Handle cancellation without applying an obsolete async result.
+
+Neither app has been migrated by this package change. Move adoption separately
+with each app's library tests and surface verification. No package version bump,
+Store release, or remote policy activation is required for local extraction.
+
+## Protected Operations
+
+`decision.checkOperationAllowed(whenUnavailable:)` is a synchronous, throwing
+precondition with no runtime or UI dependency. The app must explicitly choose
+`allow` or `block` for unavailable evidence. A validated `updateRequired` decision
+always throws. This primitive does not choose which operations are protected.
+
+Place the check in the app's shared operation entry point used by UI and App
+Intents, before starting the mutation workflow and all success side effects:
+
+```swift
+try decision.checkOperationAllowed(whenUnavailable: appUnavailableBehavior)
+try await performMutationAndSuccessEffects()
+```
+
+Refresh/re-evaluate immediately before a protected operation according to app-owned
+freshness and offline policy. A decision is a snapshot, not a durable permission or
+an atomic guarantee against a policy changing during an operation. Do not cache a
+successful check as ongoing authorization. Map fetch errors to an app-owned error
+or `unavailable`, never implicitly to a validated `notRequired` result.
+
+`Fixtures/Consumers/SurfaceAdapterConsumer/` decodes its own sample schema and uses
+this same precondition for UI/App Intent-style callers without runtime products.
+Its tests verify that a blocked operation performs neither mutation nor success
+side effects, and that unavailable evidence follows the explicit caller choice.
+
+This support does not retrofit enforcement into already-distributed binaries.
+It is not retroactive migration, CloudKit, or old-writer compatibility protection.
+Apps still decide protected operations, enforcement rollout, unavailable-policy
+handling, and presentation before adopting enforcement.

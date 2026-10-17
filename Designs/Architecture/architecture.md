@@ -8,6 +8,7 @@
 - `MHAppRuntimeDefaults`
 - `MHAppRuntimeAds`
 - `MHAppRuntimeLicenses`
+- `MHRemoteUpdate`
 - `MHDeepLinking`
 - `MHNotificationPlans`
 - `MHNotificationPayloads`
@@ -37,6 +38,7 @@ and explicit split-runtime-bundle composition.
 
 ## Public Modules
 
+- `MHRemoteUpdate`
 - `MHDeepLinking`
 - `MHLogging`
 - `MHNotificationPlans`
@@ -150,6 +152,15 @@ non-domain app infrastructure.
 - Exposes `licensesFactory` for explicit composition into
   `MHAppRuntime`
 - Uses `LicenseList` only where that dependency is available
+
+### `MHRemoteUpdate`
+
+- Standalone Foundation-only product for validated versions, bounded activation,
+  explicit decisions, public-version lookup, and operation preconditions
+- Does not depend on or expand the runtime or either umbrella
+- Keeps remote configuration, activation limits, identifiers, unavailable-policy
+  recovery, protected operations, and presentation app-owned
+- See [remote update adoption](remote-update.md) for behavior-preserving migration
 
 ### `MHDeepLinking`
 

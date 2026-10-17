@@ -25,13 +25,17 @@ struct MHRemoteUpdatePolicyTests {
     }
 
     @Test(arguments: [
-        ("1.2", "1.10"), ("2.0.0", "2.0.0"), ("1.02", "1.2"),
-        ("1.2", "1.02"), ("1", "1.0"), ("1.0", "1"), ("1.0.0.1", "1.0.0.2")
+        ("1.2", "1.10", true), ("2.0.0", "2.0.0", false), ("1.02", "1.2", false),
+        ("1.2", "1.02", false), ("1", "1.0", true), ("1.0", "1", false), ("1.0.0.1", "1.0.0.2", true)
     ])
-    func stringNumericComparisonPreservesExistingIncomesBehavior(_ current: String, _ minimum: String) {
+    func stringNumericComparisonPreservesExistingIncomesBehavior(
+        _ current: String,
+        _ minimum: String,
+        _ requiresUpdate: Bool
+    ) {
         #expect(
             MHAppVersionComparison.numericStringsRequireUpdate(currentVersion: current, minimumVersion: minimum)
-                == (current.compare(minimum, options: .numeric) == .orderedAscending)
+                == requiresUpdate
         )
     }
 
