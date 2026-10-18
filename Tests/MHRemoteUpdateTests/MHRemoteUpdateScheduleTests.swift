@@ -42,25 +42,25 @@ struct MHRemoteUpdateScheduleTests {
         let schedule = try makeSchedule()
         let unconfirmed = MHRemoteUpdateSnapshot(schedule: schedule, storefront: "jp", publication: nil)
         #expect(unconfirmed.evaluate(
-            currentVersion: try version("5"), now: date(9), maximumValidity: 30
+            currentVersion: try version("5"), now: date(9), maximumValidity: 30, maximumPublicationAge: 30
         ) == .notRequired)
         #expect(unconfirmed.evaluate(
-            currentVersion: try version("5"), now: date(10), maximumValidity: 30
+            currentVersion: try version("5"), now: date(10), maximumValidity: 30, maximumPublicationAge: 30
         ) == .unavailable)
         let confirmed = MHRemoteUpdateSnapshot(schedule: schedule, storefront: "jp", publication: .init(
             version: try version("6"), checkedAt: date(8), validUntil: date(18)
         ))
         #expect(confirmed.evaluate(
-            currentVersion: try version("5"), now: date(10), maximumValidity: 30
+            currentVersion: try version("5"), now: date(10), maximumValidity: 30, maximumPublicationAge: 30
         ) == .updateRequired)
         #expect(confirmed.evaluate(
-            currentVersion: try version("6"), now: date(10), maximumValidity: 30
+            currentVersion: try version("6"), now: date(10), maximumValidity: 30, maximumPublicationAge: 30
         ) == .notRequired)
         #expect(confirmed.evaluate(
-            currentVersion: try version("5"), now: date(18), maximumValidity: 30
+            currentVersion: try version("5"), now: date(18), maximumValidity: 30, maximumPublicationAge: 30
         ) == .unavailable)
         #expect(confirmed.evaluate(
-            currentVersion: try version("5"), now: date(20), maximumValidity: 30
+            currentVersion: try version("5"), now: date(20), maximumValidity: 30, maximumPublicationAge: 30
         ) == .unavailable)
     }
 
@@ -70,11 +70,27 @@ struct MHRemoteUpdateScheduleTests {
         let snapshot = MHRemoteUpdateSnapshot(schedule: schedule, storefront: "jp", publication: .init(
             version: try version("5"), checkedAt: date(8), validUntil: date(19)
         ))
-        #expect(snapshot.evaluate(currentVersion: try version("5"), now: date(10), maximumValidity: 30) == .unavailable)
-        #expect(snapshot.evaluate(currentVersion: try version("5"), now: date(10), maximumValidity: 5) == .unavailable)
-        #expect(snapshot.evaluate(currentVersion: try version("5"), now: date(-1), maximumValidity: 30) == .unavailable)
         #expect(snapshot.evaluate(
-            currentVersion: try version("5"), now: date(.nan), maximumValidity: 30
+            currentVersion: try version("5"), now: date(10), maximumValidity: 30, maximumPublicationAge: 30
+        ) == .unavailable)
+        #expect(snapshot.evaluate(
+            currentVersion: try version("5"), now: date(10), maximumValidity: 5, maximumPublicationAge: 30
+        ) == .unavailable)
+        #expect(snapshot.evaluate(
+            currentVersion: try version("5"), now: date(-1), maximumValidity: 30, maximumPublicationAge: 30
+        ) == .unavailable)
+        #expect(snapshot.evaluate(
+            currentVersion: try version("5"), now: date(.nan), maximumValidity: 30, maximumPublicationAge: 30
+        ) == .unavailable)
+    }
+
+    @Test
+    func restoredEvidenceRespectsAShorterPublicationLifetime() throws {
+        let snapshot = MHRemoteUpdateSnapshot(schedule: try makeSchedule(), storefront: "jp", publication: .init(
+            version: try version("6"), checkedAt: date(8), validUntil: date(19)
+        ))
+        #expect(snapshot.evaluate(
+            currentVersion: try version("5"), now: date(10), maximumValidity: 30, maximumPublicationAge: 2
         ) == .unavailable)
     }
 
@@ -84,9 +100,15 @@ struct MHRemoteUpdateScheduleTests {
             minimumVersion: try version("6"), effectiveAt: date(10), endsAt: date(12)
         ))
         let snapshot = MHRemoteUpdateSnapshot(schedule: schedule, storefront: "jp", publication: nil)
-        #expect(snapshot.evaluate(currentVersion: try version("5"), now: date(12), maximumValidity: 30) == .unavailable)
-        #expect(snapshot.evaluate(currentVersion: try version("5"), now: date(13), maximumValidity: 30) == .notRequired)
-        #expect(snapshot.evaluate(currentVersion: try version("5"), now: date(20), maximumValidity: 30) == .unavailable)
+        #expect(snapshot.evaluate(
+            currentVersion: try version("5"), now: date(12), maximumValidity: 30, maximumPublicationAge: 30
+        ) == .unavailable)
+        #expect(snapshot.evaluate(
+            currentVersion: try version("5"), now: date(13), maximumValidity: 30, maximumPublicationAge: 30
+        ) == .notRequired)
+        #expect(snapshot.evaluate(
+            currentVersion: try version("5"), now: date(20), maximumValidity: 30, maximumPublicationAge: 30
+        ) == .unavailable)
     }
 
     @Test
@@ -106,7 +128,7 @@ struct MHRemoteUpdateScheduleTests {
         let restored = try #require(try MHRemoteUpdateStore(fileURL: fileURL).load())
         #expect(restored == snapshot)
         #expect(restored.evaluate(
-            currentVersion: try version("5"), now: date(10), maximumValidity: 30
+            currentVersion: try version("5"), now: date(10), maximumValidity: 30, maximumPublicationAge: 30
         ) == .updateRequired)
         try Data("corrupt".utf8).write(to: fileURL)
         #expect(throws: (any Error).self) {

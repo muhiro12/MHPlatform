@@ -18,10 +18,12 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
             self.validUntil = validUntil
         }
 
-        func isValid(at date: Date) -> Bool {
-            checkedAt.timeIntervalSinceReferenceDate.isFinite
+        func isValid(at date: Date, maximumAge: TimeInterval) -> Bool {
+            maximumAge.isFinite && maximumAge > 0
+                && checkedAt.timeIntervalSinceReferenceDate.isFinite
                 && validUntil.timeIntervalSinceReferenceDate.isFinite
                 && checkedAt <= date && date < validUntil
+                && date.timeIntervalSince(checkedAt) < maximumAge
         }
     }
 
@@ -43,7 +45,8 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
     public func evaluate(
         currentVersion: MHAppVersion,
         now: Date,
-        maximumValidity: TimeInterval
+        maximumValidity: TimeInterval,
+        maximumPublicationAge: TimeInterval
     ) -> MHRemoteUpdateDecision {
         guard schedule.isValid(at: now, maximumValidity: maximumValidity) else {
             return .unavailable
@@ -54,7 +57,7 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
               requirement.endsAt.map({ now <= $0 }) != false else {
             return .notRequired
         }
-        guard let publication, publication.isValid(at: now),
+        guard let publication, publication.isValid(at: now, maximumAge: maximumPublicationAge),
               publication.version >= requirement.minimumVersion else {
             return .unavailable
         }
