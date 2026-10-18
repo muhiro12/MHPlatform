@@ -2,8 +2,9 @@ import Foundation
 
 /// A versioned operational document independent of an app's source release.
 ///
-/// Dates in remote JSON use ISO 8601 UTC seconds. Every revision is immutable;
-/// cancellation is a higher revision with an explicit `requirement: null`.
+/// Dates are normalized down to whole seconds for the ISO 8601 wire format.
+/// Every revision is immutable; cancellation is a higher revision with an
+/// explicit `requirement: null`.
 public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
     /// A future or active minimum version. Publication confirmation is always required.
     public struct Requirement: Codable, Equatable, Sendable {
@@ -17,8 +18,18 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         /// Creates a requirement; the containing schedule validates its dates.
         public init(minimumVersion: MHAppVersion, effectiveAt: Date, endsAt: Date? = nil) {
             self.minimumVersion = minimumVersion
-            self.effectiveAt = effectiveAt
-            self.endsAt = endsAt
+            self.effectiveAt = MHRemoteUpdateSchedule.canonicalDate(effectiveAt)
+            self.endsAt = endsAt.map(MHRemoteUpdateSchedule.canonicalDate)
+        }
+
+        /// Applies the same wire precision when restoring or decoding a requirement.
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.init(
+                minimumVersion: try container.decode(MHAppVersion.self, forKey: .minimumVersion),
+                effectiveAt: try container.decode(Date.self, forKey: .effectiveAt),
+                endsAt: try container.decodeIfPresent(Date.self, forKey: .endsAt)
+            )
         }
     }
 
@@ -60,8 +71,8 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         schemaVersion = 1
         self.bundleIdentifier = bundleIdentifier
         self.revision = revision
-        self.issuedAt = issuedAt
-        self.validUntil = validUntil
+        self.issuedAt = Self.canonicalDate(issuedAt)
+        self.validUntil = Self.canonicalDate(validUntil)
         self.requirement = requirement
         try validate()
     }
@@ -72,8 +83,8 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
         bundleIdentifier = try container.decode(String.self, forKey: .bundleIdentifier)
         revision = try container.decode(Int.self, forKey: .revision)
-        issuedAt = try container.decode(Date.self, forKey: .issuedAt)
-        validUntil = try container.decode(Date.self, forKey: .validUntil)
+        issuedAt = Self.canonicalDate(try container.decode(Date.self, forKey: .issuedAt))
+        validUntil = Self.canonicalDate(try container.decode(Date.self, forKey: .validUntil))
         guard container.contains(.requirement) else {
             throw Failure.invalidDocument
         }
@@ -86,6 +97,10 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(Self.self, from: data)
+    }
+
+    private static func canonicalDate(_ date: Date) -> Date {
+        .init(timeIntervalSinceReferenceDate: date.timeIntervalSinceReferenceDate.rounded(.down))
     }
 
     /// Encodes explicit null for cancellation so it cannot be confused with omission.
@@ -139,5 +154,11 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
                 }
             }
         }
+    }
+}
+
+private extension MHRemoteUpdateSchedule.Requirement {
+    enum CodingKeys: String, CodingKey {
+        case minimumVersion, effectiveAt, endsAt
     }
 }

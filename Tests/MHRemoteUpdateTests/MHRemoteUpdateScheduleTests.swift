@@ -136,6 +136,35 @@ struct MHRemoteUpdateScheduleTests {
         }
     }
 
+    @Test
+    func policyDatesRoundTripThroughThePublicWireFormat() throws {
+        let schedule = try MHRemoteUpdateSchedule(
+            bundleIdentifier: "example.app",
+            revision: 1,
+            issuedAt: date(0.25),
+            validUntil: date(100.75),
+            requirement: .init(
+                minimumVersion: #require(MHAppVersion("2")),
+                effectiveAt: date(10.5),
+                endsAt: date(20.875)
+            )
+        )
+        #expect(try MHRemoteUpdateSchedule.decode(schedule.encoded()) == schedule)
+    }
+
+    @Test
+    func policyIntervalsMustRemainValidAtWirePrecision() {
+        #expect(throws: MHRemoteUpdateSchedule.Failure.invalidDocument) {
+            try MHRemoteUpdateSchedule(
+                bundleIdentifier: "example.app",
+                revision: 1,
+                issuedAt: date(0.25),
+                validUntil: date(0.75),
+                requirement: nil
+            )
+        }
+    }
+
     private func makeSchedule(
         hasRequirement: Bool = true,
         requirement: MHRemoteUpdateSchedule.Requirement? = nil

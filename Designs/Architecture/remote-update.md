@@ -154,6 +154,8 @@ handling, and presentation before adopting enforcement.
 legacy `.config.json` formats. Its schema version describes the format; its
 positive `revision` identifies an immutable operational change, not an app release.
 All changes, including postponement, renewal, and cancellation, increase revision.
+Each document completely replaces the previous single current or future
+requirement.
 Unknown fields are ignored; unsupported schema versions, malformed versions,
 missing requirement keys, invalid identity, and invalid dates are rejected.
 An explicit `requirement: null` confirms no update requirement. Missing data,
@@ -174,8 +176,11 @@ HTTP failures, and decode failures never mean cancellation.
 ```
 
 These are illustrative values, not a production policy. Remote timestamps use
-ISO 8601 UTC seconds. `MHRemoteUpdateSchedule.decode(_:)` and `encoded()` implement
-this format. A requirement may also have an optional inclusive `endsAt`.
+ISO 8601 UTC seconds. Construction and decoding normalize dates down to whole
+seconds before validating intervals, so encoding cannot silently alter revision
+identity or collapse a previously accepted interval. Intervals that collapse at
+this precision are rejected. `MHRemoteUpdateSchedule.decode(_:)` and `encoded()`
+implement this format. A requirement may also have an optional inclusive `endsAt`.
 
 | Field or evidence | Meaning |
 | --- | --- |
