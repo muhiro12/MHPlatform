@@ -84,7 +84,7 @@ struct MHRemoteUpdatePolicyTests {
         #expect(policy.evaluate(currentVersion: older, now: date(100), publicVersion: newer) == .updateRequired)
         #expect(policy.evaluate(currentVersion: minimum, now: date(10), publicVersion: newer) == .notRequired)
         #expect(policy.evaluate(currentVersion: newer, now: date(10), publicVersion: newer) == .notRequired)
-        #expect(policy.evaluate(currentVersion: older, now: date(10), publicVersion: older) == .notRequired)
+        #expect(policy.evaluate(currentVersion: older, now: date(10), publicVersion: older) == .unavailable)
         #expect(policy.evaluate(currentVersion: older, now: date(10)) == .unavailable)
         #expect(policy.evaluate(currentVersion: older, now: date(-1)) == .notRequired)
         #expect(policy.evaluate(currentVersion: older, now: date(101)) == .notRequired)

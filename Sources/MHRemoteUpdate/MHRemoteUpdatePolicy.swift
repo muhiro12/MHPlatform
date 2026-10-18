@@ -22,8 +22,8 @@ public struct MHRemoteUpdatePolicy: Hashable, Sendable {
 
     /// Evaluates supplied evidence without fetching, storing, or presenting anything.
     ///
-    /// An unpublished minimum does not require an update, matching a publication-gated
-    /// policy. Missing required publication evidence is instead `unavailable`.
+    /// Missing publication evidence and an unpublished minimum are `unavailable`,
+    /// so protected operations cannot mistake an unavailable update for permission.
     public func evaluate(
         currentVersion: MHAppVersion,
         now: Date,
@@ -41,7 +41,7 @@ public struct MHRemoteUpdatePolicy: Hashable, Sendable {
                 return .unavailable
             }
             guard minimumVersion <= publicVersion else {
-                return .notRequired
+                return .unavailable
             }
         }
         return .updateRequired

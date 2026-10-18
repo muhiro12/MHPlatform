@@ -43,9 +43,11 @@ endpoints. Zero, reversed, nonfinite, and excessive windows are rejected at
 construction, using the maximum supplied by the app.
 
 Evaluation returns `updateRequired`, `notRequired`, or `unavailable`.
-An inactive policy, an installed version meeting the minimum, or a confirmed
-public version below the minimum returns `notRequired`. Missing publication
-evidence for an otherwise active requirement returns `unavailable`.
+An inactive policy or an installed version meeting the minimum returns
+`notRequired`. Missing publication evidence, or a public version below the
+minimum, returns `unavailable` for an otherwise active requirement. This deliberate
+change prevents an unpublished update being treated as permission for protected
+operations; mapping only `updateRequired` to an alert still preserves Cookle UI.
 
 ## Public Version Lookup and Evaluation
 
