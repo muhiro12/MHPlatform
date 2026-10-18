@@ -47,7 +47,7 @@ public actor MHRemoteUpdateController {
     private let publicVersion: @Sendable () async throws -> MHAppVersion?
     private var snapshot: MHRemoteUpdateSnapshot?
     private var refreshIdentifier: UUID?
-    private var hasAttemptedRestoration = false
+    private var hasInitializedEvidence = false
 
     /// Creates a controller with explicit app-owned identity, lifetimes, storage, and providers.
     ///
@@ -92,14 +92,15 @@ public actor MHRemoteUpdateController {
     /// before initial refresh; revision checks also prevent a late restore rolling it back.
     public func restore() throws {
         try Task.checkCancellation()
-        hasAttemptedRestoration = true
         guard let restored = try store?.load() else {
+            hasInitializedEvidence = true
             return
         }
         guard restored.schedule.bundleIdentifier == bundleIdentifier, restored.storefront == storefront else {
             throw Failure.identityMismatch
         }
         try validateRevision(restored.schedule)
+        hasInitializedEvidence = true
         guard snapshot == nil || restored.schedule.revision > (snapshot?.schedule.revision ?? 0) else {
             return
         }
@@ -107,16 +108,17 @@ public actor MHRemoteUpdateController {
         snapshot = restored
     }
 
-    /// Restores once, then refreshes; use at startup and each foreground transition.
+    /// Restores until evidence initializes, then refreshes on each startup/foreground call.
     ///
-    /// Cache errors do not prevent a network refresh or low-impact offline use.
-    /// Ordinary failures remain observable in the result; cancellation throws and
-    /// never becomes a preparation result. No background observer or timer is installed.
+    /// Failed cache reads are retried on the next call until restoration or refresh
+    /// initializes evidence. Cache errors do not prevent a network refresh or
+    /// low-impact offline use. Ordinary failures remain observable in the result;
+    /// cancellation throws and never becomes a preparation result. No observer or timer is installed.
     @discardableResult
     public func prepare() async throws -> Preparation {
         try Task.checkCancellation()
         var restorationError: (any Error)?
-        if hasAttemptedRestoration == false {
+        if hasInitializedEvidence == false {
             do {
                 try restore()
             } catch {
@@ -249,6 +251,7 @@ public actor MHRemoteUpdateController {
 
     private func retain(_ value: MHRemoteUpdateSnapshot) throws {
         snapshot = value
+        hasInitializedEvidence = true
         try store?.save(value)
     }
 }

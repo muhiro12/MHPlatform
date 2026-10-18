@@ -219,9 +219,11 @@ let updates = try MHRemoteUpdateController(
 let preparation = try await updates.prepare()
 ```
 
-Call `prepare()` from the app's startup and foreground hooks. It restores once,
-then refreshes on each invocation. A corrupt cache does not prevent a fetch;
-a fetch failure does not discard still-valid evidence. The result contains
+Call `prepare()` from the app's startup and foreground hooks. It restores until
+evidence initializes, then refreshes on each invocation. A failed cache read is
+retried on the next call unless restoration or refresh has initialized evidence.
+A corrupt cache does not prevent a fetch; a fetch failure does not discard
+still-valid evidence. The result contains
 `decision`, `restorationError`, and `refreshError` so the app can update UI and
 log diagnostics without reimplementing recovery sequencing. Cancellation throws.
 No timer, lifecycle observer, or UI presentation is installed automatically.
