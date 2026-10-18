@@ -164,7 +164,8 @@ let package = Package(
                 "MHNotificationPayloads",
                 "MHRouteExecution",
                 "MHPersistenceMaintenance",
-                "MHPreferences"
+                "MHPreferences",
+                "MHRemoteUpdate"
             ]
         ),
         .target(

@@ -32,10 +32,8 @@ extension SurfaceAdapterConsumer {
         mutation: @Sendable () async throws -> Void,
         afterSuccess: @Sendable () async throws -> Void
     ) async throws {
-        try await updates.checkOperationAllowed(
-            whenUnavailable: operation == .browse ? .allow : .block,
-            refreshIfUnavailable: operation == .save
-        )
+        let policy: MHRemoteUpdateOperationPolicy = operation == .browse ? .allowWhenUnavailable : .requireConfirmation
+        try await updates.checkOperationAllowed(for: policy)
         try Task.checkCancellation()
         try await mutation()
         try await afterSuccess()

@@ -157,11 +157,14 @@ non-domain app infrastructure.
 
 - Standalone Foundation-only product for validated versions, bounded activation,
   explicit decisions, public-version lookup, and operation preconditions
-- Does not depend on or expand the runtime or either umbrella
+- Re-exported by both umbrellas while remaining independently adoptable; no
+  app-root runtime or UI dependency
 - Offers an optional scheduled-policy format, retained evidence, and operation
   checks with one refresh when evidence is unavailable
-- Keeps deployment, lifetimes, storage paths, identifiers, unavailable-policy
-  recovery, protected operations, and presentation app-owned
+- Provides standard App Store assembly, persistence placement, evidence
+  lifetimes, startup recovery, and confirmation-first operation checks
+- Keeps release policy, endpoint/Store ID, protected-operation classification,
+  lifecycle entry points, presentation, and logging app-owned
 - See [remote update adoption](remote-update.md) for legacy migration and scheduled
   release operations independent of app source history
 

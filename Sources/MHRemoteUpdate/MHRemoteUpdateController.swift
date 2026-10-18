@@ -20,6 +20,16 @@ public actor MHRemoteUpdateController {
         case identityMismatch
     }
 
+    /// Startup/foreground evidence and diagnostics without app-owned recovery sequencing.
+    public struct Preparation: Sendable {
+        /// Re-evaluated evidence after restoration and the refresh attempt.
+        public let decision: MHRemoteUpdateDecision
+        /// A corrupt, incompatible, or unreadable cache; refresh is still attempted.
+        public let restorationError: (any Error)?
+        /// A fetch or save failure; still-valid retained evidence remains usable.
+        public let refreshError: (any Error)?
+    }
+
     private enum Format {
         static let countryLength = 2
         static let uppercaseASCII: ClosedRange<UInt8> = 65...90
@@ -37,6 +47,7 @@ public actor MHRemoteUpdateController {
     private let publicVersion: @Sendable () async throws -> MHAppVersion?
     private var snapshot: MHRemoteUpdateSnapshot?
     private var refreshIdentifier: UUID?
+    private var hasAttemptedRestoration = false
 
     /// Creates a controller with explicit app-owned identity, lifetimes, storage, and providers.
     ///
@@ -81,6 +92,7 @@ public actor MHRemoteUpdateController {
     /// before initial refresh; revision checks also prevent a late restore rolling it back.
     public func restore() throws {
         try Task.checkCancellation()
+        hasAttemptedRestoration = true
         guard let restored = try store?.load() else {
             return
         }
@@ -93,6 +105,50 @@ public actor MHRemoteUpdateController {
         }
         refreshIdentifier = nil
         snapshot = restored
+    }
+
+    /// Restores once, then refreshes; use at startup and each foreground transition.
+    ///
+    /// Cache errors do not prevent a network refresh or low-impact offline use.
+    /// Ordinary failures remain observable in the result; cancellation throws and
+    /// never becomes a preparation result. No background observer or timer is installed.
+    @discardableResult
+    public func prepare() async throws -> Preparation {
+        try Task.checkCancellation()
+        var restorationError: (any Error)?
+        if hasAttemptedRestoration == false {
+            do {
+                try restore()
+            } catch {
+                try Task.checkCancellation()
+                if error is CancellationError {
+                    throw error
+                }
+                restorationError = error
+            }
+        }
+        var refreshError: (any Error)?
+        do {
+            try await refresh()
+        } catch {
+            try Task.checkCancellation()
+            if error is CancellationError {
+                throw error
+            }
+            refreshError = error
+        }
+        try Task.checkCancellation()
+        return .init(decision: decision(), restorationError: restorationError, refreshError: refreshError)
+    }
+
+    /// Uses confirmation with one refresh by default; opt low-impact operations into offline use.
+    public func checkOperationAllowed(
+        for policy: MHRemoteUpdateOperationPolicy = .requireConfirmation
+    ) async throws {
+        try await checkOperationAllowed(
+            whenUnavailable: policy == .allowWhenUnavailable ? .allow : .block,
+            refreshIfUnavailable: policy == .requireConfirmation
+        )
     }
 
     /// Evaluates retained evidence against the current version and clock without networking.

@@ -39,8 +39,7 @@ Advanced composition surfaces:
   `MHAppRuntimeLicenses`
 - concrete core modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
-  `MHPreferences`
-- standalone update infrastructure: `MHRemoteUpdate`
+  `MHPreferences`, `MHRemoteUpdate`
 - surface adapter modules: `MHUserNotifications`, `MHNotificationDeepLinking`
 - optional UI bridges: `MHPreferencesUI`, `MHLoggingUI`
 - opt-in workflow shells: `MHMutationFlow`, `MHMutationLogging`,
@@ -88,13 +87,12 @@ advanced composition around one focused concern.
   route URLs, read preferences, plan notifications, resolve notification route
   payloads, bridge UserNotifications, or hand off pending routes.
 
-`MHRemoteUpdate` can be added directly by an app, shared library, or surface
-adapter that needs update policy or enforcement preconditions. It requires no
-`MHAppRuntime`, UI, ads, or umbrella dependency and is not automatically re-exported
-by either umbrella. The optional scheduled-policy format and persistence are
-package-owned. Keep deployment URLs, legacy JSON adapters, app identifiers,
-storefronts, lifetimes, storage paths, unavailable handling, and protected
-operations app-owned.
+`MHRemoteUpdate` is re-exported by both umbrellas and remains available as a
+standalone product. It needs no app-root runtime, UI, or ads. Standard App Store
+assembly needs only the policy URL and Store ID, with package-owned lookup,
+cache placement, lifetimes, preparation, and operation rules. Apps retain release
+policy, protected-operation classification, lifecycle hooks, UI, and logging;
+advanced overrides are available for concrete exceptions.
 See [remote update adoption](remote-update.md).
 
 ## What Stays App-Owned

@@ -13,15 +13,17 @@ infrastructure from the current Incomes and Cookle implementations.
 | Request failure | Throw; retain previously loaded configuration | Clear update flag and fail open | Expose failure and unavailable evidence; app chooses recovery |
 | Presentation | App-owned alert | App-owned alert | No UI or copy |
 
-`MHRemoteUpdate` is a standalone Foundation-only product. Apps, shared libraries,
-and App Intent-style adapters can depend on it without an app-root runtime.
-It has no dependency on either umbrella or on mutation/UI frameworks.
+`MHRemoteUpdate` is a Foundation-only module re-exported by `MHPlatformCore`
+and therefore `MHPlatform`. Existing umbrella adopters need no extra product.
+The standalone product remains available for focused consumers and has no
+dependency on either umbrella or on mutation/UI frameworks.
 
 The package owns version validation/comparison, activation-window validation,
 update decisions, lookup, and the opt-in scheduled-policy format, persistence,
-and refresh orchestration. Apps own deployment URLs, legacy JSON adapters,
-identifiers, storefronts, evidence lifetimes, storage locations, refresh triggers,
-logging, protected operations, unavailable handling, and UI.
+and refresh orchestration, including standard App Store assembly and defaults.
+Apps supply the deployment URL and Store ID, publish release policy, identify
+protected operations, connect lifecycle entry points, and own UI/logging.
+Legacy adapters and exceptional overrides remain available through advanced APIs.
 No app release values or repository URLs become package defaults.
 
 ## Version Contracts
@@ -184,8 +186,10 @@ this format. A requirement may also have an optional inclusive `endsAt`.
 
 The two-week lead time does not require a two-week enforcement window. The legacy
 72-hour Cookle window is an app-owned constraint for its existing adapter; the
-new schedule has independent activation and evidence validity. Neither lifetime
-gets a package default. A policy expiring, or publication missing, below minimum,
+new schedule has independent activation and evidence validity. The standard
+assembly accepts document lifetimes up to 30 days and retains publication proof
+for 24 hours. Advanced assembly can override these limits. A policy expiring,
+or publication missing, below minimum,
 or expired, produces `unavailable`, never `notRequired`. A valid future
 requirement is `notRequired` until activation; a version meeting the minimum is
 also `notRequired` while the policy document remains valid.
@@ -196,36 +200,56 @@ also `notRequired` while the policy document remains valid.
 It re-evaluates installed version and time on every `decision()` or operation
 check. There is no app-root runtime dependency, timer, UI, or automatic mutation.
 
-The following assembly belongs to the app. The identifiers, URL, lifetimes,
-cache directory, providers, and refresh triggers must be supplied by that app:
+### Standard App Store Adoption
+
+The standard path requires only the app's operational endpoint and App Store ID:
 
 ```swift
-let policyLookup = MHRemoteUpdateScheduleLookup(session: session)
-let storeLookup = MHAppStoreVersionLookup(session: session)
+import MHPlatformCore
+
 let updates = try MHRemoteUpdateController(
-    bundleIdentifier: bundleIdentifier,
-    storefront: storefront,
-    maximumValidity: maximumPolicyValidity,
-    publicationLifetime: publicationLifetime,
-    store: .init(fileURL: policyCacheURL),
-    currentVersion: installedVersion,
-    fetchSchedule: {
-        try await policyLookup.schedule(from: policyURL, bundleIdentifier: bundleIdentifier)
-    },
-    publicVersion: {
-        try await storeLookup.version(
-            appID: appID, bundleIdentifier: bundleIdentifier, country: storefront
-        )
-    }
+    appStoreID: appStoreID,
+    policyURL: policyURL
 )
+let preparation = try await updates.prepare()
 ```
 
-Create the storage parent directory first. Call `restore()` once at startup,
-handle/log any error, and retain the controller so a corrupt or absent cache
-leaves usable unknown state. Call `refresh()` at app-selected startup,
-foreground, retry, or other refresh points; handle errors without replacing them
-with permission. Refresh also checks publication before future activation so
-usable publication evidence can be retained ahead of time.
+Call `prepare()` from the app's startup and foreground hooks. It restores once,
+then refreshes on each invocation. A corrupt cache does not prevent a fetch;
+a fetch failure does not discard still-valid evidence. The result contains
+`decision`, `restorationError`, and `refreshError` so the app can update UI and
+log diagnostics without reimplementing recovery sequencing. Cancellation throws.
+No timer, lifecycle observer, or UI presentation is installed automatically.
+
+| Standard behavior | Package convention |
+| --- | --- |
+| Identity and installed version | `Bundle.main`; pass the containing app's bundle in extensions |
+| Metadata storefront | `jp`; override `storefront` when needed |
+| Maximum policy-document lifetime | 30 days, including advance announcement |
+| Publication evidence lifetime | 24 hours |
+| Persistence | Application Support / MHRemoteUpdate, scoped by bundle, Store ID, and country |
+| Directory preparation | Created automatically when saving |
+| Cache source identity | A different policy URL cannot reuse the cached evidence |
+| Normal operation check | Require confirmation, refreshing once if unavailable |
+| Low-impact offline operation | Explicit `.allowWhenUnavailable`, without networking |
+
+The policy document still supplies its own earlier `validUntil` and optional
+requirement end. A 30-day cap does not mean enforcing an update for 30 days.
+The shared defaults are MH integration conventions, not release values copied
+from one app. `Defaults` exposes the standard constants.
+
+An optional `storageDirectory` supports shared containers, alternate environments,
+and tests. Use separate directories/controllers for different environments.
+One process owns each cache file; App Group writer coordination is not automatic.
+
+### Advanced Assembly
+
+The existing injectable initializer, explicit `restore()` / `refresh()`, and
+allow/block plus refresh flags remain for tests, legacy migration, or concrete
+exceptions. Standard apps do not need to assemble lookup closures, pick a cache
+filename, create directories, or choose evidence lifetimes. Advanced persistence
+keeps its original snapshot format; standard assembly uses a source-scoped cache.
+Do not read a standard cache as an unscoped legacy snapshot.
 
 A valid schedule is saved before publication lookup. Failed/cancelled lookups
 preserve prior evidence until its own expiry; successful observations replace
@@ -236,28 +260,28 @@ is rejected. The latest refresh invocation supersedes older in-flight responses.
 A save error is thrown while the latest accepted evidence remains in memory.
 
 Use the shared app operation entry point called by UI, App Intents, and other
-surfaces. For example, an app can choose:
-
-| App operation | Unavailable behavior | Refresh if unavailable |
-| --- | --- | --- |
-| Side-effect-free browsing | `allow` | `false` |
-| App-designated consequential save | `block` | `true` |
-| Consequential operation with separate retry UI | `block` | `false` |
+surfaces. The standard API chooses confirmation unless explicitly relaxed:
 
 ```swift
-try await updates.checkOperationAllowed(
-    whenUnavailable: .block,
-    refreshIfUnavailable: true
-)
+try await updates.checkOperationAllowed()
 try Task.checkCancellation()
 try await performMutationAndSuccessEffects()
 ```
 
-Refresh occurs at most once per check, only from unavailable state. Errors
-propagate before the operation begins. If refresh succeeds but evidence remains
-unavailable, the explicit allow/block choice applies. Known required updates
-block all these normal operation paths; provide separate retry and Store routes.
-A required state does not itself trigger refresh through this check.
+For app-designated low-impact operations only:
+
+```swift
+try await updates.checkOperationAllowed(for: .allowWhenUnavailable)
+```
+
+`.requireConfirmation` is the default. It refreshes at most once, only from
+unavailable state. Fetch/save errors propagate before the operation begins; a
+successful refresh with insufficient evidence still blocks. The relaxed rule
+allows unavailable evidence without a request. A known required update blocks
+both rules. Apps still decide which operations can use the relaxed rule and must
+wire every protected entry point to the check. There is no automatic app lock.
+Provide separate retry and Store routes; a required state does not itself trigger
+refresh through this check.
 
 `SurfaceAdapterConsumer` demonstrates both legacy primitives and the scheduled
 controller at a common operation boundary. Its tests verify low-impact offline
@@ -317,5 +341,7 @@ compatible app release when advance announcements are needed for a later
 release. Cookle also needs deliberate adoption of retained evidence and
 operation gating rather than only mapping the decision to an alert. Neither
 app, legacy endpoint, live policy, nor hosting branch is changed by this package
-implementation. Each adoption requires its own operation classification,
-lifetimes, cache path, deployment endpoint, and app verification.
+implementation. Each adoption requires its own operational endpoint and Store ID, operation
+classification, lifecycle/UI connection, and app verification. Standard lifetimes,
+lookup assembly, cache placement, and recovery sequencing are package-owned;
+override them only for a concrete app-specific requirement.

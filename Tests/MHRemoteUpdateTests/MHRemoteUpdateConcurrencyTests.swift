@@ -69,9 +69,12 @@ struct MHRemoteUpdateConcurrencyTests: Sendable {
 
     @Test
     func saveFailureRetainsCurrentEvidenceInMemoryAndRemainsObservable() async throws {
-        let missingParent = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString).appendingPathComponent("policy.json")
-        let store = MHRemoteUpdateStore(fileURL: missingParent)
+        let blockedParent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try Data("not a directory".utf8).write(to: blockedParent)
+        defer {
+            try? FileManager.default.removeItem(at: blockedParent)
+        }
+        let store = MHRemoteUpdateStore(fileURL: blockedParent.appendingPathComponent("policy.json"))
         let controller = try controller(store: store) { try schedule(revision: 1, requirement: false) }
         await #expect(throws: (any Error).self) {
             try await controller.refresh()
