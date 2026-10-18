@@ -19,6 +19,28 @@ extension SurfaceAdapterConsumer {
         case invalidPolicy
     }
 
+    /// This sample app chooses which operations require confirmed update evidence.
+    enum ScheduledOperation {
+        case browse
+        case save
+    }
+
+    /// UI and App Intent-style callers use the same operation boundary and policy state.
+    static func performScheduledOperation(
+        _ operation: ScheduledOperation,
+        updates: MHRemoteUpdateController,
+        mutation: @Sendable () async throws -> Void,
+        afterSuccess: @Sendable () async throws -> Void
+    ) async throws {
+        try await updates.checkOperationAllowed(
+            whenUnavailable: operation == .browse ? .allow : .block,
+            refreshIfUnavailable: operation == .save
+        )
+        try Task.checkCancellation()
+        try await mutation()
+        try await afterSuccess()
+    }
+
     /// The adapter owns its JSON schema, activation limit, and public-version provider.
     static func updateDecision(
         document: Data,

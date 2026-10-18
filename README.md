@@ -174,8 +174,8 @@ review dependencies in surface adapters unless the target intentionally owns an
 app-root runtime surface.
 
 Remote update consumers can adopt the standalone `MHRemoteUpdate` product for
-version comparison, bounded activation, identity-validated App Store lookup, and
-operation preconditions. See the
+version comparison, bounded activation, identity-validated lookup, scheduled
+policy persistence, and operation checks with optional refresh. See the
 [remote update adoption guide](Designs/Architecture/remote-update.md) for the
 Incomes and Cookle migration paths and app-owned policy boundaries.
 

@@ -91,8 +91,10 @@ advanced composition around one focused concern.
 `MHRemoteUpdate` can be added directly by an app, shared library, or surface
 adapter that needs update policy or enforcement preconditions. It requires no
 `MHAppRuntime`, UI, ads, or umbrella dependency and is not automatically re-exported
-by either umbrella. Keep app identifiers, storefronts, configuration schemas,
-activation limits, unavailable-policy handling, and protected operations app-owned.
+by either umbrella. The optional scheduled-policy format and persistence are
+package-owned. Keep deployment URLs, legacy JSON adapters, app identifiers,
+storefronts, lifetimes, storage paths, unavailable handling, and protected
+operations app-owned.
 See [remote update adoption](remote-update.md).
 
 ## What Stays App-Owned

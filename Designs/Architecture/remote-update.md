@@ -18,9 +18,10 @@ and App Intent-style adapters can depend on it without an app-root runtime.
 It has no dependency on either umbrella or on mutation/UI frameworks.
 
 The package owns version validation/comparison, activation-window validation,
-update decisions, and reusable App Store lookup. Apps own configuration URLs,
-JSON schemas, identifiers, storefronts, maximum activation duration, logging,
-refresh/caching policy, unavailable-policy handling, protected operations, and UI.
+update decisions, lookup, and the opt-in scheduled-policy format, persistence,
+and refresh orchestration. Apps own deployment URLs, legacy JSON adapters,
+identifiers, storefronts, evidence lifetimes, storage locations, refresh triggers,
+logging, protected operations, unavailable handling, and UI.
 No app release values or repository URLs become package defaults.
 
 ## Version Contracts
@@ -68,7 +69,7 @@ Missing policy or an invalid installed version yields `unavailable`; lookup erro
 throw, allowing the app to log and explicitly select recovery. Cancellation throws
 `CancellationError` rather than producing an update decision.
 
-## Adoption Without Changing Release Policy
+## Legacy Adoption and Deliberate Policy Migration
 
 ### Incomes
 
@@ -108,8 +109,11 @@ behavior-preserving extraction.
    Handle cancellation without applying an obsolete async result.
 
 Neither app has been migrated by this package change. Move adoption separately
-with each app's library tests and surface verification. No package version bump,
-Store release, or remote policy activation is required for local extraction.
+with each app's library tests and surface verification. The scheduled controller
+below is an intentional policy migration, including publication confirmation for
+Incomes; it is not the behavior-preserving comparator substitution above. No
+package version bump, Store release, or remote policy activation is required for
+local extraction.
 
 ## Protected Operations
 
@@ -141,3 +145,177 @@ This support does not retrofit enforcement into already-distributed binaries.
 It is not retroactive migration, CloudKit, or old-writer compatibility protection.
 Apps still decide protected operations, enforcement rollout, unavailable-policy
 handling, and presentation before adopting enforcement.
+
+## Scheduled Policy and Retained Evidence
+
+`MHRemoteUpdateSchedule` is an optional shared wire contract, independent of
+legacy `.config.json` formats. Its schema version describes the format; its
+positive `revision` identifies an immutable operational change, not an app release.
+All changes, including postponement, renewal, and cancellation, increase revision.
+Unknown fields are ignored; unsupported schema versions, malformed versions,
+missing requirement keys, invalid identity, and invalid dates are rejected.
+An explicit `requirement: null` confirms no update requirement. Missing data,
+HTTP failures, and decode failures never mean cancellation.
+
+```json
+{
+  "schemaVersion": 1,
+  "bundleIdentifier": "com.example.app",
+  "revision": 12,
+  "issuedAt": "2026-10-18T00:00:00Z",
+  "validUntil": "2026-11-08T00:00:00Z",
+  "requirement": {
+    "minimumVersion": "6.0",
+    "effectiveAt": "2026-11-01T00:00:00Z"
+  }
+}
+```
+
+These are illustrative values, not a production policy. Remote timestamps use
+ISO 8601 UTC seconds. `MHRemoteUpdateSchedule.decode(_:)` and `encoded()` implement
+this format. A requirement may also have an optional inclusive `endsAt`.
+
+| Field or evidence | Meaning |
+| --- | --- |
+| `issuedAt` through exclusive `validUntil` | When the entire policy document can be trusted, including cancellation |
+| `effectiveAt` through optional inclusive `endsAt` | When the requirement applies, while the document remains valid |
+| Publication `checkedAt` through exclusive `validUntil` | How long a successful storefront observation remains usable |
+| App-selected maximum validity and publication age | Local upper limits, reapplied when reading retained evidence |
+
+The two-week lead time does not require a two-week enforcement window. The legacy
+72-hour Cookle window is an app-owned constraint for its existing adapter; the
+new schedule has independent activation and evidence validity. Neither lifetime
+gets a package default. A policy expiring, or publication missing, below minimum,
+or expired, produces `unavailable`, never `notRequired`. A valid future
+requirement is `notRequired` until activation; a version meeting the minimum is
+also `notRequired` while the policy document remains valid.
+
+## Controller and Operation Entry Points
+
+`MHRemoteUpdateController` is one actor per app, environment, and storefront.
+It re-evaluates installed version and time on every `decision()` or operation
+check. There is no app-root runtime dependency, timer, UI, or automatic mutation.
+
+The following assembly belongs to the app. The identifiers, URL, lifetimes,
+cache directory, providers, and refresh triggers must be supplied by that app:
+
+```swift
+let policyLookup = MHRemoteUpdateScheduleLookup(session: session)
+let storeLookup = MHAppStoreVersionLookup(session: session)
+let updates = try MHRemoteUpdateController(
+    bundleIdentifier: bundleIdentifier,
+    storefront: storefront,
+    maximumValidity: maximumPolicyValidity,
+    publicationLifetime: publicationLifetime,
+    store: .init(fileURL: policyCacheURL),
+    currentVersion: installedVersion,
+    fetchSchedule: {
+        try await policyLookup.schedule(from: policyURL, bundleIdentifier: bundleIdentifier)
+    },
+    publicVersion: {
+        try await storeLookup.version(
+            appID: appID, bundleIdentifier: bundleIdentifier, country: storefront
+        )
+    }
+)
+```
+
+Create the storage parent directory first. Call `restore()` once at startup,
+handle/log any error, and retain the controller so a corrupt or absent cache
+leaves usable unknown state. Call `refresh()` at app-selected startup,
+foreground, retry, or other refresh points; handle errors without replacing them
+with permission. Refresh also checks publication before future activation so
+usable publication evidence can be retained ahead of time.
+
+A valid schedule is saved before publication lookup. Failed/cancelled lookups
+preserve prior evidence until its own expiry; successful observations replace
+publication evidence. A successful lookup yielding nil clears publication proof,
+not the schedule. Only matching bundle and storefront evidence can be restored.
+A higher revision cannot be rolled back, and changed content at the same revision
+is rejected. The latest refresh invocation supersedes older in-flight responses.
+A save error is thrown while the latest accepted evidence remains in memory.
+
+Use the shared app operation entry point called by UI, App Intents, and other
+surfaces. For example, an app can choose:
+
+| App operation | Unavailable behavior | Refresh if unavailable |
+| --- | --- | --- |
+| Side-effect-free browsing | `allow` | `false` |
+| App-designated consequential save | `block` | `true` |
+| Consequential operation with separate retry UI | `block` | `false` |
+
+```swift
+try await updates.checkOperationAllowed(
+    whenUnavailable: .block,
+    refreshIfUnavailable: true
+)
+try Task.checkCancellation()
+try await performMutationAndSuccessEffects()
+```
+
+Refresh occurs at most once per check, only from unavailable state. Errors
+propagate before the operation begins. If refresh succeeds but evidence remains
+unavailable, the explicit allow/block choice applies. Known required updates
+block all these normal operation paths; provide separate retry and Store routes.
+A required state does not itself trigger refresh through this check.
+
+`SurfaceAdapterConsumer` demonstrates both legacy primitives and the scheduled
+controller at a common operation boundary. Its tests verify low-impact offline
+use, one refresh before consequential operations, and no mutation or success
+effects on rejection. Operation classification remains app-owned.
+
+## Release Operations Independent of Source Releases
+
+Both existing apps currently fetch `main/.config.json`. This couples a live
+operational policy change to the next source release, regardless of the file's
+name or its JSON schema. Putting a new schema at that same URL alone does not
+remove this coupling.
+
+For new adopters, use a stable endpoint backed by separately maintained policy
+history. A policy-only branch in the app repository is sufficient; a separately
+hosted configuration repository or service can use the same contract. A policy
+branch should contain only deployable policy documents and should not be merged
+into the app's source branch. The package never chooses or creates a hosting
+repository, branch, or URL.
+
+A 6.0 rollout then has separate histories:
+
+1. Finish and tag the app's 6.0 source commit. No live policy change is needed in
+   that commit, and the 6.1 source branch can evolve independently.
+2. Publish a higher policy revision at the independent endpoint. It can announce
+   6.0 before release, with a future activation time and sufficient validity.
+3. Before activation, clients keep the plan across launches. If 6.0 is already
+   active in the policy but not confirmed public, their state is unavailable:
+   low-impact operations may continue while consequential operations wait.
+4. Once activation and valid publication evidence both hold, older versions
+   require an update. Installed 6.0 meets the minimum and continues normally.
+5. Postponement, cancellation, and validity renewal are policy-history commits;
+   they do not become 6.1 source changes. Each uses a higher revision. A
+   cancellation is a full valid document with `requirement: null`.
+
+Publication gating prevents a premature *update-required* state; an active
+unpublished requirement can still limit consequential operations. Use future
+activation when announcing a release in advance. Renewal must occur before
+expiry to keep confirming either requirement or cancellation; absence of renewal
+intentionally becomes unavailable. HTTP caches cannot extend absolute validity.
+
+An offline device cannot learn an unreceived cancellation or a new emergency
+requirement. Shorter evidence lifetimes reduce stale enforcement but increase
+unknown periods; apps choose this tradeoff explicitly. Device clock changes can
+also affect local evaluation; this is not a trusted server-time mechanism.
+
+### Migration Boundary for Existing Binaries
+
+Already-distributed Incomes versions still read their hard-coded legacy URL and
+have no publication gate. A new JSON document or new package cannot retrofit
+these binaries. Keep the legacy endpoint and its `requiredVersion` compatible;
+do not raise it to 6.0 before 6.0 is available. A final legacy `main/.config.json`
+change may therefore still be needed after release during transition.
+
+Ship adoption of the independent endpoint and shared schedule in an earlier
+compatible app release when advance announcements are needed for a later
+release. Cookle also needs deliberate adoption of retained evidence and
+operation gating rather than only mapping the decision to an alert. Neither
+app, legacy endpoint, live policy, nor hosting branch is changed by this package
+implementation. Each adoption requires its own operation classification,
+lifetimes, cache path, deployment endpoint, and app verification.

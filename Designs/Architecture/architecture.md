@@ -158,9 +158,12 @@ non-domain app infrastructure.
 - Standalone Foundation-only product for validated versions, bounded activation,
   explicit decisions, public-version lookup, and operation preconditions
 - Does not depend on or expand the runtime or either umbrella
-- Keeps remote configuration, activation limits, identifiers, unavailable-policy
+- Offers an optional scheduled-policy format, retained evidence, and operation
+  checks with one refresh when evidence is unavailable
+- Keeps deployment, lifetimes, storage paths, identifiers, unavailable-policy
   recovery, protected operations, and presentation app-owned
-- See [remote update adoption](remote-update.md) for behavior-preserving migration
+- See [remote update adoption](remote-update.md) for legacy migration and scheduled
+  release operations independent of app source history
 
 ### `MHDeepLinking`
 
