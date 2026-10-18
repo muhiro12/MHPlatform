@@ -90,6 +90,16 @@ struct MHAppStoreVersionLookupTests {
         }
     }
 
+    @Test
+    func publicationLookupDoesNotRenewLocalHTTPMetadataAsFreshProof() async throws {
+        let session = makeSession("publicationCache")
+        defer {
+            session.invalidateAndCancel()
+        }
+        let version = try await lookup(session)
+        #expect(version == MHAppVersion("2"))
+    }
+
     private func lookup(_ session: URLSession) async throws -> MHAppVersion {
         try await MHAppStoreVersionLookup(session: session).version(
             appID: 123, bundleIdentifier: "com.example.app", country: "jp"

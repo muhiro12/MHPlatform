@@ -61,6 +61,8 @@ storefront country code. A 2xx HTTP response, decodable result, matching app ID
 and bundle ID, and valid numeric version are all required. The session can be
 injected for request configuration and deterministic `URLProtocol` tests.
 Transport, HTTP, decoding, and identity errors remain observable to the app.
+Local HTTP cache is bypassed, so a repeated lookup cannot renew cached metadata
+as freshly observed publication evidence.
 Lookup confirms storefront metadata, not that every device can download an update.
 
 `MHRemoteUpdateEvaluator` accepts installed-version, clock, and async public-version

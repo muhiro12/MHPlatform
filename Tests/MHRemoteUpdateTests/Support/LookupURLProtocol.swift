@@ -70,7 +70,11 @@ final class LookupURLProtocol: URLProtocol {
             response = httpResponse
         }
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: Data(Self.body(for: scenario).utf8))
+        client?.urlProtocol(self, didLoad: Data((
+            scenario == "publicationCache" && request.cachePolicy != .reloadIgnoringLocalCacheData
+                ? #"{"results":[{"trackId":123,"bundleId":"com.example.app","version":"1"}]}"#
+                : Self.body(for: scenario)
+        ).utf8))
         client?.urlProtocolDidFinishLoading(self)
     }
 

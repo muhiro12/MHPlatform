@@ -43,7 +43,8 @@ public struct MHAppStoreVersionLookup: Sendable {
     /// Looks up an app in the app-selected storefront; never substitutes another app.
     ///
     /// Cancellation propagates as `CancellationError`. No failure is converted into
-    /// an update decision. Store availability does not guarantee download success.
+    /// an update decision. Local HTTP cache is bypassed so rechecking does not
+    /// renew old publication evidence. Store metadata does not guarantee download success.
     public func version(
         appID: Int,
         bundleIdentifier: String,
@@ -72,7 +73,8 @@ public struct MHAppStoreVersionLookup: Sendable {
         }
 
         do {
-            let (data, urlResponse) = try await session.data(from: url)
+            let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
+            let (data, urlResponse) = try await session.data(for: request)
             try Task.checkCancellation()
             guard let response = urlResponse as? HTTPURLResponse else {
                 throw Failure.invalidResponse
