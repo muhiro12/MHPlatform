@@ -50,6 +50,9 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
     /// Optional evidence; its absence never clears a known schedule.
     public let publication: Publication?
 
+    // A successful empty lookup must supersede older positive publication evidence.
+    var publicationCheckedAt: Date?
+
     /// Creates a snapshot for the app-owned storage location.
     public init(
         schedule: MHRemoteUpdateSchedule,
@@ -61,6 +64,29 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
         self.storefront = storefront
         self.observation = observation
         self.publication = publication
+        publicationCheckedAt = publication?.checkedAt
+    }
+
+    func merging(_ incoming: Self) throws -> Self {
+        guard schedule.bundleIdentifier == incoming.schedule.bundleIdentifier, storefront == incoming.storefront else {
+            throw MHRemoteUpdateController.Failure.identityMismatch
+        }
+        guard incoming.schedule.revision >= schedule.revision,
+              incoming.schedule.revision != schedule.revision || incoming.schedule == schedule else {
+            throw MHRemoteUpdateController.Failure.revisionConflict
+        }
+        let latestObservation = incoming.schedule.revision > schedule.revision
+            || incoming.observation.fetchedAt > self.observation.fetchedAt ? incoming.observation : self.observation
+        let publicationSource = (incoming.publicationCheckedAt ?? .distantPast)
+            >= (publicationCheckedAt ?? .distantPast) ? incoming : self
+        var merged = Self(
+            schedule: incoming.schedule,
+            storefront: storefront,
+            observation: latestObservation,
+            publication: publicationSource.publication
+        )
+        merged.publicationCheckedAt = publicationSource.publicationCheckedAt
+        return merged
     }
 
     /// Expired policy evidence or unconfirmed publication become unavailable, never permission.

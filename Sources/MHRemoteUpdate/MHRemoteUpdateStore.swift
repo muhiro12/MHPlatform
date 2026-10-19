@@ -1,9 +1,9 @@
 import Foundation
 
-/// A small, atomically replaced evidence file at an app-selected location.
+/// A small, coordinated evidence file at an app-selected location.
 ///
-/// Use a separate URL for each app, environment, and storefront. One controller
-/// owns each file; coordinating writers in multiple processes is app-owned.
+/// Use a separate URL for each app, environment, and storefront. Controllers and
+/// processes using this store coordinate reads and revision-checked replacements.
 public struct MHRemoteUpdateStore: Sendable {
     /// Validation failure for standard-integration cache files.
     public enum Failure: Error, Equatable, Sendable {
@@ -32,8 +32,66 @@ public struct MHRemoteUpdateStore: Sendable {
 
     /// Returns nil only when the file is absent; corruption and I/O errors remain observable.
     public func load() throws -> MHRemoteUpdateSnapshot? {
+        var result: Result<MHRemoteUpdateSnapshot?, any Error>?
+        var error: NSError?
+        NSFileCoordinator().coordinate(readingItemAt: fileURL, options: [], error: &error) { url in
+            result = Result { try read(at: url) }
+        }
+        if let error {
+            if error.code == NSFileReadNoSuchFileError, error.domain == NSCocoaErrorDomain {
+                return nil
+            }
+            throw error
+        }
+        return try result?.get()
+    }
+
+    /// Rejects older or conflicting policy revisions while coordinating the complete replacement.
+    public func save(_ snapshot: MHRemoteUpdateSnapshot) throws {
+        _ = try retain(snapshot)
+    }
+
+    func retain(_ snapshot: MHRemoteUpdateSnapshot) throws -> MHRemoteUpdateSnapshot {
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+        )
+        var result: Result<MHRemoteUpdateSnapshot, any Error>?
+        var error: NSError?
+        NSFileCoordinator().coordinate(writingItemAt: fileURL, options: [], error: &error) { url in
+            result = Result {
+                let existing = try readableEvidence(at: url)
+                let matchesIdentity = existing?.schedule.bundleIdentifier == snapshot.schedule.bundleIdentifier
+                    && existing?.storefront == snapshot.storefront
+                let merged = try matchesIdentity ? existing?.merging(snapshot) ?? snapshot : snapshot
+                try write(merged, at: url)
+                return merged
+            }
+        }
+        if let error {
+            throw error
+        }
+        guard let result else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        return try result.get()
+    }
+
+    private func readableEvidence(at url: URL) throws -> MHRemoteUpdateSnapshot? {
         do {
-            let data = try Data(contentsOf: fileURL)
+            return try read(at: url)
+        } catch is DecodingError {
+            // A validated network response can repair an unreadable cache format.
+            return nil
+        } catch is MHRemoteUpdateSchedule.Failure {
+            return nil
+        } catch Failure.sourceMismatch {
+            return nil
+        }
+    }
+
+    private func read(at url: URL) throws -> MHRemoteUpdateSnapshot? {
+        do {
+            let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
             if let sourceURL {
                 let record = try decoder.decode(ScopedSnapshot.self, from: data)
@@ -48,8 +106,7 @@ public struct MHRemoteUpdateStore: Sendable {
         }
     }
 
-    /// Writes before replacing the old file; never removes evidence on fetch failure.
-    public func save(_ snapshot: MHRemoteUpdateSnapshot) throws {
+    private func write(_ snapshot: MHRemoteUpdateSnapshot, at url: URL) throws {
         let encoder = JSONEncoder()
         let data: Data
         if let sourceURL {
@@ -57,9 +114,6 @@ public struct MHRemoteUpdateStore: Sendable {
         } else {
             data = try encoder.encode(snapshot)
         }
-        try FileManager.default.createDirectory(
-            at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
-        )
-        try data.write(to: fileURL, options: .atomic)
+        try data.write(to: url, options: .atomic)
     }
 }

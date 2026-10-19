@@ -8,7 +8,7 @@ struct MHRemoteUpdatePreparationTests: Sendable {
     }
 
     @Test
-    func corruptCacheDoesNotPreventRefreshAndRestorationIsAttemptedOnce() async throws {
+    func corruptCacheDoesNotPreventRefreshAndLaterCorruptionRemainsObservable() async throws {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer {
             try? FileManager.default.removeItem(at: fileURL)
@@ -22,7 +22,7 @@ struct MHRemoteUpdatePreparationTests: Sendable {
         #expect(first.decision == .notRequired)
         try Data("corrupt again".utf8).write(to: fileURL)
         let second = try await updates.prepare()
-        #expect(second.restorationError == nil)
+        #expect(second.restorationError != nil)
         #expect(second.evaluation.restorationError != nil)
         #expect(second.decision == .notRequired)
     }

@@ -44,7 +44,8 @@ struct MHRemoteUpdateFirstOperationTests: Sendable {
         #expect(try cache.store.load() == original)
         try Data("corrupt after initialization".utf8).write(to: cache.fileURL)
         try await updates.checkOperationAllowed()
-        #expect(await updates.evaluation().restorationError == nil)
+        #expect(await updates.evaluation().restorationError != nil)
+        #expect(await updates.evaluation().observation == original.observation)
     }
 
     @Test(arguments: [false, true])

@@ -391,7 +391,8 @@ let updates = try MHRemoteUpdateController(
 
 An optional `storageDirectory` supports shared containers, alternate environments,
 and tests. Use separate directories/controllers for different environments.
-One process owns each cache file; App Group writer coordination is not automatic.
+The package coordinates cache reads and revision-checked writes across controllers
+and processes using `NSFileCoordinator`. It requires no app-owned lock or observer.
 
 ### Headless Operation Entry
 
@@ -414,7 +415,9 @@ corrupt, or mismatched evidence cannot establish permission.
 Ordinary restoration failures remain available through `evaluation()` while the
 operation's refresh/allow/block policy still applies. Failed restoration is
 retried on later initialization attempts until restoration or refresh succeeds.
-Once initialized, checks use in-memory evidence rather than rereading the file.
+Each operation check also merges newer shared evidence from disk without renewing
+its observation dates. Corrupt reads remain diagnostic and do not erase valid
+in-memory evidence.
 Cancellation, revision checks, save errors, and latest-invocation refresh ordering
 remain in force. Each operation check requests at most one refresh; concurrent
 checks retain the existing latest-invocation behavior rather than coalescing
@@ -422,8 +425,8 @@ network requests.
 
 Keep `prepare()` at startup/foreground when an explicit refresh and preparation
 diagnostics are desired. Extensions still supply the containing app's identity
-and appropriate storage location; cross-process cache writer coordination is
-outside the controller.
+and an appropriate shared storage location. Package stores coordinate writers;
+this is a snapshot check, not a transaction across the later app mutation.
 
 ### Read-Only Decision Diagnostics
 
@@ -481,7 +484,10 @@ publication evidence. A successful lookup yielding nil clears publication proof,
 not the schedule. Only matching bundle and storefront evidence can be restored.
 A higher revision cannot be rolled back, and changed content at the same revision
 is rejected. The latest refresh invocation supersedes older in-flight responses.
-A save error is thrown while the latest accepted evidence remains in memory.
+Older or conflicting writes are rejected under the same coordinated access as
+the read and replacement. Equal policies keep the newer observation and latest
+publication result, including an empty result. Storage I/O errors are thrown
+while accepted evidence remains in memory.
 
 Use the shared app operation entry point called by UI, App Intents, and other
 surfaces. The standard API chooses confirmation unless explicitly relaxed:

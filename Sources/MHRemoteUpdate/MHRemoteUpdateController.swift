@@ -184,33 +184,19 @@ public actor MHRemoteUpdateController {
                 throw Failure.identityMismatch
             }
             try validateRevision(document)
-            let accepted = MHRemoteUpdateSnapshot(
+            var accepted = MHRemoteUpdateSnapshot(
                 schedule: document,
                 storefront: storefront,
                 observation: try observation(fetchedAt: response.fetchedAt),
                 publication: evidence?.publication
             )
+            accepted.publicationCheckedAt = evidence?.publicationCheckedAt
             try retain(accepted)
             if let installedVersion = currentVersion().flatMap(MHAppVersion.init),
                document.needsPublication(currentVersion: installedVersion, at: now()) {
                 let version = try await publicVersion()
                 try checkRefresh(identifier)
-                let checkedAt = now()
-                let validUntil = checkedAt.addingTimeInterval(publicationLifetime)
-                guard checkedAt.timeIntervalSinceReferenceDate.isFinite,
-                      validUntil.timeIntervalSinceReferenceDate.isFinite else {
-                    throw Failure.invalidConfiguration
-                }
-                // A failed lookup keeps valid prior evidence; a successful observation replaces it.
-                let publication = version.map { version in
-                    MHRemoteUpdateSnapshot.Publication(version: version, checkedAt: checkedAt, validUntil: validUntil)
-                }
-                try retain(.init(
-                    schedule: document,
-                    storefront: storefront,
-                    observation: accepted.observation,
-                    publication: publication
-                ))
+                try retainPublication(version, schedule: document, observation: accepted.observation)
             }
             lastRefreshError = nil
             return decision()
@@ -245,8 +231,32 @@ public actor MHRemoteUpdateController {
         try Task.checkCancellation()
         try decision().checkOperationAllowed(whenUnavailable: behavior)
     }
+}
 
-    private func observation(fetchedAt: Date) throws -> MHRemoteUpdateSnapshot.Observation {
+private extension MHRemoteUpdateController {
+    func retainPublication(
+        _ version: MHAppVersion?,
+        schedule: MHRemoteUpdateSchedule,
+        observation: MHRemoteUpdateSnapshot.Observation
+    ) throws {
+        let checkedAt = now()
+        let validUntil = checkedAt.addingTimeInterval(publicationLifetime)
+        guard checkedAt.timeIntervalSinceReferenceDate.isFinite,
+              validUntil.timeIntervalSinceReferenceDate.isFinite else {
+            throw Failure.invalidConfiguration
+        }
+        // An empty successful observation also replaces prior publication evidence.
+        let publication = version.map { version in
+            MHRemoteUpdateSnapshot.Publication(version: version, checkedAt: checkedAt, validUntil: validUntil)
+        }
+        var confirmed = MHRemoteUpdateSnapshot(
+            schedule: schedule, storefront: storefront, observation: observation, publication: publication
+        )
+        confirmed.publicationCheckedAt = checkedAt
+        try retain(confirmed)
+    }
+
+    func observation(fetchedAt: Date) throws -> MHRemoteUpdateSnapshot.Observation {
         let validUntil = fetchedAt.addingTimeInterval(policyLifetime)
         guard fetchedAt.timeIntervalSinceReferenceDate.isFinite,
               validUntil.timeIntervalSinceReferenceDate.isFinite,
@@ -256,7 +266,7 @@ public actor MHRemoteUpdateController {
         return .init(fetchedAt: fetchedAt, validUntil: validUntil)
     }
 
-    private func restoreEvidence() throws {
+    func restoreEvidence() throws {
         guard let restored = try store?.load() else {
             hasInitializedEvidence = true
             return
@@ -266,16 +276,21 @@ public actor MHRemoteUpdateController {
         }
         try validateRevision(restored.schedule)
         hasInitializedEvidence = true
-        guard evidence == nil || restored.schedule.revision > (evidence?.schedule.revision ?? 0) else {
-            return
-        }
-        refreshIdentifier = nil
-        evidence = restored
+        evidence = try evidence?.merging(restored) ?? restored
     }
 
-    private func initializeEvidence() throws -> (any Error)? {
+    func initializeEvidence() throws -> (any Error)? {
         try Task.checkCancellation()
         guard hasInitializedEvidence == false else {
+            do {
+                if let restored = try store?.load(), restored.schedule.revision >= (evidence?.schedule.revision ?? 0) {
+                    evidence = try evidence?.merging(restored) ?? restored
+                }
+                lastRestorationError = nil
+            } catch {
+                lastRestorationError = error
+                return error
+            }
             return nil
         }
         do {
@@ -290,7 +305,7 @@ public actor MHRemoteUpdateController {
         }
     }
 
-    private func validateRevision(_ document: MHRemoteUpdateSchedule) throws {
+    func validateRevision(_ document: MHRemoteUpdateSchedule) throws {
         guard let existing = evidence?.schedule else {
             return
         }
@@ -300,16 +315,25 @@ public actor MHRemoteUpdateController {
         }
     }
 
-    private func checkRefresh(_ identifier: UUID) throws {
+    func checkRefresh(_ identifier: UUID) throws {
         try Task.checkCancellation()
         guard refreshIdentifier == identifier else {
             throw Failure.superseded
         }
     }
 
-    private func retain(_ value: MHRemoteUpdateSnapshot) throws {
-        evidence = value
-        hasInitializedEvidence = true
-        try store?.save(value)
+    func retain(_ value: MHRemoteUpdateSnapshot) throws {
+        do {
+            evidence = try store?.retain(value) ?? value
+            hasInitializedEvidence = true
+        } catch {
+            if error is Failure, let restored = try? store?.load() {
+                evidence = try evidence?.merging(restored) ?? restored
+            } else {
+                evidence = value
+                hasInitializedEvidence = true
+            }
+            throw error
+        }
     }
 }
