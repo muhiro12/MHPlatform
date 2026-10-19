@@ -160,6 +160,7 @@ non-domain app infrastructure.
 - Foundation-only HTTPS transport and typed app configuration envelope
 - Accepts an app-selected URL and validates HTTP success, schema, and app identity
 - Carries the original fetch time when one response is distributed to features
+- Offers typed per-feature outcomes without discarding valid sibling sections
 - Leaves revisions, activation, persistence, and failure policy to each feature
 - Re-exported through both umbrellas and available as a standalone product
 
@@ -174,6 +175,8 @@ non-domain app infrastructure.
   checks with one refresh when evidence is unavailable
 - Provides standard App Store assembly, persistence placement, evidence
   lifetimes, startup recovery, and confirmation-first operation checks
+- Evaluates baseline and additional timed requirements together, preserving
+  currently enforced minimums when future plans are announced
 - Keeps release policy, endpoint/Store ID, protected-operation classification,
   lifecycle entry points, presentation, and logging app-owned
 - See [remote update adoption](remote-update.md) for legacy migration and scheduled

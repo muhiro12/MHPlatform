@@ -73,6 +73,29 @@ struct ScheduledUpdateAdapterTests: Sendable {
         #expect(await recorder.events.isEmpty)
     }
 
+    @Test(arguments: [SurfaceAdapterConsumer.ScheduledOperation.browse, .save])
+    func anUpcomingMinimumNeverReopensAnOperationBlockedByTheBaseline(
+        _ operation: SurfaceAdapterConsumer.ScheduledOperation
+    ) async throws {
+        let recorder = Recorder()
+        let baseline = try document(requirement: true)
+        let policy = try MHRemoteUpdateSchedule(
+            bundleIdentifier: baseline.bundleIdentifier,
+            revision: 2,
+            requirement: baseline.requirement,
+            scheduledRequirements: [.init(
+                minimumVersion: #require(MHAppVersion("3")),
+                effectiveAt: .init(timeIntervalSinceReferenceDate: 30)
+            )]
+        )
+        let controller = try controller { policy }
+        #expect(try await controller.refresh() == .updateRequired)
+        await #expect(throws: MHRemoteUpdateOperationError.updateRequired) {
+            try await perform(operation, updates: controller, recorder: recorder)
+        }
+        #expect(await recorder.events.isEmpty)
+    }
+
     private func perform(
         _ operation: SurfaceAdapterConsumer.ScheduledOperation,
         updates: MHRemoteUpdateController,

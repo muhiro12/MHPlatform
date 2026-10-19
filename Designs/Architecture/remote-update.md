@@ -193,14 +193,57 @@ positive `features.remoteUpdate.revision` identifies an immutable update decisio
 of app versions. Changes, postponement, and explicit cancellation require a
 higher revision. The same revision with different content and older revisions
 are rejected, including after retained evidence expires. Each document replaces
-the previous single current or future requirement.
+the complete previous baseline and set of plans. The existing `requirement` is
+the baseline and can still represent a single current or future requirement.
+
+To retain an active minimum while announcing another, add `scheduledRequirements`:
+
+```json
+{
+  "schemaVersion": 1,
+  "bundleIdentifier": "com.example.app",
+  "features": {
+    "remoteUpdate": {
+      "revision": 3,
+      "requirement": {
+        "minimumVersion": "6.0",
+        "effectiveAt": "2026-10-01T00:00:00Z"
+      },
+      "scheduledRequirements": [
+        {
+          "minimumVersion": "7.0",
+          "effectiveAt": "2026-11-01T00:00:00Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+The highest minimum among all currently active requirements applies, regardless
+of array order. Before November 1, 5.0 still needs 6.0 and 6.0 can continue.
+From November 1, both need 7.0, subject to fresh publication evidence. An
+unpublished future 7.0 does not invalidate otherwise sufficient evidence for
+the currently active 6.0 minimum. Ended plans stop contributing, leaving any
+still-active baseline or other plan in effect. All activation/end boundaries
+and publication checks are reevaluated locally without rewriting the policy.
+
+Each plan uses the same validated requirement shape. `scheduledRequirements`
+may be omitted for an empty list, preserving existing documents and snapshots;
+an explicit null or malformed entry rejects the entire update section. Plan
+changes, removal, and postponement require a higher policy revision. Array
+order is preserved as part of immutable revision content even though it does
+not affect minimum selection. No app-owned plan selection is required.
 
 Activation uses absolute ISO 8601 UTC seconds; an optional inclusive `endsAt`
 ends the requirement. Construction and decoding normalize dates down to whole
 seconds before validating intervals. Intervals that collapse at this precision
 are rejected. `decode(_:)` and `encoded()` implement the shared wire format.
 
-Only explicit `requirement: null` cancels a requirement. Omission, malformed
+Only explicit `requirement: null` removes the baseline. Full cancellation also
+requires an empty or omitted `scheduledRequirements` list. To cancel just the
+plans, publish a higher revision that keeps the baseline and clears the list.
+Omission of `requirement`, malformed
 versions, invalid identity, invalid dates, unsupported schemas, HTTP errors, and
 missing data never mean cancellation or validated permission. Authored
 `issuedAt` and `validUntil` fields in the update section are not accepted: freshness belongs to the
@@ -223,8 +266,23 @@ The update-only decoder ignores unrelated feature sections, including values tha
 would be invalid for those features. Missing or null `features.remoteUpdate`
 is an error, not cancellation. Changes to sibling sections do not change update
 policy equality or require a higher update revision. A future multi-feature
-decoder must isolate each feature's validation failure rather than throwing away
-all otherwise valid sections.
+decoder uses `MHRemoteConfigSection<Value>` for each selected feature. Its
+`value`, `missing`, and `invalid` cases preserve independent outcomes in one
+decoded response. Calling `get()` returns the valid feature or throws its
+failure; a missing feature throws `MHRemoteConfigSectionError.missing`.
+
+The update reader uses this section boundary internally. A valid update remains
+usable beside an invalid unrelated section; an invalid update can coexist with
+another valid selected feature but cannot renew update evidence or authorize
+an operation. Missing and invalid sections cannot be republished as valid
+configuration through their encoder. Invalid JSON, a malformed/unsupported
+envelope, wrong app identity, and cancellation still fail the shared request.
+Feature isolation applies to well-formed JSON values, not to broken JSON syntax.
+
+Feature implementations own their selected payload types and use this package
+primitive. Standard app initialization, lifecycle hooks, and operation checks
+do not change. No extra per-feature requests, app-owned recovery registry, or
+announcement feature is introduced.
 
 `MHRemoteConfigResponse` carries the original network observation. Its `map`
 selects a feature without renewing that time. The update controller accepts
@@ -262,8 +320,9 @@ permission. The current local maximum age is reapplied to restored observations.
 A failed refresh keeps only evidence that remains valid on its own terms.
 
 A successful policy fetch does not itself renew App Store evidence. Publication
-must be observed separately. A future requirement is `notRequired` before
-activation; a compliant installed version also returns `notRequired` while policy
+must be observed separately. A future requirement does not contribute to the
+active minimum before activation; any active baseline still applies. A compliant
+installed version returns `notRequired` while policy
 evidence remains fresh. Otherwise an active requirement needs unexpired proof
 that the minimum version is public, or its result is `unavailable`.
 
@@ -381,6 +440,26 @@ controller at a common operation boundary. Its tests verify low-impact offline
 use, one refresh before consequential operations, and no mutation or success
 effects on rejection. Operation classification remains app-owned.
 
+## Adopting Plans and Isolated Features from 1.18.0
+
+Version 1.19.0 preserves the standard initializer, operation checks, existing
+schedule/feature initializers, and 1.18.0 wire documents and retained snapshots.
+No app code change is needed to evaluate additional plans through the standard
+controller. The new `scheduledRequirements` initializer overload is available
+to advanced producers and providers.
+
+Deploy the 1.19.0 reader before relying on additional plans. A 1.18.0 binary
+ignores `scheduledRequirements` and continues to enforce only `requirement`.
+Keep the baseline intact when announcing plans; changing the common schema is
+not needed for this compatible addition. If older readers must enforce a new
+minimum, update their baseline at activation or migrate them first.
+
+Multi-feature implementations wrap each selected field in
+`MHRemoteConfigSection`; existing strict typed payloads remain valid and keep
+their existing all-or-nothing decoding behavior. The standard update reader
+uses isolation automatically. Feature errors remain observable and do not
+renew the failed feature's retained evidence.
+
 ## Migrating from 1.17.0
 
 Version 1.18.0 intentionally replaces the scheduled-controller API, remote wire
@@ -441,7 +520,7 @@ A 6.0 rollout then has separate histories:
    require an update. Installed 6.0 meets the minimum and continues normally.
 5. Postponement and cancellation are policy-history commits; they do not become
    6.1 source changes. Each uses a higher revision. A cancellation is a full valid
-   document with `requirement: null`. Re-fetching unchanged policy renews only
+   document with `requirement: null` and no scheduled requirements. Re-fetching unchanged policy renews only
    the client's retained evidence; it needs no policy-history commit.
 
 Publication gating prevents a premature *update-required* state; an active

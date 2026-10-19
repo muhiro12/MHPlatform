@@ -189,6 +189,11 @@ configuration envelope; update revisions and retained evidence remain in
 repository embedded in the package. See the
 [remote update adoption guide](Designs/Architecture/remote-update.md).
 
+An active update minimum can coexist with additional timed plans; the package
+selects the strictest active minimum without extra app-side selection logic.
+Typed `MHRemoteConfigSection` values isolate feature failures in a shared response.
+The standard endpoint/Store-ID initializer and operation checks remain unchanged.
+
 ## Public Products
 
 Default adoption pillars:
