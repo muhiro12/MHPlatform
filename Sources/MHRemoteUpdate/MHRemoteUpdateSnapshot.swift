@@ -55,14 +55,14 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
     /// Freshness of the retained policy; local reads never renew it.
     public let observation: Observation
     /// The storefront in which publication evidence was obtained.
-    public let storefront: String
+    public let storefront: String?
     /// Optional evidence; its absence never clears a known schedule.
     public let publication: Publication?
 
     /// Creates a snapshot for the app-owned storage location.
     public init(
         schedule: MHRemoteUpdateSchedule,
-        storefront: String,
+        storefront: String?,
         observation: Observation,
         publication: Publication?
     ) {

@@ -45,35 +45,15 @@ public struct MHAppStoreVersionLookup: Sendable {
     /// Cancellation propagates as `CancellationError`. No failure is converted into
     /// an update decision. Local HTTP cache is bypassed so rechecking does not
     /// renew old publication evidence. Store metadata does not guarantee download success.
+    /// Nil omits country selection; the service's default is not a global catalog.
     public func version(
         appID: Int,
         bundleIdentifier: String,
-        country: String
+        country: String? = nil
     ) async throws -> MHAppVersion {
         try Task.checkCancellation()
-        guard appID > 0,
-              bundleIdentifier.isEmpty == false,
-              bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines) == bundleIdentifier,
-              country.utf8.count == Format.countryLength,
-              country.utf8.allSatisfy({ byte in
-                Format.uppercaseASCII.contains(byte) || Format.lowercaseASCII.contains(byte)
-              }) else {
-            throw Failure.invalidRequest
-        }
-        var components = URLComponents()
-        components.scheme = "https"
-        components.host = "itunes.apple.com"
-        components.path = "/lookup"
-        components.queryItems = [
-            .init(name: "id", value: String(appID)),
-            .init(name: "country", value: country)
-        ]
-        guard let url = components.url else {
-            throw Failure.invalidRequest
-        }
-
+        let request = try makeRequest(appID: appID, bundleIdentifier: bundleIdentifier, country: country)
         do {
-            let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
             let (data, urlResponse) = try await session.data(for: request)
             try Task.checkCancellation()
             guard let response = urlResponse as? HTTPURLResponse else {
@@ -98,5 +78,34 @@ public struct MHAppStoreVersionLookup: Sendable {
             }
             throw error
         }
+    }
+
+    private func makeRequest(appID: Int, bundleIdentifier: String, country: String?) throws -> URLRequest {
+        guard appID > 0,
+              bundleIdentifier.isEmpty == false,
+              bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines) == bundleIdentifier else {
+            throw Failure.invalidRequest
+        }
+        if let country {
+            guard country.utf8.count == Format.countryLength,
+                  country.utf8.allSatisfy({ byte in
+                    Format.uppercaseASCII.contains(byte) || Format.lowercaseASCII.contains(byte)
+                  }) else {
+                throw Failure.invalidRequest
+            }
+        }
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "itunes.apple.com"
+        components.path = "/lookup"
+        components.queryItems = [.init(name: "id", value: String(appID))]
+        if let country {
+            components.queryItems?.append(.init(name: "country", value: country.lowercased()))
+        }
+        guard let url = components.url else {
+            throw Failure.invalidRequest
+        }
+
+        return .init(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
     }
 }

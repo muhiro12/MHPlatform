@@ -6,8 +6,6 @@ public extension MHRemoteUpdateController {
         private static let secondsPerDay: TimeInterval = 86_400
         private static let policyLifetimeDays: TimeInterval = 30
 
-        /// The US metadata storefront, independent of the app's primary language.
-        public static let storefront = "us"
         /// Maximum offline reuse of a successfully fetched policy.
         public static let policyLifetime = policyLifetimeDays * secondsPerDay
         /// The lifetime of successful publication evidence.
@@ -25,7 +23,7 @@ public extension MHRemoteUpdateController {
     init(
         appStoreID: Int,
         policyURL: URL,
-        storefront: String = Defaults.storefront,
+        storefront: String? = nil,
         bundle: Bundle = .main,
         storageDirectory: URL? = nil,
         session: URLSession = .shared
@@ -43,7 +41,7 @@ public extension MHRemoteUpdateController {
         let fileURL = directory
             .appendingPathComponent(bundleIdentifier, isDirectory: true)
             .appendingPathComponent(String(appStoreID), isDirectory: true)
-            .appendingPathComponent(storefront.lowercased(), isDirectory: true)
+            .appendingPathComponent(storefront?.lowercased() ?? "default", isDirectory: true)
             .appendingPathComponent("snapshot.json")
         let scheduleLookup = MHRemoteUpdateScheduleLookup(session: session)
         let versionLookup = MHAppStoreVersionLookup(session: session)

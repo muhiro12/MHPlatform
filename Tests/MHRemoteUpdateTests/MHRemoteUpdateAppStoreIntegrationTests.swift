@@ -3,8 +3,8 @@ import MHRemoteUpdate
 import Testing
 
 struct MHRemoteUpdateAppStoreIntegrationTests {
-    @Test
-    func standardAssemblyPersistsEvidenceAndRestoresOfflineWithoutCustomProviders() async throws {
+    @Test(arguments: [nil, "JP"] as [String?])
+    func standardAssemblyPersistsEvidenceAndRestoresOfflineWithoutCustomProviders(_ storefront: String?) async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer {
             try? FileManager.default.removeItem(at: directory)
@@ -13,25 +13,37 @@ struct MHRemoteUpdateAppStoreIntegrationTests {
         let policyURL = try #require(URL(string: "https://example.com/policy.json"))
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StandardUpdateURLProtocol.self]
+        configuration.httpAdditionalHeaders = ["X-Expected-Storefront": storefront?.lowercased() ?? "default"]
         let session = URLSession(configuration: configuration)
         defer {
             session.invalidateAndCancel()
         }
         let updates = try MHRemoteUpdateController(
-            appStoreID: 123, policyURL: policyURL, bundle: bundle, storageDirectory: directory, session: session
+            appStoreID: 123,
+            policyURL: policyURL,
+            storefront: storefront,
+            bundle: bundle,
+            storageDirectory: directory,
+            session: session
         )
         let result = try await updates.prepare()
         #expect(result.restorationError == nil)
         #expect(result.refreshError == nil)
         #expect(result.decision == .updateRequired)
         let restarted = try MHRemoteUpdateController(
-            appStoreID: 123, policyURL: policyURL, bundle: bundle, storageDirectory: directory, session: session
+            appStoreID: 123,
+            policyURL: policyURL,
+            storefront: storefront,
+            bundle: bundle,
+            storageDirectory: directory,
+            session: session
         )
         try await restarted.restore()
         #expect(await restarted.decision() == .updateRequired)
         let otherEndpoint = try MHRemoteUpdateController(
             appStoreID: 123,
             policyURL: #require(URL(string: "https://example.com/another-policy.json")),
+            storefront: storefront,
             bundle: bundle,
             storageDirectory: directory,
             session: session

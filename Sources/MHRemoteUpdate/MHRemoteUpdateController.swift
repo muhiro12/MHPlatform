@@ -35,7 +35,7 @@ public actor MHRemoteUpdateController {
     }
 
     private let bundleIdentifier: String
-    private let storefront: String
+    private let storefront: String?
     private let policyLifetime: TimeInterval
     private let publicationLifetime: TimeInterval
     private let store: MHRemoteUpdateStore?
@@ -55,7 +55,7 @@ public actor MHRemoteUpdateController {
     @preconcurrency
     public init(
         bundleIdentifier: String,
-        storefront: String,
+        storefront: String?,
         policyLifetime: TimeInterval,
         publicationLifetime: TimeInterval,
         store: MHRemoteUpdateStore?,
@@ -66,16 +66,20 @@ public actor MHRemoteUpdateController {
     ) throws {
         guard bundleIdentifier.isEmpty == false,
               bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines) == bundleIdentifier,
-              storefront.utf8.count == Format.countryLength,
-              storefront.utf8.allSatisfy({ byte in
-                Format.uppercaseASCII.contains(byte) || Format.lowercaseASCII.contains(byte)
-              }),
               policyLifetime.isFinite, policyLifetime > 0,
               publicationLifetime.isFinite, publicationLifetime > 0 else {
             throw Failure.invalidConfiguration
         }
+        if let storefront {
+            guard storefront.utf8.count == Format.countryLength,
+                  storefront.utf8.allSatisfy({ byte in
+                    Format.uppercaseASCII.contains(byte) || Format.lowercaseASCII.contains(byte)
+                  }) else {
+                throw Failure.invalidConfiguration
+            }
+        }
         self.bundleIdentifier = bundleIdentifier
-        self.storefront = storefront.lowercased()
+        self.storefront = storefront?.lowercased()
         self.policyLifetime = policyLifetime
         self.publicationLifetime = publicationLifetime
         self.store = store

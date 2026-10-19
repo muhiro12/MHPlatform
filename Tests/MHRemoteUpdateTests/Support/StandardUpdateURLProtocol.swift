@@ -25,8 +25,10 @@ final class StandardUpdateURLProtocol: URLProtocol {
             let data: Data
             if url.host == "itunes.apple.com" {
                 let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                let country = components?.queryItems?.first { $0.name == "country" }?.value
+                let expected = request.value(forHTTPHeaderField: "X-Expected-Storefront") ?? "default"
                 guard components?.queryItems?.contains(.init(name: "id", value: String(Status.appID))) == true,
-                      components?.queryItems?.contains(.init(name: "country", value: "us")) == true else {
+                      country == (expected == "default" ? nil : expected) else {
                     throw URLError(.badURL)
                 }
                 data = Data(#"{"results":[{"trackId":123,"bundleId":"example.app","version":"2"}]}"#.utf8)
