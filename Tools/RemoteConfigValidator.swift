@@ -3,7 +3,6 @@ import MHRemoteUpdate
 
 @main
 enum RemoteConfigValidator {
-    private static let maximumArgumentCount = 2
     private enum Failure: Error, CustomStringConvertible {
         case usage
 
@@ -11,6 +10,8 @@ enum RemoteConfigValidator {
             "Usage: mh-validate-remote-config <candidate.json> [previous.json]"
         }
     }
+
+    private static let maximumArgumentCount = 2
 
     static func main() {
         do {
