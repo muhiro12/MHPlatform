@@ -26,7 +26,7 @@ final class StandardUpdateURLProtocol: URLProtocol {
             if url.host == "itunes.apple.com" {
                 let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                 guard components?.queryItems?.contains(.init(name: "id", value: String(Status.appID))) == true,
-                      components?.queryItems?.contains(.init(name: "country", value: "jp")) == true else {
+                      components?.queryItems?.contains(.init(name: "country", value: "us")) == true else {
                     throw URLError(.badURL)
                 }
                 data = Data(#"{"results":[{"trackId":123,"bundleId":"example.app","version":"2"}]}"#.utf8)

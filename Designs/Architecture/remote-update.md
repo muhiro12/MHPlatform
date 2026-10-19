@@ -256,7 +256,7 @@ No timer, lifecycle observer, or UI presentation is installed automatically.
 | Standard behavior | Package convention |
 | --- | --- |
 | Identity and installed version | `Bundle.main`; pass the containing app's bundle in extensions |
-| Metadata storefront | `jp`; override `storefront` when needed |
+| Metadata storefront | `us`; override `storefront` when needed |
 | Offline policy evidence | 30 days from the latest accepted network fetch |
 | Publication evidence lifetime | 24 hours |
 | Persistence | Application Support / MHRemoteUpdate, scoped by bundle, Store ID, and country |
@@ -269,6 +269,11 @@ The policy may supply an optional requirement end. The policy evidence lifetime
 and publication lifetime are separate limits, not enforcement durations.
 The shared defaults are MH integration conventions, not release values copied
 from one app. `Defaults` exposes the standard constants.
+
+The US storefront is the standard publication reference, independent of the
+app's primary language. It is not a global catalog or proof of availability in
+every customer's storefront. The lookup explicitly sends `country=us` rather
+than relying on the service's default.
 
 An optional `storageDirectory` supports shared containers, alternate environments,
 and tests. Use separate directories/controllers for different environments.

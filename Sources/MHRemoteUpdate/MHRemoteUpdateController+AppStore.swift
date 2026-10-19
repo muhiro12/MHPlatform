@@ -6,8 +6,8 @@ public extension MHRemoteUpdateController {
         private static let secondsPerDay: TimeInterval = 86_400
         private static let policyLifetimeDays: TimeInterval = 30
 
-        /// The standard metadata storefront; apps may explicitly select another country.
-        public static let storefront = "jp"
+        /// The US metadata storefront, independent of the app's primary language.
+        public static let storefront = "us"
         /// Maximum offline reuse of a successfully fetched policy.
         public static let policyLifetime = policyLifetimeDays * secondsPerDay
         /// The lifetime of successful publication evidence.
