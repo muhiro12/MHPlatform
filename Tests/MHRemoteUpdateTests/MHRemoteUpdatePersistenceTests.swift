@@ -5,6 +5,40 @@ import Testing
 struct MHRemoteUpdatePersistenceTests: Sendable {
     private typealias Fixture = RemoteUpdateTestSupport
 
+    @Test(arguments: [false, true])
+    func legacySnapshotRequiresAValidatedFetchBeforeBecomingUsable(_ offline: Bool) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: directory)
+        }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let fileURL = directory.appendingPathComponent("policy.json")
+        let legacySnapshot = Data(#"""
+            {"schedule":{"schemaVersion":1,"bundleIdentifier":"example.app","revision":1,
+            "issuedAt":0,"validUntil":2592000,"requirement":null},"storefront":"jp"}
+        """#.utf8)
+        try legacySnapshot.write(to: fileURL)
+        let store = MHRemoteUpdateStore(fileURL: fileURL)
+        let clock = Fixture.Clock()
+        let policy = try makePolicy()
+        let updates = try makeController(clock: clock, store: store) {
+            if offline {
+                throw Fixture.Failure.offline
+            }
+            return policy
+        }
+        let preparation = try await updates.prepare()
+        #expect(preparation.restorationError != nil)
+        #expect(preparation.decision == (offline ? .unavailable : .notRequired))
+        if offline {
+            #expect(preparation.refreshError is Fixture.Failure)
+            #expect(try Data(contentsOf: fileURL) == legacySnapshot)
+        } else {
+            #expect(preparation.refreshError == nil)
+            #expect(try store.load()?.observation.fetchedAt == clock.now())
+        }
+    }
+
     @Test
     func restoringRepeatedlyDoesNotExtendTheLastSuccessfulFetch() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

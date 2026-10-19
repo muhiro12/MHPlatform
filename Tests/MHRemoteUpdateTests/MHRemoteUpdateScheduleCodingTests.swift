@@ -64,6 +64,17 @@ struct MHRemoteUpdateScheduleCodingTests {
     }
 
     @Test
+    func legacyBoundedDocumentIsNotReinterpretedAsStaticConfiguration() {
+        let document = Data(#"""
+            {"schemaVersion":1,"bundleIdentifier":"example.app","revision":1,
+            "issuedAt":"2026-10-01T00:00:00Z","validUntil":"2026-10-31T00:00:00Z","requirement":null}
+        """#.utf8)
+        #expect(throws: (any Error).self) {
+            try MHRemoteUpdateSchedule.decode(document)
+        }
+    }
+
+    @Test
     func unrelatedFeatureChangesDoNotChangeUpdatePolicyOrRevision() throws {
         let documents = [
             #"""

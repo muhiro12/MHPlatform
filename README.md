@@ -34,6 +34,10 @@ From this transition onward, incompatible public API changes require a major
 version, compatible features a minor version, and fixes a patch version.
 Version 1.14.0 is an explicit transition exception: it replaces the beta native
 ad size API while retaining the requested minor version increment.
+Version 1.18.0 is another explicit transition exception: it replaces the
+scheduled remote-update API, wire format, and retained cache before operational
+adoption. See the [1.17.0 migration notes](Designs/Architecture/remote-update.md#migrating-from-1170)
+before upgrading an experimental scheduled-update integration.
 
 ### Migrating Native Ads to 1.14.0
 

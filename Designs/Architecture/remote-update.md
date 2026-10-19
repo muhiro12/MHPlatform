@@ -56,8 +56,8 @@ operations; mapping only `updateRequired` to an alert still preserves Cookle UI.
 
 `MHAppStoreVersionLookup(session:)` uses the official
 [ID-based Lookup API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/LookupExamples.html).
-Its caller supplies the app ID, expected bundle identifier, and two-letter
-storefront country code. A 2xx HTTP response, decodable result, matching app ID
+Its caller supplies the app ID and expected bundle identifier, with an optional
+two-letter storefront country code. A 2xx HTTP response, decodable result, matching app ID
 and bundle ID, and valid numeric version are all required. The session can be
 injected for request configuration and deterministic `URLProtocol` tests.
 Transport, HTTP, decoding, and identity errors remain observable to the app.
@@ -319,6 +319,16 @@ solve publication lookup for apps unavailable in the US. Such apps must select
 an available reference storefront. Language and storefront are independent.
 Default and explicitly selected storefronts have separate evidence files.
 
+For a specific publication reference, pass the optional country code:
+
+```swift
+let updates = try MHRemoteUpdateController(
+    appStoreID: appStoreID,
+    configurationURL: configurationURL,
+    storefront: "jp"
+)
+```
+
 An optional `storageDirectory` supports shared containers, alternate environments,
 and tests. Use separate directories/controllers for different environments.
 One process owns each cache file; App Group writer coordination is not automatic.
@@ -370,6 +380,39 @@ refresh through this check.
 controller at a common operation boundary. Its tests verify low-impact offline
 use, one refresh before consequential operations, and no mutation or success
 effects on rejection. Operation classification remains app-owned.
+
+## Migrating from 1.17.0
+
+Version 1.18.0 intentionally replaces the scheduled-controller API, remote wire
+format, and retained snapshot before operational adoption. This is an explicit
+minor-release exception, not a source- or wire-compatible upgrade. The legacy
+version comparison, activation policy, evaluator, and operation-decision
+primitives remain available.
+
+| Integration boundary | Required change |
+| --- | --- |
+| Standard controller | Rename `policyURL:` to `configurationURL:`. |
+| Metadata storefront | Pass `storefront: "jp"` to retain 1.17.0's Japan reference; omission now delegates to Apple's service default. |
+| Remote JSON | Use the shared envelope shown above; move `revision` and explicit `requirement` under `features.remoteUpdate`. Remove authored `issuedAt` and `validUntil`. |
+| Schedule construction | Remove `issuedAt:` and `validUntil:` from `MHRemoteUpdateSchedule` construction. |
+| Advanced controller | Replace `maximumValidity:` with `policyLifetime:` for retained fetch evidence. `Defaults.maximumValidity` is replaced by `Defaults.policyLifetime`. |
+| Injected schedule provider | Return `MHRemoteConfigResponse<MHRemoteUpdateSchedule>` with the original validated network observation. The standard lookup already returns this response; use `map` when selecting from a shared response. |
+| Lookup error handling | Use `MHRemoteConfigError` for request, HTTP, envelope, and identity validation instead of `MHRemoteUpdateScheduleLookup.Failure`. Transport and decoding errors still propagate. |
+| Advanced snapshot code | Supply the new policy `observation`; use `maximumPolicyAge:` when evaluating snapshots. |
+
+The shared envelope still uses `schemaVersion: 1`; it does not accept or silently
+reinterpret 1.17.0's flat bounded-document format. Do not replace a deployed
+legacy endpoint with this format while old clients still consume it. Publish a
+separate endpoint for new adopters when both formats must coexist.
+
+There is no automatic migration of 1.17.0 retained snapshots. A missing cache
+starts unavailable; an incompatible cache throws on `restore()`. `prepare()`
+reports that restoration failure and still attempts a validated fetch. A
+successful fetch writes the new snapshot; a failed fetch leaves the result
+unavailable. Offline startup after this transition therefore cannot authorize
+protected operations from old evidence. Never manufacture a fresh observation
+timestamp from a disk read. These files contain replaceable configuration
+evidence, not app-owned user data.
 
 ## Release Operations Independent of Source Releases
 
