@@ -2,7 +2,7 @@ import Foundation
 import MHRemoteConfig
 
 struct RemoteUpdateFeatures: Codable, Sendable {
-    let remoteUpdate: MHRemoteUpdateSchedule.Feature
+    let remoteUpdate: MHRemoteConfigSection<MHRemoteUpdateSchedule.Feature>
 }
 
 public extension MHRemoteUpdateSchedule {
@@ -10,26 +10,34 @@ public extension MHRemoteUpdateSchedule {
     struct Feature: Codable, Equatable, Sendable {
         /// A positive immutable revision for update policy alone.
         public let revision: Int
-        /// Explicit nil cancels; missing data never establishes cancellation.
+        /// Explicit nil removes the baseline; missing data never establishes cancellation.
         public let requirement: Requirement?
+        /// Additional plans evaluated alongside the baseline after their activation.
+        public let scheduledRequirements: [Requirement]
 
         /// Validates the update section without depending on other feature types.
         public init(revision: Int, requirement: Requirement?) throws {
+            try self.init(revision: revision, requirement: requirement, scheduledRequirements: [])
+        }
+
+        /// Validates every plan before accepting any part of this update policy.
+        public init(revision: Int, requirement: Requirement?, scheduledRequirements: [Requirement]) throws {
             guard revision > 0 else {
                 throw Failure.invalidDocument
             }
-            if let requirement {
-                guard requirement.effectiveAt.timeIntervalSinceReferenceDate.isFinite else {
+            for candidate in requirement.map({ [$0] + scheduledRequirements }) ?? scheduledRequirements {
+                guard candidate.effectiveAt.timeIntervalSinceReferenceDate.isFinite else {
                     throw Failure.invalidDocument
                 }
-                if let endsAt = requirement.endsAt {
-                    guard endsAt.timeIntervalSinceReferenceDate.isFinite, endsAt > requirement.effectiveAt else {
+                if let endsAt = candidate.endsAt {
+                    guard endsAt.timeIntervalSinceReferenceDate.isFinite, endsAt > candidate.effectiveAt else {
                         throw Failure.invalidDocument
                     }
                 }
             }
             self.revision = revision
             self.requirement = requirement
+            self.scheduledRequirements = scheduledRequirements
         }
 
         /// Requires explicit cancellation and rejects publisher-controlled evidence expiry.
@@ -42,7 +50,9 @@ public extension MHRemoteUpdateSchedule {
             }
             try self.init(
                 revision: container.decode(Int.self, forKey: .revision),
-                requirement: container.decodeIfPresent(Requirement.self, forKey: .requirement)
+                requirement: container.decodeIfPresent(Requirement.self, forKey: .requirement),
+                scheduledRequirements: container.contains(.scheduledRequirements)
+                    ? container.decode([Requirement].self, forKey: .scheduledRequirements) : []
             )
         }
 
@@ -51,31 +61,41 @@ public extension MHRemoteUpdateSchedule {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(revision, forKey: .revision)
             try container.encode(requirement, forKey: .requirement)
+            if scheduledRequirements.isEmpty == false {
+                try container.encode(scheduledRequirements, forKey: .scheduledRequirements)
+            }
         }
     }
 
     /// Selects validated update policy from a shared app configuration response.
     init(bundleIdentifier: String, feature: Feature) throws {
-        try self.init(bundleIdentifier: bundleIdentifier, revision: feature.revision, requirement: feature.requirement)
+        try self.init(
+            bundleIdentifier: bundleIdentifier,
+            revision: feature.revision,
+            requirement: feature.requirement,
+            scheduledRequirements: feature.scheduledRequirements
+        )
     }
 
     /// Decodes only the update section of the shared app configuration envelope.
     static func decode(_ data: Data) throws -> Self {
         let document = try MHRemoteConfigDocument<RemoteUpdateFeatures>.decode(data)
-        return try .init(bundleIdentifier: document.bundleIdentifier, feature: document.features.remoteUpdate)
+        return try .init(bundleIdentifier: document.bundleIdentifier, feature: document.features.remoteUpdate.get())
     }
 
     /// Encodes an app configuration containing the update section.
     func encoded() throws -> Data {
         try MHRemoteConfigDocument(
             bundleIdentifier: bundleIdentifier,
-            features: RemoteUpdateFeatures(remoteUpdate: .init(revision: revision, requirement: requirement))
+            features: RemoteUpdateFeatures(remoteUpdate: .value(.init(
+                revision: revision, requirement: requirement, scheduledRequirements: scheduledRequirements
+            )))
         ).encoded()
     }
 }
 
 private extension MHRemoteUpdateSchedule.Feature {
     enum CodingKeys: String, CodingKey {
-        case revision, requirement, issuedAt, validUntil
+        case revision, requirement, scheduledRequirements, issuedAt, validUntil
     }
 }

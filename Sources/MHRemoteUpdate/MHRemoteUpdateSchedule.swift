@@ -43,7 +43,7 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, bundleIdentifier, revision, requirement, issuedAt, validUntil
+        case schemaVersion, bundleIdentifier, revision, requirement, scheduledRequirements, issuedAt, validUntil
     }
 
     private static let supportedSchemaVersion = 1
@@ -54,8 +54,14 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
     public let bundleIdentifier: String
     /// A positive immutable revision, independent of the app version.
     public let revision: Int
-    /// An explicit nil cancels the requirement; omission in JSON is invalid.
+    /// The baseline requirement; explicit nil removes it, while omission in JSON is invalid.
     public let requirement: Requirement?
+    /// Additional independently timed requirements; active requirements cannot weaken the baseline.
+    public let scheduledRequirements: [Requirement]
+
+    var allRequirements: [Requirement] {
+        requirement.map { [$0] + scheduledRequirements } ?? scheduledRequirements
+    }
 
     /// Creates a policy; only its fetched evidence receives an expiry.
     public init(
@@ -63,10 +69,26 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         revision: Int,
         requirement: Requirement?
     ) throws {
+        try self.init(
+            bundleIdentifier: bundleIdentifier, revision: revision, requirement: requirement, scheduledRequirements: []
+        )
+    }
+
+    /// Adds plans without replacing a currently enforced minimum.
+    ///
+    /// The highest minimum among all active requirements applies. Removing or
+    /// postponing a plan requires a higher revision of the complete policy.
+    public init(
+        bundleIdentifier: String,
+        revision: Int,
+        requirement: Requirement?,
+        scheduledRequirements: [Requirement]
+    ) throws {
         schemaVersion = Self.supportedSchemaVersion
         self.bundleIdentifier = bundleIdentifier
         self.revision = revision
         self.requirement = requirement
+        self.scheduledRequirements = scheduledRequirements
         try validate()
     }
 
@@ -82,6 +104,8 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
             throw Failure.invalidDocument
         }
         requirement = try container.decodeIfPresent(Requirement.self, forKey: .requirement)
+        scheduledRequirements = container.contains(.scheduledRequirements)
+            ? try container.decode([Requirement].self, forKey: .scheduledRequirements) : []
         try validate()
     }
 
@@ -96,6 +120,23 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         try container.encode(bundleIdentifier, forKey: .bundleIdentifier)
         try container.encode(revision, forKey: .revision)
         try container.encode(requirement, forKey: .requirement)
+        if scheduledRequirements.isEmpty == false {
+            try container.encode(scheduledRequirements, forKey: .scheduledRequirements)
+        }
+    }
+
+    func minimumVersion(at date: Date) -> MHAppVersion? {
+        allRequirements.lazy.filter { requirement in
+            date >= requirement.effectiveAt && requirement.endsAt.map { date <= $0 } != false
+        }
+        .map(\.minimumVersion)
+        .max()
+    }
+
+    func needsPublication(currentVersion: MHAppVersion, at date: Date) -> Bool {
+        allRequirements.contains { requirement in
+            currentVersion < requirement.minimumVersion && requirement.endsAt.map { date <= $0 } != false
+        }
     }
 
     private func validate() throws {
@@ -106,7 +147,7 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
               bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines) == bundleIdentifier else {
             throw Failure.invalidDocument
         }
-        _ = try Feature(revision: revision, requirement: requirement)
+        _ = try Feature(revision: revision, requirement: requirement, scheduledRequirements: scheduledRequirements)
     }
 }
 

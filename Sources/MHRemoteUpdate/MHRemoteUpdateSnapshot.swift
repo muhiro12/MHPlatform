@@ -82,14 +82,11 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
         guard observation.isValid(at: now, maximumAge: maximumPolicyAge) else {
             return .unavailable
         }
-        guard let requirement = schedule.requirement,
-              currentVersion < requirement.minimumVersion,
-              now >= requirement.effectiveAt,
-              requirement.endsAt.map({ now <= $0 }) != false else {
+        guard let minimumVersion = schedule.minimumVersion(at: now), currentVersion < minimumVersion else {
             return .notRequired
         }
         guard let publication, publication.isValid(at: now, maximumAge: maximumPublicationAge),
-              publication.version >= requirement.minimumVersion else {
+              publication.version >= minimumVersion else {
             return .unavailable
         }
         return .updateRequired

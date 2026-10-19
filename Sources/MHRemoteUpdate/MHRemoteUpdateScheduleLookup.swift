@@ -19,7 +19,7 @@ public struct MHRemoteUpdateScheduleLookup: Sendable {
             from: url, bundleIdentifier: bundleIdentifier, features: RemoteUpdateFeatures.self
         )
         return try response.map { document in
-            try .init(bundleIdentifier: document.bundleIdentifier, feature: document.features.remoteUpdate)
+            try .init(bundleIdentifier: document.bundleIdentifier, feature: document.features.remoteUpdate.get())
         }
     }
 }

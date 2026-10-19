@@ -5,6 +5,7 @@ import Foundation
 /// Decode all selected features once and share the resulting value. Features own
 /// their revisions, validation, freshness, and failure behavior; adding a sibling
 /// feature does not change the envelope or a previously accepted feature revision.
+/// Wrap each selected feature in `MHRemoteConfigSection` to isolate its failure.
 public struct MHRemoteConfigDocument<Features: Decodable & Sendable>: Decodable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, bundleIdentifier, features

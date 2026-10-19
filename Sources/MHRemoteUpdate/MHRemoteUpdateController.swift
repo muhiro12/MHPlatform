@@ -196,9 +196,8 @@ public actor MHRemoteUpdateController {
                 publication: evidence?.publication
             )
             try retain(accepted)
-            if let requirement = document.requirement,
-               currentVersion().flatMap(MHAppVersion.init).map({ $0 < requirement.minimumVersion }) == true,
-               requirement.endsAt.map({ now() <= $0 }) != false {
+            if let installedVersion = currentVersion().flatMap(MHAppVersion.init),
+               document.needsPublication(currentVersion: installedVersion, at: now()) {
                 let version = try await publicVersion()
                 try checkRefresh(identifier)
                 let checkedAt = now()
