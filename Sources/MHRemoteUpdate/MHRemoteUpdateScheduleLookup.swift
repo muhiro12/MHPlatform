@@ -28,6 +28,35 @@ public struct MHRemoteUpdateScheduleLookup: Sendable {
     /// Bypasses the local response cache. Document validity is still checked separately
     /// by the controller; a successful response never extends its absolute expiry.
     public func schedule(from url: URL, bundleIdentifier: String) async throws -> MHRemoteUpdateSchedule {
+        let schedule = try MHRemoteUpdateSchedule.decode(await fetch(from: url, bundleIdentifier: bundleIdentifier))
+        guard schedule.bundleIdentifier == bundleIdentifier else {
+            throw MHRemoteUpdateSchedule.Failure.identityMismatch
+        }
+        return schedule
+    }
+
+    /// Fetches schema v2 without assigning freshness to local cache reads.
+    public func staticPolicy(from url: URL, bundleIdentifier: String) async throws -> MHRemoteUpdateStaticPolicy {
+        let policy = try MHRemoteUpdateStaticPolicy.decode(await fetch(from: url, bundleIdentifier: bundleIdentifier))
+        guard policy.bundleIdentifier == bundleIdentifier else {
+            throw MHRemoteUpdateSchedule.Failure.identityMismatch
+        }
+        return policy
+    }
+
+    func document(from url: URL, bundleIdentifier: String) async throws -> MHRemoteUpdateDocument {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let document = try decoder.decode(
+            MHRemoteUpdateDocument.self, from: await fetch(from: url, bundleIdentifier: bundleIdentifier)
+        )
+        guard document.bundleIdentifier == bundleIdentifier else {
+            throw MHRemoteUpdateSchedule.Failure.identityMismatch
+        }
+        return document
+    }
+
+    private func fetch(from url: URL, bundleIdentifier: String) async throws -> Data {
         try Task.checkCancellation()
         guard url.scheme == "https", url.host?.isEmpty == false,
               bundleIdentifier.isEmpty == false else {
@@ -43,11 +72,7 @@ public struct MHRemoteUpdateScheduleLookup: Sendable {
             guard Status.success.contains(response.statusCode) else {
                 throw Failure.httpStatus(response.statusCode)
             }
-            let schedule = try MHRemoteUpdateSchedule.decode(data)
-            guard schedule.bundleIdentifier == bundleIdentifier else {
-                throw MHRemoteUpdateSchedule.Failure.identityMismatch
-            }
-            return schedule
+            return data
         } catch {
             if error is CancellationError || Task.isCancelled || (error as? URLError)?.code == .cancelled {
                 throw CancellationError()

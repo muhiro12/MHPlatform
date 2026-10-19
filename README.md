@@ -176,7 +176,9 @@ app-root runtime surface.
 Remote updates are available through `MHPlatformCore` and `MHPlatform`, with a
 standalone `MHRemoteUpdate` product for focused consumers. Standard App Store
 adoption needs a policy URL and Store ID; the package assembles lookup, persistence,
-lifetimes, and confirmation-first operation checks. See the
+lifetimes, and confirmation-first operation checks. Static schema-v2 policies
+need no periodic publisher renewal; only validated fetches renew bounded offline
+evidence. Bounded schema-v1 documents retain their absolute expiry. See the
 [remote update adoption guide](Designs/Architecture/remote-update.md).
 
 ## Public Products

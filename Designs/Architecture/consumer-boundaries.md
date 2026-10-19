@@ -93,6 +93,8 @@ assembly needs only the policy URL and Store ID, with package-owned lookup,
 cache placement, lifetimes, preparation, and operation rules. Apps retain release
 policy, protected-operation classification, lifecycle hooks, UI, and logging;
 advanced overrides are available for concrete exceptions.
+Static-v2 policies need no publisher renewal; the package bounds offline reuse
+from validated fetches separately from activation and publication evidence.
 See [remote update adoption](remote-update.md).
 
 ## What Stays App-Owned

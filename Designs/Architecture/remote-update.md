@@ -150,7 +150,7 @@ It is not retroactive migration, CloudKit, or old-writer compatibility protectio
 Apps still decide protected operations, enforcement rollout, unavailable-policy
 handling, and presentation before adopting enforcement.
 
-## Scheduled Policy and Retained Evidence
+## Bounded Schedules: Schema v1
 
 `MHRemoteUpdateSchedule` is an optional shared wire contract, independent of
 legacy `.config.json` formats. Its schema version describes the format; its
@@ -201,6 +201,81 @@ or expired, produces `unavailable`, never `notRequired`. A valid future
 requirement is `notRequired` until activation; a version meeting the minimum is
 also `notRequired` while the policy document remains valid.
 
+## Static Policies: Schema v2
+
+Use `MHRemoteUpdateStaticPolicy` for configuration edited only when the release
+decision changes. The standard controller accepts both schemas without another
+app setting. This minimal static document confirms no update requirement:
+
+```json
+{
+  "schemaVersion": 2,
+  "bundleIdentifier": "com.example.app",
+  "revision": 1,
+  "requirement": null
+}
+```
+
+To announce a release, replace `requirement` and increase `revision`:
+
+```json
+"requirement": {
+  "minimumVersion": "6.0",
+  "effectiveAt": "2026-11-01T00:00:00Z"
+}
+```
+
+Activation and the optional inclusive `endsAt` retain their absolute meaning and
+whole-second precision. Schema v2 has no `issuedAt` or `validUntil`; these keys
+are rejected even when null, preventing accidental mixing with v1. Missing
+`requirement` is invalid; only explicit null cancels it. Identity, positive
+revision, valid versions, and valid activation intervals remain mandatory.
+
+Policy identity and freshness are separate. A successful, identity-validated
+network fetch renews retained policy evidence for at most 30 days by default,
+even when the immutable revision and JSON are unchanged for months. The standard
+lookup bypasses local HTTP cache. Every `prepare()` refreshes; an unavailable
+operation check refreshes once under the standard confirmation rule. This is
+client-side fetching, with no publisher job, timer, service, or periodic JSON edit.
+
+Local restore, failed or malformed fetches, identity/revision conflicts, and
+cancelled responses never renew policy freshness. Offline expiry remains
+`unavailable`, including explicit cancellation and compliant installed versions;
+expiry alone never authorizes an operation. A successful policy fetch does not
+extend App Store evidence: publication must be observed separately and remains
+bounded to 24 hours by default. Before activation, or when the installed version
+already meets the minimum, fresh policy evidence is sufficient for `notRequired`.
+
+The 30-day offline lifetime is `Defaults.policyLifetime`; the v1 absolute-duration
+cap remains `Defaults.maximumValidity`. Neither is an enforcement duration.
+Advanced static assembly accepts `policyLifetime` and `fetchPolicy`, while the
+existing `maximumValidity` / `fetchSchedule` initializer keeps its v1 contract.
+`MHRemoteUpdateScheduleLookup.staticPolicy(from:bundleIdentifier:)` is available
+for injected static providers; they must also use validated network responses.
+
+### Migrating from 1.17.0
+
+1. Update the package in the adopting app. The standard endpoint/Store-ID
+   initializer and operation checks do not change. Existing v1 JSON keeps its
+   absolute expiry; fetching it again does not extend that deadline.
+2. Publish static-v2 JSON with a higher revision than any previously served v1
+   or v2 document. Remove `issuedAt` and `validUntil` deliberately. Changing
+   schema or content at the same revision is a conflict, including after expiry.
+3. Restore existing bounded snapshots without inventing a fetch time from file
+   dates. Their validity remains unchanged until a validated v2 fetch replaces
+   them. Static evidence uses an explicit cache-v2 envelope storing its observation
+   interval, source identity, policy, storefront, and publication evidence.
+4. Restore through the controller for either cache representation. The public
+   `MHRemoteUpdateStore.load()` / `save(_:)` primitives keep their bounded-v1
+   snapshot representation; they do not decode static-cache envelopes.
+
+Clients still running 1.17.0 cannot decode v2 and become unavailable if served it.
+Roll out the new reader before changing a shared endpoint, or give new clients
+a separate static endpoint while retaining valid v1 documents for old clients.
+A changed source URL cannot reuse evidence from the old endpoint. Downgraded
+clients cannot interpret a static-cache envelope and must fetch compatible data;
+do not delete the cache or reinterpret it as permission to bypass migration.
+
 ## Controller and Operation Entry Points
 
 `MHRemoteUpdateController` is one actor per app, environment, and storefront.
@@ -234,7 +309,8 @@ No timer, lifecycle observer, or UI presentation is installed automatically.
 | --- | --- |
 | Identity and installed version | `Bundle.main`; pass the containing app's bundle in extensions |
 | Metadata storefront | `jp`; override `storefront` when needed |
-| Maximum policy-document lifetime | 30 days, including advance announcement |
+| Static-v2 offline policy evidence | 30 days from the latest accepted network fetch |
+| Bounded-v1 maximum document lifetime | 30 days, including advance announcement |
 | Publication evidence lifetime | 24 hours |
 | Persistence | Application Support / MHRemoteUpdate, scoped by bundle, Store ID, and country |
 | Directory preparation | Created automatically when saving |
@@ -242,8 +318,8 @@ No timer, lifecycle observer, or UI presentation is installed automatically.
 | Normal operation check | Require confirmation, refreshing once if unavailable |
 | Low-impact offline operation | Explicit `.allowWhenUnavailable`, without networking |
 
-The policy document still supplies its own earlier `validUntil` and optional
-requirement end. A 30-day cap does not mean enforcing an update for 30 days.
+Only v1 supplies an earlier document `validUntil`; both schemas support an
+optional requirement end. A 30-day cap does not mean enforcing an update for 30 days.
 The shared defaults are MH integration conventions, not release values copied
 from one app. `Defaults` exposes the standard constants.
 
@@ -257,8 +333,9 @@ The existing injectable initializer, explicit `restore()` / `refresh()`, and
 allow/block plus refresh flags remain for tests, legacy migration, or concrete
 exceptions. Standard apps do not need to assemble lookup closures, pick a cache
 filename, create directories, or choose evidence lifetimes. Advanced persistence
-keeps its original snapshot format; standard assembly uses a source-scoped cache.
-Do not read a standard cache as an unscoped legacy snapshot.
+keeps the original bounded snapshot format and adds a separate static envelope;
+standard assembly scopes either representation to the source URL. Restore static
+caches through the controller. Do not read a standard cache as an unscoped snapshot.
 
 A valid schedule is saved before publication lookup. Failed/cancelled lookups
 preserve prior evidence until its own expiry; successful observations replace
@@ -299,10 +376,9 @@ effects on rejection. Operation classification remains app-owned.
 
 ## Release Operations Independent of Source Releases
 
-Both existing apps currently fetch `main/.config.json`. This couples a live
-operational policy change to the next source release, regardless of the file's
-name or its JSON schema. Putting a new schema at that same URL alone does not
-remove this coupling.
+Fetching `main/.config.json` couples a live operational policy change to the next
+source release, regardless of the file's name or JSON schema. Putting a new schema
+at that same URL alone does not remove this coupling.
 
 For new adopters, use a stable endpoint backed by separately maintained policy
 history. A policy-only branch in the app repository is sufficient; a separately
@@ -316,21 +392,23 @@ A 6.0 rollout then has separate histories:
 1. Finish and tag the app's 6.0 source commit. No live policy change is needed in
    that commit, and the 6.1 source branch can evolve independently.
 2. Publish a higher policy revision at the independent endpoint. It can announce
-   6.0 before release, with a future activation time and sufficient validity.
+   6.0 before release, with a future activation time. Static-v2 JSON needs no
+   publisher renewal; bounded-v1 JSON must still have sufficient validity.
 3. Before activation, clients keep the plan across launches. If 6.0 is already
    active in the policy but not confirmed public, their state is unavailable:
    low-impact operations may continue while consequential operations wait.
 4. Once activation and valid publication evidence both hold, older versions
    require an update. Installed 6.0 meets the minimum and continues normally.
-5. Postponement, cancellation, and validity renewal are policy-history commits;
-   they do not become 6.1 source changes. Each uses a higher revision. A
-   cancellation is a full valid document with `requirement: null`.
+5. Postponement and cancellation are policy-history commits; they do not become
+   6.1 source changes. Each uses a higher revision. A cancellation is a full valid
+   document with `requirement: null`. Only bounded-v1 JSON needs periodic renewal.
 
 Publication gating prevents a premature *update-required* state; an active
 unpublished requirement can still limit consequential operations. Use future
-activation when announcing a release in advance. Renewal must occur before
-expiry to keep confirming either requirement or cancellation; absence of renewal
-intentionally becomes unavailable. HTTP caches cannot extend absolute validity.
+activation when announcing a release in advance. Static-v2 evidence is renewed
+by accepted network fetches; offline expiry intentionally becomes unavailable.
+For bounded-v1 documents, publisher renewal must occur before absolute expiry.
+Local cache reads extend neither contract.
 
 An offline device cannot learn an unreceived cancellation or a new emergency
 requirement. Shorter evidence lifetimes reduce stale enforcement but increase

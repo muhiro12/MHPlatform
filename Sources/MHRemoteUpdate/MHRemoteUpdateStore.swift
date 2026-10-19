@@ -16,6 +16,18 @@ public struct MHRemoteUpdateStore: Sendable {
         let snapshot: MHRemoteUpdateSnapshot
     }
 
+    private struct CacheHeader: Decodable {
+        let cacheVersion: Int?
+    }
+
+    private struct StaticCache: Codable {
+        let cacheVersion: Int
+        let sourceURL: URL?
+        let evidence: MHRemoteUpdateEvidence
+    }
+
+    private static let staticCacheVersion = 2
+
     private let fileURL: URL
     private let sourceURL: URL?
 
@@ -30,7 +42,8 @@ public struct MHRemoteUpdateStore: Sendable {
         self.sourceURL = sourceURL
     }
 
-    /// Returns nil only when the file is absent; corruption and I/O errors remain observable.
+    /// Reads a bounded-v1 snapshot; static-v2 caches are restored through the controller.
+    /// Returns nil only when absent; corruption and I/O errors remain observable.
     public func load() throws -> MHRemoteUpdateSnapshot? {
         do {
             let data = try Data(contentsOf: fileURL)
@@ -57,6 +70,56 @@ public struct MHRemoteUpdateStore: Sendable {
         } else {
             data = try encoder.encode(snapshot)
         }
+        try write(data)
+    }
+
+    func loadEvidence() throws -> MHRemoteUpdateEvidence? {
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let decoder = JSONDecoder()
+            if let version = try decoder.decode(CacheHeader.self, from: data).cacheVersion {
+                let cache = try decoder.decode(StaticCache.self, from: data)
+                guard version == Self.staticCacheVersion, case .static = cache.evidence.document else {
+                    throw MHRemoteUpdateStaticPolicy.Failure.unsupportedSchema
+                }
+                guard cache.sourceURL == sourceURL else {
+                    throw Failure.sourceMismatch
+                }
+                return cache.evidence
+            }
+            let snapshot: MHRemoteUpdateSnapshot
+            if let sourceURL {
+                let record = try decoder.decode(ScopedSnapshot.self, from: data)
+                guard record.sourceURL == sourceURL else {
+                    throw Failure.sourceMismatch
+                }
+                snapshot = record.snapshot
+            } else {
+                snapshot = try decoder.decode(MHRemoteUpdateSnapshot.self, from: data)
+            }
+            return .init(
+                document: .bounded(snapshot.schedule),
+                storefront: snapshot.storefront,
+                observation: nil,
+                publication: snapshot.publication
+            )
+        } catch CocoaError.fileReadNoSuchFile {
+            return nil
+        }
+    }
+
+    func saveEvidence(_ evidence: MHRemoteUpdateEvidence) throws {
+        switch evidence.document {
+        case let .bounded(schedule):
+            try save(.init(schedule: schedule, storefront: evidence.storefront, publication: evidence.publication))
+        case .static:
+            try write(JSONEncoder().encode(StaticCache(
+                cacheVersion: Self.staticCacheVersion, sourceURL: sourceURL, evidence: evidence
+            )))
+        }
+    }
+
+    private func write(_ data: Data) throws {
         try FileManager.default.createDirectory(
             at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
         )

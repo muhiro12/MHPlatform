@@ -39,30 +39,27 @@ public actor MHRemoteUpdateController {
     private let bundleIdentifier: String
     private let storefront: String
     private let maximumValidity: TimeInterval
+    private let policyLifetime: TimeInterval
     private let publicationLifetime: TimeInterval
     private let store: MHRemoteUpdateStore?
     private let currentVersion: @Sendable () -> String?
     private let now: @Sendable () -> Date
-    private let fetchSchedule: @Sendable () async throws -> MHRemoteUpdateSchedule
+    private let fetchDocument: @Sendable () async throws -> MHRemoteUpdateDocument
     private let publicVersion: @Sendable () async throws -> MHAppVersion?
-    private var snapshot: MHRemoteUpdateSnapshot?
+    private var evidence: MHRemoteUpdateEvidence?
     private var refreshIdentifier: UUID?
     private var hasInitializedEvidence = false
 
-    /// Creates a controller with explicit app-owned identity, lifetimes, storage, and providers.
-    ///
-    /// The public-version provider must validate app ID, bundle ID, and this storefront,
-    /// for example with `MHAppStoreVersionLookup`. Pass nil storage only for ephemeral use.
-    @preconcurrency
-    public init(
+    init(
         bundleIdentifier: String,
         storefront: String,
         maximumValidity: TimeInterval,
+        policyLifetime: TimeInterval,
         publicationLifetime: TimeInterval,
         store: MHRemoteUpdateStore?,
         currentVersion: @escaping @Sendable () -> String?,
-        now: @escaping @Sendable () -> Date = Date.init,
-        fetchSchedule: @escaping @Sendable () async throws -> MHRemoteUpdateSchedule,
+        now: @escaping @Sendable () -> Date,
+        fetchDocument: @escaping @Sendable () async throws -> MHRemoteUpdateDocument,
         publicVersion: @escaping @Sendable () async throws -> MHAppVersion?
     ) throws {
         guard bundleIdentifier.isEmpty == false,
@@ -72,17 +69,19 @@ public actor MHRemoteUpdateController {
                 Format.uppercaseASCII.contains(byte) || Format.lowercaseASCII.contains(byte)
               }),
               maximumValidity.isFinite, maximumValidity > 0,
+              policyLifetime.isFinite, policyLifetime > 0,
               publicationLifetime.isFinite, publicationLifetime > 0 else {
             throw Failure.invalidConfiguration
         }
         self.bundleIdentifier = bundleIdentifier
         self.storefront = storefront.lowercased()
         self.maximumValidity = maximumValidity
+        self.policyLifetime = policyLifetime
         self.publicationLifetime = publicationLifetime
         self.store = store
         self.currentVersion = currentVersion
         self.now = now
-        self.fetchSchedule = fetchSchedule
+        self.fetchDocument = fetchDocument
         self.publicVersion = publicVersion
     }
 
@@ -92,20 +91,20 @@ public actor MHRemoteUpdateController {
     /// before initial refresh; revision checks also prevent a late restore rolling it back.
     public func restore() throws {
         try Task.checkCancellation()
-        guard let restored = try store?.load() else {
+        guard let restored = try store?.loadEvidence() else {
             hasInitializedEvidence = true
             return
         }
-        guard restored.schedule.bundleIdentifier == bundleIdentifier, restored.storefront == storefront else {
+        guard restored.document.bundleIdentifier == bundleIdentifier, restored.storefront == storefront else {
             throw Failure.identityMismatch
         }
-        try validateRevision(restored.schedule)
+        try validateRevision(restored.document)
         hasInitializedEvidence = true
-        guard snapshot == nil || restored.schedule.revision > (snapshot?.schedule.revision ?? 0) else {
+        guard evidence == nil || restored.document.revision > (evidence?.document.revision ?? 0) else {
             return
         }
         refreshIdentifier = nil
-        snapshot = restored
+        evidence = restored
     }
 
     /// Restores until evidence initializes, then refreshes on each startup/foreground call.
@@ -155,14 +154,15 @@ public actor MHRemoteUpdateController {
 
     /// Evaluates retained evidence against the current version and clock without networking.
     public func decision() -> MHRemoteUpdateDecision {
-        guard let snapshot, let version = currentVersion().flatMap(MHAppVersion.init) else {
+        guard let evidence, let version = currentVersion().flatMap(MHAppVersion.init) else {
             return .unavailable
         }
-        return snapshot.evaluate(
+        return evidence.evaluate(
             currentVersion: version,
             now: now(),
             maximumValidity: maximumValidity,
-            maximumPublicationAge: publicationLifetime
+            policyLifetime: policyLifetime,
+            publicationLifetime: publicationLifetime
         )
     }
 
@@ -178,17 +178,23 @@ public actor MHRemoteUpdateController {
         let identifier = UUID()
         refreshIdentifier = identifier
         do {
-            let schedule = try await fetchSchedule()
+            let document = try await fetchDocument()
             try checkRefresh(identifier)
-            guard schedule.bundleIdentifier == bundleIdentifier else {
+            guard document.bundleIdentifier == bundleIdentifier else {
                 throw Failure.identityMismatch
             }
-            guard schedule.isValid(at: now(), maximumValidity: maximumValidity) else {
+            guard document.acceptsFetch(at: now(), maximumValidity: maximumValidity) else {
                 throw Failure.invalidSchedule
             }
-            try validateRevision(schedule)
-            try retain(.init(schedule: schedule, storefront: storefront, publication: snapshot?.publication))
-            if let requirement = schedule.requirement,
+            try validateRevision(document)
+            var accepted = MHRemoteUpdateEvidence(
+                document: document,
+                storefront: storefront,
+                observation: try observation(for: document),
+                publication: evidence?.publication
+            )
+            try retain(accepted)
+            if let requirement = document.requirement,
                currentVersion().flatMap(MHAppVersion.init).map({ $0 < requirement.minimumVersion }) == true,
                requirement.endsAt.map({ now() <= $0 }) != false {
                 let version = try await publicVersion()
@@ -203,7 +209,8 @@ public actor MHRemoteUpdateController {
                 let publication = version.map { version in
                     MHRemoteUpdateSnapshot.Publication(version: version, checkedAt: checkedAt, validUntil: validUntil)
                 }
-                try retain(.init(schedule: schedule, storefront: storefront, publication: publication))
+                accepted.publication = publication
+                try retain(accepted)
             }
             return decision()
         } catch {
@@ -232,12 +239,26 @@ public actor MHRemoteUpdateController {
         try decision().checkOperationAllowed(whenUnavailable: behavior)
     }
 
-    private func validateRevision(_ schedule: MHRemoteUpdateSchedule) throws {
-        guard let existing = snapshot?.schedule else {
+    private func observation(for document: MHRemoteUpdateDocument) throws -> MHRemoteUpdateEvidence.Observation? {
+        guard case .static = document else {
+            return nil
+        }
+        let fetchedAt = now()
+        let validUntil = fetchedAt.addingTimeInterval(policyLifetime)
+        guard fetchedAt.timeIntervalSinceReferenceDate.isFinite,
+              validUntil.timeIntervalSinceReferenceDate.isFinite,
+              validUntil > fetchedAt else {
+            throw Failure.invalidConfiguration
+        }
+        return .init(fetchedAt: fetchedAt, validUntil: validUntil)
+    }
+
+    private func validateRevision(_ document: MHRemoteUpdateDocument) throws {
+        guard let existing = evidence?.document else {
             return
         }
-        guard schedule.revision >= existing.revision,
-              schedule.revision != existing.revision || schedule == existing else {
+        guard document.revision >= existing.revision,
+              document.revision != existing.revision || document == existing else {
             throw Failure.revisionConflict
         }
     }
@@ -249,9 +270,9 @@ public actor MHRemoteUpdateController {
         }
     }
 
-    private func retain(_ value: MHRemoteUpdateSnapshot) throws {
-        snapshot = value
+    private func retain(_ value: MHRemoteUpdateEvidence) throws {
+        evidence = value
         hasInitializedEvidence = true
-        try store?.save(value)
+        try store?.saveEvidence(value)
     }
 }

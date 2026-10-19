@@ -10,6 +10,8 @@ public extension MHRemoteUpdateController {
         public static let storefront = "jp"
         /// The maximum accepted policy-document lifetime, including advance announcement.
         public static let maximumValidity = maximumValidityDays * secondsPerDay
+        /// Maximum offline reuse of a successfully fetched static policy.
+        public static let policyLifetime = maximumValidityDays * secondsPerDay
         /// The lifetime of successful publication evidence.
         public static let publicationLifetime = secondsPerDay
     }
@@ -52,11 +54,13 @@ public extension MHRemoteUpdateController {
             bundleIdentifier: bundleIdentifier,
             storefront: storefront,
             maximumValidity: Defaults.maximumValidity,
+            policyLifetime: Defaults.policyLifetime,
             publicationLifetime: Defaults.publicationLifetime,
             store: .init(fileURL: fileURL, sourceURL: policyURL),
             currentVersion: { installedVersion },
-            fetchSchedule: {
-                try await scheduleLookup.schedule(from: policyURL, bundleIdentifier: bundleIdentifier)
+            now: Date.init,
+            fetchDocument: {
+                try await scheduleLookup.document(from: policyURL, bundleIdentifier: bundleIdentifier)
             },
             publicVersion: {
                 try await versionLookup.version(

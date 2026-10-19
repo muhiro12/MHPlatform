@@ -6,6 +6,8 @@ final class StandardUpdateURLProtocol: URLProtocol {
         static let appID = 123
         static let validity: TimeInterval = 3_600
         static let issueLead: TimeInterval = 60
+        static let staticSchemaVersion = 2
+        static let staticRevision = 2
     }
 
     override static func canInit(with _: URLRequest) -> Bool {
@@ -33,9 +35,12 @@ final class StandardUpdateURLProtocol: URLProtocol {
                 }
                 data = Data(#"{"results":[{"trackId":123,"bundleId":"example.app","version":"2"}]}"#.utf8)
             } else {
+                guard request.cachePolicy == .reloadIgnoringLocalCacheData else {
+                    throw URLError(.badURL)
+                }
                 let formatter = ISO8601DateFormatter()
                 let issuedAt = formatter.string(from: .now.addingTimeInterval(-Status.issueLead))
-                let document: [String: Any] = [
+                var document: [String: Any] = [
                     "schemaVersion": 1,
                     "revision": 1,
                     "bundleIdentifier": "example.app",
@@ -43,6 +48,13 @@ final class StandardUpdateURLProtocol: URLProtocol {
                     "validUntil": formatter.string(from: .now.addingTimeInterval(Status.validity)),
                     "requirement": ["minimumVersion": "2", "effectiveAt": issuedAt]
                 ]
+                if request.value(forHTTPHeaderField: "PolicySchema") == "2" {
+                    document["schemaVersion"] = Status.staticSchemaVersion
+                    document["revision"] = Status.staticRevision
+                    document.removeValue(forKey: "issuedAt")
+                    document.removeValue(forKey: "validUntil")
+                    document["requirement"] = ["minimumVersion": "2", "effectiveAt": "2001-01-01T00:00:00Z"]
+                }
                 data = try JSONSerialization.data(withJSONObject: document)
             }
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
