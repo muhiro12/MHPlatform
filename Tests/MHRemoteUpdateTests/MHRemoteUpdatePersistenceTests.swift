@@ -1,10 +1,9 @@
 import Foundation
 import MHRemoteUpdate
-import Synchronization
 import Testing
 
-struct MHRemoteUpdateStaticPersistenceTests: Sendable {
-    private typealias Fixture = StaticPolicyTestSupport
+struct MHRemoteUpdatePersistenceTests: Sendable {
+    private typealias Fixture = RemoteUpdateTestSupport
 
     @Test
     func restoringRepeatedlyDoesNotExtendTheLastSuccessfulFetch() async throws {
@@ -34,42 +33,6 @@ struct MHRemoteUpdateStaticPersistenceTests: Sendable {
         #expect(await renewed.decision() == .notRequired)
         clock.set(day: 61)
         #expect(await renewed.decision() == .unavailable)
-    }
-
-    @Test
-    func legacySnapshotRetainsItsExpiryAndMigratesOnlyAfterAHigherStaticRevision() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer {
-            try? FileManager.default.removeItem(at: directory)
-        }
-        let store = MHRemoteUpdateStore(fileURL: directory.appendingPathComponent("policy.json"))
-        let bounded = try MHRemoteUpdateSchedule(
-            bundleIdentifier: "example.app",
-            revision: 1,
-            issuedAt: Fixture.date(0),
-            validUntil: Fixture.date(2),
-            requirement: nil
-        )
-        try store.save(.init(schedule: bounded, storefront: "jp", publication: nil))
-        #expect(try store.load()?.schedule == bounded)
-        let clock = Fixture.Clock()
-        let policy = Mutex(try makePolicy())
-        let updates = try makeController(clock: clock, store: store) { policy.withLock { $0 } }
-        try await updates.restore()
-        #expect(await updates.decision() == .notRequired)
-        clock.set(day: 2)
-        #expect(await updates.decision() == .unavailable)
-        await #expect(throws: MHRemoteUpdateController.Failure.revisionConflict) {
-            try await updates.refresh()
-        }
-        let migrated = try makePolicy(revision: 2)
-        policy.withLock { $0 = migrated }
-        #expect(try await updates.refresh() == .notRequired)
-        let restarted = try makeController(clock: clock, store: store) { throw Fixture.Failure.offline }
-        try await restarted.restore()
-        #expect(await restarted.decision() == .notRequired)
-        clock.set(day: 32)
-        #expect(await restarted.decision() == .unavailable)
     }
 
     @Test
@@ -131,7 +94,7 @@ struct MHRemoteUpdateStaticPersistenceTests: Sendable {
         minimum: String? = nil,
         activationDay: Double = 0,
         endDay: Double? = nil
-    ) throws -> MHRemoteUpdateStaticPolicy {
+    ) throws -> MHRemoteUpdateSchedule {
         let requirement = try minimum.map { minimum in
             try MHRemoteUpdateSchedule.Requirement(
                 minimumVersion: #require(MHAppVersion(minimum)),
@@ -148,7 +111,7 @@ struct MHRemoteUpdateStaticPersistenceTests: Sendable {
         installedVersion: String = "1",
         policyDays: Double = 30,
         publicationDays: Double = 1,
-        fetch: @escaping @Sendable () async throws -> MHRemoteUpdateStaticPolicy,
+        fetch: @escaping @Sendable () async throws -> MHRemoteUpdateSchedule,
         publicVersion: @escaping @Sendable () async throws -> MHAppVersion? = { MHAppVersion("2") }
     ) throws -> MHRemoteUpdateController {
         try .init(
@@ -159,7 +122,7 @@ struct MHRemoteUpdateStaticPersistenceTests: Sendable {
             store: store,
             currentVersion: { installedVersion },
             now: { clock.now() },
-            fetchPolicy: fetch,
+            fetchSchedule: fetch,
             publicVersion: publicVersion
         )
     }

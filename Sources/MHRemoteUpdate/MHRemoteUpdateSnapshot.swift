@@ -2,6 +2,29 @@ import Foundation
 
 /// Persisted evidence for one app and storefront, re-evaluated at every check.
 public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
+    /// Time-bounded evidence of an accepted policy fetch.
+    public struct Observation: Codable, Equatable, Sendable {
+        /// When an accepted policy fetch completed.
+        public let fetchedAt: Date
+        /// The exclusive expiry of retained policy evidence.
+        public let validUntil: Date
+
+        /// Records an observation without choosing a package-default lifetime.
+        public init(fetchedAt: Date, validUntil: Date) {
+            self.fetchedAt = fetchedAt
+            self.validUntil = validUntil
+        }
+
+        func isValid(at date: Date, maximumAge: TimeInterval) -> Bool {
+            maximumAge.isFinite && maximumAge > 0
+                && fetchedAt.timeIntervalSinceReferenceDate.isFinite
+                && validUntil.timeIntervalSinceReferenceDate.isFinite
+                && date.timeIntervalSinceReferenceDate.isFinite
+                && fetchedAt <= date && date < validUntil
+                && date.timeIntervalSince(fetchedAt) < maximumAge
+        }
+    }
+
     /// Time-bounded publication evidence supplied by the app's identity-validated lookup.
     public struct Publication: Codable, Equatable, Sendable {
         /// The version observed in the selected storefront.
@@ -29,26 +52,34 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
 
     /// The retained remote schedule, including future requirements or cancellation.
     public let schedule: MHRemoteUpdateSchedule
+    /// Freshness of the retained policy; local reads never renew it.
+    public let observation: Observation
     /// The storefront in which publication evidence was obtained.
     public let storefront: String
     /// Optional evidence; its absence never clears a known schedule.
     public let publication: Publication?
 
     /// Creates a snapshot for the app-owned storage location.
-    public init(schedule: MHRemoteUpdateSchedule, storefront: String, publication: Publication?) {
+    public init(
+        schedule: MHRemoteUpdateSchedule,
+        storefront: String,
+        observation: Observation,
+        publication: Publication?
+    ) {
         self.schedule = schedule
         self.storefront = storefront
+        self.observation = observation
         self.publication = publication
     }
 
-    /// Expired documents or unconfirmed publication become unavailable, never permission.
+    /// Expired policy evidence or unconfirmed publication become unavailable, never permission.
     public func evaluate(
         currentVersion: MHAppVersion,
         now: Date,
-        maximumValidity: TimeInterval,
+        maximumPolicyAge: TimeInterval,
         maximumPublicationAge: TimeInterval
     ) -> MHRemoteUpdateDecision {
-        guard schedule.isValid(at: now, maximumValidity: maximumValidity) else {
+        guard observation.isValid(at: now, maximumAge: maximumPolicyAge) else {
             return .unavailable
         }
         guard let requirement = schedule.requirement,

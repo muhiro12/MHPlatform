@@ -3,8 +3,8 @@ import MHRemoteUpdate
 import Testing
 
 struct MHRemoteUpdateAppStoreIntegrationTests {
-    @Test(arguments: [1, 2])
-    func standardAssemblyPersistsEvidenceAndRestoresOfflineWithoutCustomProviders(_ schemaVersion: Int) async throws {
+    @Test
+    func standardAssemblyPersistsEvidenceAndRestoresOfflineWithoutCustomProviders() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer {
             try? FileManager.default.removeItem(at: directory)
@@ -13,7 +13,6 @@ struct MHRemoteUpdateAppStoreIntegrationTests {
         let policyURL = try #require(URL(string: "https://example.com/policy.json"))
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StandardUpdateURLProtocol.self]
-        configuration.httpAdditionalHeaders = ["PolicySchema": String(schemaVersion)]
         let session = URLSession(configuration: configuration)
         defer {
             session.invalidateAndCancel()

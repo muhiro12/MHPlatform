@@ -52,21 +52,13 @@ struct MHRemoteUpdateScheduleLookupTests {
     }
 
     @Test
-    func staticLookupValidatesIdentityWithoutReinterpretingV1() async throws {
+    func unsupportedSchemaDoesNotLoadAsTheCurrentFormat() async throws {
         let session = session()
         defer {
             session.invalidateAndCancel()
         }
-        let lookup = MHRemoteUpdateScheduleLookup(session: session)
-        let url = try #require(URL(string: "https://example.com/static"))
-        let policy = try await lookup.staticPolicy(from: url, bundleIdentifier: "example.app")
-        #expect(policy.revision == 2)
-        #expect(policy.requirement == nil)
-        await #expect(throws: (any Error).self) {
-            try await lookup.schedule(from: url, bundleIdentifier: "example.app")
-        }
-        await #expect(throws: MHRemoteUpdateSchedule.Failure.identityMismatch) {
-            try await lookup.staticPolicy(from: url, bundleIdentifier: "other.app")
+        await #expect(throws: MHRemoteUpdateSchedule.Failure.unsupportedSchema) {
+            try await lookup(session, scenario: "unsupported")
         }
     }
 

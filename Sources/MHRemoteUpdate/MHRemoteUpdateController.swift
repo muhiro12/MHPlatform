@@ -10,8 +10,6 @@ public actor MHRemoteUpdateController {
     public enum Failure: Error, Equatable, Sendable {
         /// App identity, storefront, or evidence lifetime is invalid.
         case invalidConfiguration
-        /// A fetched document is not currently valid or exceeds the app's maximum lifetime.
-        case invalidSchedule
         /// A response belongs to an earlier refresh invocation.
         case superseded
         /// A revision moved backwards or an immutable revision changed content.
@@ -38,28 +36,32 @@ public actor MHRemoteUpdateController {
 
     private let bundleIdentifier: String
     private let storefront: String
-    private let maximumValidity: TimeInterval
     private let policyLifetime: TimeInterval
     private let publicationLifetime: TimeInterval
     private let store: MHRemoteUpdateStore?
     private let currentVersion: @Sendable () -> String?
     private let now: @Sendable () -> Date
-    private let fetchDocument: @Sendable () async throws -> MHRemoteUpdateDocument
+    private let fetchSchedule: @Sendable () async throws -> MHRemoteUpdateSchedule
     private let publicVersion: @Sendable () async throws -> MHAppVersion?
-    private var evidence: MHRemoteUpdateEvidence?
+    private var evidence: MHRemoteUpdateSnapshot?
     private var refreshIdentifier: UUID?
     private var hasInitializedEvidence = false
 
-    init(
+    /// Creates a controller with explicit identity, evidence lifetimes, and validated providers.
+    ///
+    /// `fetchSchedule` must perform a validated network fetch, bypassing local HTTP
+    /// cache; disk reads cannot establish new freshness. `publicVersion` must validate
+    /// app ID, bundle ID, and storefront. Pass nil storage only for ephemeral use.
+    @preconcurrency
+    public init(
         bundleIdentifier: String,
         storefront: String,
-        maximumValidity: TimeInterval,
         policyLifetime: TimeInterval,
         publicationLifetime: TimeInterval,
         store: MHRemoteUpdateStore?,
         currentVersion: @escaping @Sendable () -> String?,
-        now: @escaping @Sendable () -> Date,
-        fetchDocument: @escaping @Sendable () async throws -> MHRemoteUpdateDocument,
+        now: @escaping @Sendable () -> Date = Date.init,
+        fetchSchedule: @escaping @Sendable () async throws -> MHRemoteUpdateSchedule,
         publicVersion: @escaping @Sendable () async throws -> MHAppVersion?
     ) throws {
         guard bundleIdentifier.isEmpty == false,
@@ -68,20 +70,18 @@ public actor MHRemoteUpdateController {
               storefront.utf8.allSatisfy({ byte in
                 Format.uppercaseASCII.contains(byte) || Format.lowercaseASCII.contains(byte)
               }),
-              maximumValidity.isFinite, maximumValidity > 0,
               policyLifetime.isFinite, policyLifetime > 0,
               publicationLifetime.isFinite, publicationLifetime > 0 else {
             throw Failure.invalidConfiguration
         }
         self.bundleIdentifier = bundleIdentifier
         self.storefront = storefront.lowercased()
-        self.maximumValidity = maximumValidity
         self.policyLifetime = policyLifetime
         self.publicationLifetime = publicationLifetime
         self.store = store
         self.currentVersion = currentVersion
         self.now = now
-        self.fetchDocument = fetchDocument
+        self.fetchSchedule = fetchSchedule
         self.publicVersion = publicVersion
     }
 
@@ -91,16 +91,16 @@ public actor MHRemoteUpdateController {
     /// before initial refresh; revision checks also prevent a late restore rolling it back.
     public func restore() throws {
         try Task.checkCancellation()
-        guard let restored = try store?.loadEvidence() else {
+        guard let restored = try store?.load() else {
             hasInitializedEvidence = true
             return
         }
-        guard restored.document.bundleIdentifier == bundleIdentifier, restored.storefront == storefront else {
+        guard restored.schedule.bundleIdentifier == bundleIdentifier, restored.storefront == storefront else {
             throw Failure.identityMismatch
         }
-        try validateRevision(restored.document)
+        try validateRevision(restored.schedule)
         hasInitializedEvidence = true
-        guard evidence == nil || restored.document.revision > (evidence?.document.revision ?? 0) else {
+        guard evidence == nil || restored.schedule.revision > (evidence?.schedule.revision ?? 0) else {
             return
         }
         refreshIdentifier = nil
@@ -160,9 +160,8 @@ public actor MHRemoteUpdateController {
         return evidence.evaluate(
             currentVersion: version,
             now: now(),
-            maximumValidity: maximumValidity,
-            policyLifetime: policyLifetime,
-            publicationLifetime: publicationLifetime
+            maximumPolicyAge: policyLifetime,
+            maximumPublicationAge: publicationLifetime
         )
     }
 
@@ -178,19 +177,16 @@ public actor MHRemoteUpdateController {
         let identifier = UUID()
         refreshIdentifier = identifier
         do {
-            let document = try await fetchDocument()
+            let document = try await fetchSchedule()
             try checkRefresh(identifier)
             guard document.bundleIdentifier == bundleIdentifier else {
                 throw Failure.identityMismatch
             }
-            guard document.acceptsFetch(at: now(), maximumValidity: maximumValidity) else {
-                throw Failure.invalidSchedule
-            }
             try validateRevision(document)
-            var accepted = MHRemoteUpdateEvidence(
-                document: document,
+            let accepted = MHRemoteUpdateSnapshot(
+                schedule: document,
                 storefront: storefront,
-                observation: try observation(for: document),
+                observation: try observation(),
                 publication: evidence?.publication
             )
             try retain(accepted)
@@ -209,8 +205,12 @@ public actor MHRemoteUpdateController {
                 let publication = version.map { version in
                     MHRemoteUpdateSnapshot.Publication(version: version, checkedAt: checkedAt, validUntil: validUntil)
                 }
-                accepted.publication = publication
-                try retain(accepted)
+                try retain(.init(
+                    schedule: document,
+                    storefront: storefront,
+                    observation: accepted.observation,
+                    publication: publication
+                ))
             }
             return decision()
         } catch {
@@ -239,10 +239,7 @@ public actor MHRemoteUpdateController {
         try decision().checkOperationAllowed(whenUnavailable: behavior)
     }
 
-    private func observation(for document: MHRemoteUpdateDocument) throws -> MHRemoteUpdateEvidence.Observation? {
-        guard case .static = document else {
-            return nil
-        }
+    private func observation() throws -> MHRemoteUpdateSnapshot.Observation {
         let fetchedAt = now()
         let validUntil = fetchedAt.addingTimeInterval(policyLifetime)
         guard fetchedAt.timeIntervalSinceReferenceDate.isFinite,
@@ -253,8 +250,8 @@ public actor MHRemoteUpdateController {
         return .init(fetchedAt: fetchedAt, validUntil: validUntil)
     }
 
-    private func validateRevision(_ document: MHRemoteUpdateDocument) throws {
-        guard let existing = evidence?.document else {
+    private func validateRevision(_ document: MHRemoteUpdateSchedule) throws {
+        guard let existing = evidence?.schedule else {
             return
         }
         guard document.revision >= existing.revision,
@@ -270,9 +267,9 @@ public actor MHRemoteUpdateController {
         }
     }
 
-    private func retain(_ value: MHRemoteUpdateEvidence) throws {
+    private func retain(_ value: MHRemoteUpdateSnapshot) throws {
         evidence = value
         hasInitializedEvidence = true
-        try store?.saveEvidence(value)
+        try store?.save(value)
     }
 }

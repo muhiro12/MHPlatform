@@ -3,8 +3,8 @@ import MHRemoteUpdate
 import Synchronization
 import Testing
 
-struct MHRemoteUpdateStaticControllerTests: Sendable {
-    private typealias Fixture = StaticPolicyTestSupport
+struct MHRemoteUpdateFreshnessTests: Sendable {
+    private typealias Fixture = RemoteUpdateTestSupport
 
     @Test(arguments: [nil, "1"])
     func unchangedPolicyCanBeFetchedBeyondThirtyDaysWithoutReissuingIt(_ minimum: String?) async throws {
@@ -153,7 +153,7 @@ struct MHRemoteUpdateStaticControllerTests: Sendable {
         minimum: String? = nil,
         activationDay: Double = 0,
         endDay: Double? = nil
-    ) throws -> MHRemoteUpdateStaticPolicy {
+    ) throws -> MHRemoteUpdateSchedule {
         let requirement = try minimum.map { minimum in
             try MHRemoteUpdateSchedule.Requirement(
                 minimumVersion: #require(MHAppVersion(minimum)),
@@ -170,7 +170,7 @@ struct MHRemoteUpdateStaticControllerTests: Sendable {
         installedVersion: String = "1",
         policyDays: Double = 30,
         publicationDays: Double = 1,
-        fetch: @escaping @Sendable () async throws -> MHRemoteUpdateStaticPolicy,
+        fetch: @escaping @Sendable () async throws -> MHRemoteUpdateSchedule,
         publicVersion: @escaping @Sendable () async throws -> MHAppVersion? = { MHAppVersion("2") }
     ) throws -> MHRemoteUpdateController {
         try .init(
@@ -181,7 +181,7 @@ struct MHRemoteUpdateStaticControllerTests: Sendable {
             store: store,
             currentVersion: { installedVersion },
             now: { clock.now() },
-            fetchPolicy: fetch,
+            fetchSchedule: fetch,
             publicVersion: publicVersion
         )
     }

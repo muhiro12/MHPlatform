@@ -121,7 +121,7 @@ struct MHRemoteUpdateControllerTests: Sendable {
             try await controller.refresh()
         }
         let foreign = try MHRemoteUpdateSchedule(
-            bundleIdentifier: "other.app", revision: 2, issuedAt: date(0), validUntil: date(100), requirement: nil
+            bundleIdentifier: "other.app", revision: 2, requirement: nil
         )
         response.withLock { $0 = foreign }
         await #expect(throws: MHRemoteUpdateController.Failure.identityMismatch) {
@@ -146,10 +146,10 @@ struct MHRemoteUpdateControllerTests: Sendable {
     }
 
     @Test
-    func timeIsResampledAfterLookupAndExpiredScheduleIsUnknown() async throws {
+    func timeIsResampledAfterLookupAndExpiredEvidenceIsUnknown() async throws {
         let clock = Clock(date(5))
         let lookup: @Sendable () async -> MHAppVersion? = {
-            clock.set(date(100))
+            clock.set(date(105))
             return MHAppVersion("6")
         }
         let controller = try controller(clock: clock, publicVersion: lookup)
@@ -177,10 +177,10 @@ struct MHRemoteUpdateControllerTests: Sendable {
     }
 
     @Test
-    func expiredOrExcessiveScheduleDoesNotBecomePermission() async throws {
-        let clock = Clock(date(100))
+    func invalidClockDoesNotBecomePermission() async throws {
+        let clock = Clock(date(.nan))
         let controller = try controller(clock: clock)
-        await #expect(throws: MHRemoteUpdateController.Failure.invalidSchedule) {
+        await #expect(throws: MHRemoteUpdateController.Failure.invalidConfiguration) {
             try await controller.refresh()
         }
         #expect(await controller.decision() == .unavailable)
@@ -195,7 +195,7 @@ struct MHRemoteUpdateControllerTests: Sendable {
         try .init(
             bundleIdentifier: "example.app",
             storefront: "JP",
-            maximumValidity: 100,
+            policyLifetime: 100,
             publicationLifetime: 20,
             store: store,
             currentVersion: { "5" },
@@ -209,8 +209,6 @@ struct MHRemoteUpdateControllerTests: Sendable {
         try .init(
             bundleIdentifier: "example.app",
             revision: revision,
-            issuedAt: date(0),
-            validUntil: date(100),
             requirement: requirement ? .init(minimumVersion: #require(MHAppVersion("6")), effectiveAt: date(10)) : nil
         )
     }

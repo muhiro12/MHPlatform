@@ -93,7 +93,7 @@ struct ScheduledUpdateAdapterTests: Sendable {
         try .init(
             bundleIdentifier: "example.app",
             storefront: "jp",
-            maximumValidity: 100,
+            policyLifetime: 100,
             publicationLifetime: 20,
             store: nil,
             currentVersion: { "1" },
@@ -107,8 +107,6 @@ struct ScheduledUpdateAdapterTests: Sendable {
         try .init(
             bundleIdentifier: "example.app",
             revision: 1,
-            issuedAt: .init(timeIntervalSinceReferenceDate: 0),
-            validUntil: .init(timeIntervalSinceReferenceDate: 100),
             requirement: requirement ? .init(
                 minimumVersion: #require(MHAppVersion("2")), effectiveAt: .init(timeIntervalSinceReferenceDate: 0)
             ) : nil

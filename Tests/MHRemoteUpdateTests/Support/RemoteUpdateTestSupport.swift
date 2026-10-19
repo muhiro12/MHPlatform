@@ -3,12 +3,12 @@ import MHRemoteUpdate
 import Synchronization
 import Testing
 
-enum StaticPolicyTestSupport {
+enum RemoteUpdateTestSupport {
     final class Clock: Sendable {
         private let value: Mutex<Date>
 
         init() {
-            value = .init(StaticPolicyTestSupport.date(0))
+            value = .init(RemoteUpdateTestSupport.date(0))
         }
 
         func now() -> Date {
@@ -16,7 +16,7 @@ enum StaticPolicyTestSupport {
         }
 
         func set(day: Double) {
-            value.withLock { $0 = StaticPolicyTestSupport.date(day) }
+            value.withLock { $0 = RemoteUpdateTestSupport.date(day) }
         }
     }
 

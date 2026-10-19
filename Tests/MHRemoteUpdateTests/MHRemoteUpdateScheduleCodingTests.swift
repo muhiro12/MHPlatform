@@ -2,29 +2,26 @@ import Foundation
 import MHRemoteUpdate
 import Testing
 
-struct MHRemoteUpdateStaticPolicyTests {
-    private typealias Fixture = StaticPolicyTestSupport
+struct MHRemoteUpdateScheduleCodingTests {
+    private typealias Fixture = RemoteUpdateTestSupport
 
     @Test
     func minimalStaticCancellationRoundTripsWithoutPublisherTimestamps() throws {
         let document = Data(#"""
-            {"schemaVersion":2,"bundleIdentifier":"example.app","revision":1,"requirement":null}
+            {"schemaVersion":1,"bundleIdentifier":"example.app","revision":1,"requirement":null}
         """#.utf8)
-        let policy = try MHRemoteUpdateStaticPolicy.decode(document)
+        let policy = try MHRemoteUpdateSchedule.decode(document)
         #expect(policy == (try makePolicy()))
         let encoded = try policy.encoded()
         let object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
         #expect(object["issuedAt"] == nil)
         #expect(object["validUntil"] == nil)
         #expect(object["requirement"] is NSNull)
-        #expect(try MHRemoteUpdateStaticPolicy.decode(encoded) == policy)
-        #expect(throws: (any Error).self) {
-            try MHRemoteUpdateSchedule.decode(encoded)
-        }
+        #expect(try MHRemoteUpdateSchedule.decode(encoded) == policy)
     }
 
     @Test(arguments: [
-        #""schemaVersion":1"#, #""schemaVersion":3"#, #""revision":0"#,
+        #""schemaVersion":2"#, #""schemaVersion":3"#, #""revision":0"#,
         #""bundleIdentifier":" app""#, #""requirement":{}"#,
         #""issuedAt":null"#, #""validUntil":null"#
     ])
@@ -39,21 +36,21 @@ struct MHRemoteUpdateStaticPolicyTests {
             value
         }
         #expect(throws: (any Error).self) {
-            try MHRemoteUpdateStaticPolicy.decode(JSONSerialization.data(withJSONObject: object))
+            try MHRemoteUpdateSchedule.decode(JSONSerialization.data(withJSONObject: object))
         }
     }
 
     @Test
     func missingRequirementIsNotCancellation() throws {
-        let document = Data(#"{"schemaVersion":2,"bundleIdentifier":"example.app","revision":1}"#.utf8)
-        #expect(throws: MHRemoteUpdateStaticPolicy.Failure.invalidDocument) {
-            try MHRemoteUpdateStaticPolicy.decode(document)
+        let document = Data(#"{"schemaVersion":1,"bundleIdentifier":"example.app","revision":1}"#.utf8)
+        #expect(throws: MHRemoteUpdateSchedule.Failure.invalidDocument) {
+            try MHRemoteUpdateSchedule.decode(document)
         }
     }
 
     @Test
     func activationDatesRetainWirePrecisionAndRejectCollapsedEnds() throws {
-        let policy = try MHRemoteUpdateStaticPolicy(
+        let policy = try MHRemoteUpdateSchedule(
             bundleIdentifier: "example.app",
             revision: 1,
             requirement: .init(
@@ -62,9 +59,9 @@ struct MHRemoteUpdateStaticPolicyTests {
                 endsAt: .init(timeIntervalSinceReferenceDate: 10.75)
             )
         )
-        #expect(try MHRemoteUpdateStaticPolicy.decode(policy.encoded()) == policy)
-        #expect(throws: MHRemoteUpdateStaticPolicy.Failure.invalidDocument) {
-            try MHRemoteUpdateStaticPolicy(
+        #expect(try MHRemoteUpdateSchedule.decode(policy.encoded()) == policy)
+        #expect(throws: MHRemoteUpdateSchedule.Failure.invalidDocument) {
+            try MHRemoteUpdateSchedule(
                 bundleIdentifier: "example.app",
                 revision: 1,
                 requirement: .init(
@@ -81,7 +78,7 @@ struct MHRemoteUpdateStaticPolicyTests {
         minimum: String? = nil,
         activationDay: Double = 0,
         endDay: Double? = nil
-    ) throws -> MHRemoteUpdateStaticPolicy {
+    ) throws -> MHRemoteUpdateSchedule {
         let requirement = try minimum.map { minimum in
             try MHRemoteUpdateSchedule.Requirement(
                 minimumVersion: #require(MHAppVersion(minimum)),

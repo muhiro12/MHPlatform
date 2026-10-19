@@ -159,8 +159,8 @@ non-domain app infrastructure.
   explicit decisions, public-version lookup, and operation preconditions
 - Re-exported by both umbrellas while remaining independently adoptable; no
   app-root runtime or UI dependency
-- Offers bounded-v1 schedules and static-v2 policies, bounded retained evidence,
-  and operation checks with one refresh when evidence is unavailable
+- Offers a single static policy format, bounded retained evidence, and operation
+  checks with one refresh when evidence is unavailable
 - Provides standard App Store assembly, persistence placement, evidence
   lifetimes, startup recovery, and confirmation-first operation checks
 - Keeps release policy, endpoint/Store ID, protected-operation classification,

@@ -89,7 +89,15 @@ struct MHRemoteUpdateConcurrencyTests: Sendable {
             try? FileManager.default.removeItem(at: fileURL)
         }
         let store = MHRemoteUpdateStore(fileURL: fileURL)
-        try store.save(.init(schedule: schedule(revision: 1, requirement: false), storefront: "us", publication: nil))
+        try store.save(.init(
+            schedule: schedule(revision: 1, requirement: false),
+            storefront: "us",
+            observation: .init(
+                fetchedAt: .init(timeIntervalSinceReferenceDate: 0),
+                validUntil: .init(timeIntervalSinceReferenceDate: 100)
+            ),
+            publication: nil
+        ))
         let controller = try controller(store: store) { try schedule(revision: 1, requirement: false) }
         await #expect(throws: MHRemoteUpdateController.Failure.identityMismatch) {
             try await controller.restore()
@@ -105,7 +113,7 @@ struct MHRemoteUpdateConcurrencyTests: Sendable {
         return try .init(
             bundleIdentifier: "example.app",
             storefront: "jp",
-            maximumValidity: 100,
+            policyLifetime: 100,
             publicationLifetime: 20,
             store: store,
             currentVersion: { "5" },
@@ -119,8 +127,6 @@ struct MHRemoteUpdateConcurrencyTests: Sendable {
         try .init(
             bundleIdentifier: "example.app",
             revision: revision,
-            issuedAt: .init(timeIntervalSinceReferenceDate: 0),
-            validUntil: .init(timeIntervalSinceReferenceDate: 100),
             requirement: requirement ? .init(
                 minimumVersion: #require(MHAppVersion("6")), effectiveAt: .init(timeIntervalSinceReferenceDate: 10)
             ) : nil

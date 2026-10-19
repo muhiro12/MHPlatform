@@ -43,12 +43,11 @@ final class ScheduleURLProtocol: URLProtocol {
         switch scenario {
         case "decode":
             body = "invalid json"
-        case "static":
+        case "unsupported":
             body = #"{"schemaVersion":2,"bundleIdentifier":"example.app","revision":2,"requirement":null}"#
         default:
             body = #"""
                 {"schemaVersion":1,"bundleIdentifier":"example.app","revision":1,
-                "issuedAt":"2026-10-18T00:00:00Z","validUntil":"2026-11-08T00:00:00Z",
                 "requirement":{"minimumVersion":"6.0","effectiveAt":"2026-11-01T00:00:00Z"}}
             """#
         }

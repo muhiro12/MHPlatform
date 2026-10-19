@@ -4,14 +4,12 @@ public extension MHRemoteUpdateController {
     /// Shared MH conventions for the standard App Store integration.
     enum Defaults {
         private static let secondsPerDay: TimeInterval = 86_400
-        private static let maximumValidityDays: TimeInterval = 30
+        private static let policyLifetimeDays: TimeInterval = 30
 
         /// The standard metadata storefront; apps may explicitly select another country.
         public static let storefront = "jp"
-        /// The maximum accepted policy-document lifetime, including advance announcement.
-        public static let maximumValidity = maximumValidityDays * secondsPerDay
-        /// Maximum offline reuse of a successfully fetched static policy.
-        public static let policyLifetime = maximumValidityDays * secondsPerDay
+        /// Maximum offline reuse of a successfully fetched policy.
+        public static let policyLifetime = policyLifetimeDays * secondsPerDay
         /// The lifetime of successful publication evidence.
         public static let publicationLifetime = secondsPerDay
     }
@@ -53,14 +51,13 @@ public extension MHRemoteUpdateController {
         try self.init(
             bundleIdentifier: bundleIdentifier,
             storefront: storefront,
-            maximumValidity: Defaults.maximumValidity,
             policyLifetime: Defaults.policyLifetime,
             publicationLifetime: Defaults.publicationLifetime,
             store: .init(fileURL: fileURL, sourceURL: policyURL),
             currentVersion: { installedVersion },
             now: Date.init,
-            fetchDocument: {
-                try await scheduleLookup.document(from: policyURL, bundleIdentifier: bundleIdentifier)
+            fetchSchedule: {
+                try await scheduleLookup.schedule(from: policyURL, bundleIdentifier: bundleIdentifier)
             },
             publicVersion: {
                 try await versionLookup.version(

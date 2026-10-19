@@ -48,17 +48,23 @@ struct MHRemoteUpdatePreparationTests: Sendable {
         let schedule = try MHRemoteUpdateSchedule(
             bundleIdentifier: "example.app",
             revision: 1,
-            issuedAt: .init(timeIntervalSinceReferenceDate: 0),
-            validUntil: .init(timeIntervalSinceReferenceDate: 100),
             requirement: .init(
                 minimumVersion: #require(MHAppVersion("2")), effectiveAt: .init(timeIntervalSinceReferenceDate: 0)
             )
         )
-        try store.save(.init(schedule: schedule, storefront: "jp", publication: .init(
-            version: #require(MHAppVersion("2")),
-            checkedAt: .init(timeIntervalSinceReferenceDate: 0),
-            validUntil: .init(timeIntervalSinceReferenceDate: 20)
-        )))
+        try store.save(.init(
+            schedule: schedule,
+            storefront: "jp",
+            observation: .init(
+                fetchedAt: .init(timeIntervalSinceReferenceDate: 0),
+                validUntil: .init(timeIntervalSinceReferenceDate: 100)
+            ),
+            publication: .init(
+                version: #require(MHAppVersion("2")),
+                checkedAt: .init(timeIntervalSinceReferenceDate: 0),
+                validUntil: .init(timeIntervalSinceReferenceDate: 20)
+            )
+        ))
         let updates = try controller(store: store) { throw ExpectedFailure.offline }
         let result = try await updates.prepare()
         #expect(result.decision == .updateRequired)
@@ -88,7 +94,15 @@ struct MHRemoteUpdatePreparationTests: Sendable {
             try? FileManager.default.removeItem(at: directory)
         }
         let store = MHRemoteUpdateStore(fileURL: directory.appendingPathComponent("nested/policy.json"))
-        let snapshot = MHRemoteUpdateSnapshot(schedule: try schedule(), storefront: "jp", publication: nil)
+        let snapshot = MHRemoteUpdateSnapshot(
+            schedule: try schedule(),
+            storefront: "jp",
+            observation: .init(
+                fetchedAt: .init(timeIntervalSinceReferenceDate: 0),
+                validUntil: .init(timeIntervalSinceReferenceDate: 100)
+            ),
+            publication: nil
+        )
         try store.save(snapshot)
         #expect(try store.load() == snapshot)
     }
@@ -111,14 +125,16 @@ struct MHRemoteUpdatePreparationTests: Sendable {
             schedule: MHRemoteUpdateSchedule(
                 bundleIdentifier: "example.app",
                 revision: 1,
-                issuedAt: .init(timeIntervalSinceReferenceDate: 0),
-                validUntil: .init(timeIntervalSinceReferenceDate: 100),
                 requirement: .init(
                     minimumVersion: #require(MHAppVersion("2")),
                     effectiveAt: .init(timeIntervalSinceReferenceDate: 0)
                 )
             ),
             storefront: "jp",
+            observation: .init(
+                fetchedAt: .init(timeIntervalSinceReferenceDate: 0),
+                validUntil: .init(timeIntervalSinceReferenceDate: 100)
+            ),
             publication: .init(
                 version: #require(MHAppVersion("2")),
                 checkedAt: .init(timeIntervalSinceReferenceDate: 0),
@@ -139,7 +155,7 @@ struct MHRemoteUpdatePreparationTests: Sendable {
         return try .init(
             bundleIdentifier: "example.app",
             storefront: "jp",
-            maximumValidity: 100,
+            policyLifetime: 100,
             publicationLifetime: 20,
             store: store,
             currentVersion: { "1" },
@@ -153,8 +169,6 @@ struct MHRemoteUpdatePreparationTests: Sendable {
         try .init(
             bundleIdentifier: "example.app",
             revision: 1,
-            issuedAt: .init(timeIntervalSinceReferenceDate: 0),
-            validUntil: .init(timeIntervalSinceReferenceDate: 100),
             requirement: nil
         )
     }
