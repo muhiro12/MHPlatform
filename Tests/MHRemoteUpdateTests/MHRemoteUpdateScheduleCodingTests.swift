@@ -6,6 +6,55 @@ struct MHRemoteUpdateScheduleCodingTests {
     private typealias Fixture = RemoteUpdateTestSupport
 
     @Test
+    func standardCodableAndConvenienceMethodsUseOneWireFormatIncludingDates() throws {
+        let policy = try makePolicy(minimum: "2", activationDay: 1, endDay: 2)
+        let standard = try JSONEncoder().encode(policy)
+        #expect(try MHRemoteUpdateSchedule.decode(standard) == policy)
+        #expect(try JSONDecoder().decode(MHRemoteUpdateSchedule.self, from: policy.encoded()) == policy)
+        let object = try JSONSerialization.jsonObject(with: standard)
+        let convenience = try JSONSerialization.jsonObject(with: policy.encoded())
+        #expect(try JSONSerialization.data(withJSONObject: object, options: .sortedKeys)
+                    == JSONSerialization.data(withJSONObject: convenience, options: .sortedKeys))
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        #expect(try decoder.decode(MHRemoteUpdateSchedule.self, from: standard) == policy)
+    }
+
+    @Test(arguments: [#""schemaVersion":2,"#, #""schemaVersion":null,"#, #""schemaVersion":"1","#])
+    func unsupportedOrInvalidFeatureFormatIsRejectedIndependently(_ field: String) {
+        let document = Data("""
+            {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
+            "remoteUpdate":{\(field)"revision":1,"requirement":null}}}
+            """.utf8)
+        #expect(throws: (any Error).self) {
+            try MHRemoteUpdateSchedule.decode(document)
+        }
+    }
+
+    @Test
+    func priorCacheFormatRetainsItsOriginalObservationWithoutMigrationOrRenewal() throws {
+        let data = Data(#"""
+            {"schedule":{"schemaVersion":1,"bundleIdentifier":"example.app","revision":2,
+            "requirement":{"minimumVersion":"2","effectiveAt":0}},
+            "observation":{"fetchedAt":10,"validUntil":100},
+            "publication":{"version":"2","checkedAt":10,"validUntil":50}}
+        """#.utf8)
+        let cached = try JSONDecoder().decode(MHRemoteUpdateSnapshot.self, from: data)
+        #expect(cached.schedule.revision == 2)
+        #expect(cached.observation.fetchedAt == Date(timeIntervalSinceReferenceDate: 10))
+        #expect(try JSONDecoder().decode(
+            MHRemoteUpdateSnapshot.self, from: JSONEncoder().encode(cached)
+        ) == cached)
+        let installedVersion = try #require(MHAppVersion("1"))
+        #expect(cached.evaluate(
+            currentVersion: installedVersion,
+            now: .init(timeIntervalSinceReferenceDate: 20),
+            maximumPolicyAge: 100,
+            maximumPublicationAge: 100
+        ) == .updateRequired)
+    }
+
+    @Test
     func minimalStaticCancellationRoundTripsWithoutPublisherTimestamps() throws {
         let document = Data(#"""
             {"schemaVersion":1,"bundleIdentifier":"example.app",

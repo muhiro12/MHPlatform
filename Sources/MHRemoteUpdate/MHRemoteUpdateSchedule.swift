@@ -1,4 +1,5 @@
 import Foundation
+import MHRemoteConfig
 
 /// An immutable release decision with no publisher renewal deadline.
 ///
@@ -26,9 +27,19 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             self.init(
                 minimumVersion: try container.decode(MHAppVersion.self, forKey: .minimumVersion),
-                effectiveAt: try container.decode(Date.self, forKey: .effectiveAt),
-                endsAt: try container.decodeIfPresent(Date.self, forKey: .endsAt)
+                effectiveAt: try Date(container.decode(String.self, forKey: .effectiveAt), strategy: .iso8601),
+                endsAt: try container.decodeIfPresent(String.self, forKey: .endsAt).map { value in
+                    try Date(value, strategy: .iso8601)
+                }
             )
+        }
+
+        /// Uses the same ISO 8601 wire dates regardless of the encoder's date strategy.
+        public func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(minimumVersion, forKey: .minimumVersion)
+            try container.encode(effectiveAt.formatted(.iso8601), forKey: .effectiveAt)
+            try container.encodeIfPresent(endsAt?.formatted(.iso8601), forKey: .endsAt)
         }
     }
 
@@ -40,10 +51,6 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         case invalidDocument
         /// The document belongs to another app.
         case identityMismatch
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case schemaVersion, bundleIdentifier, revision, requirement, scheduledRequirements, issuedAt, validUntil
     }
 
     private static let supportedSchemaVersion = 1
@@ -92,37 +99,19 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         try validate()
     }
 
-    /// Rejects authored expiry fields; freshness belongs to fetched evidence.
+    /// Decodes the shared envelope, matching `decode(_:)` and the standard Config client.
     public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
-        bundleIdentifier = try container.decode(String.self, forKey: .bundleIdentifier)
-        revision = try container.decode(Int.self, forKey: .revision)
-        guard container.contains(.requirement),
-              container.contains(.issuedAt) == false,
-              container.contains(.validUntil) == false else {
-            throw Failure.invalidDocument
-        }
-        requirement = try container.decodeIfPresent(Requirement.self, forKey: .requirement)
-        scheduledRequirements = container.contains(.scheduledRequirements)
-            ? try container.decode([Requirement].self, forKey: .scheduledRequirements) : []
-        try validate()
+        let document = try MHRemoteConfigDocument<RemoteUpdateFeatures>(from: decoder)
+        try self.init(bundleIdentifier: document.bundleIdentifier, feature: document.features.remoteUpdate.get())
     }
 
     private static func canonicalDate(_ date: Date) -> Date {
         .init(timeIntervalSinceReferenceDate: date.timeIntervalSinceReferenceDate.rounded(.down))
     }
 
-    /// Encodes explicit cancellation without any publisher-controlled expiry.
+    /// Encodes the shared envelope rather than a persistence-specific schedule shape.
     public func encode(to encoder: any Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(schemaVersion, forKey: .schemaVersion)
-        try container.encode(bundleIdentifier, forKey: .bundleIdentifier)
-        try container.encode(revision, forKey: .revision)
-        try container.encode(requirement, forKey: .requirement)
-        if scheduledRequirements.isEmpty == false {
-            try container.encode(scheduledRequirements, forKey: .scheduledRequirements)
-        }
+        try configuration().encode(to: encoder)
     }
 
     func minimumVersion(at date: Date) -> MHAppVersion? {

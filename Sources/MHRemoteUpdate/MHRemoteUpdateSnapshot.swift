@@ -2,6 +2,9 @@ import Foundation
 
 /// Persisted evidence for one app and storefront, re-evaluated at every check.
 public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
+    private enum CodingKeys: String, CodingKey {
+        case schedule, observation, storefront, publication, publicationCheckedAt
+    }
     /// Time-bounded evidence of an accepted policy fetch.
     public struct Observation: Codable, Equatable, Sendable {
         /// When an accepted policy fetch completed.
@@ -65,6 +68,29 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
         self.observation = observation
         self.publication = publication
         publicationCheckedAt = publication?.checkedAt
+    }
+
+    /// Restores private cache data without interpreting a disk read as a network observation.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            schedule: try container.decode(RemoteUpdateCachedSchedule.self, forKey: .schedule).schedule(),
+            storefront: try container.decodeIfPresent(String.self, forKey: .storefront),
+            observation: try container.decode(Observation.self, forKey: .observation),
+            publication: try container.decodeIfPresent(Publication.self, forKey: .publication)
+        )
+        publicationCheckedAt = try container.decodeIfPresent(Date.self, forKey: .publicationCheckedAt)
+            ?? publication?.checkedAt
+    }
+
+    /// Keeps cache representation separate from the public schedule's shared Config envelope.
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(RemoteUpdateCachedSchedule(schedule), forKey: .schedule)
+        try container.encode(observation, forKey: .observation)
+        try container.encodeIfPresent(storefront, forKey: .storefront)
+        try container.encodeIfPresent(publication, forKey: .publication)
+        try container.encodeIfPresent(publicationCheckedAt, forKey: .publicationCheckedAt)
     }
 
     func merging(_ incoming: Self) throws -> Self {

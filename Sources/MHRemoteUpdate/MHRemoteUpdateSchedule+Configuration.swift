@@ -8,6 +8,8 @@ struct RemoteUpdateFeatures: Codable, Sendable {
 public extension MHRemoteUpdateSchedule {
     /// The independently revisioned `features.remoteUpdate` section.
     struct Feature: Codable, Equatable, Sendable {
+        /// The update feature format, independent of policy revisions and the envelope.
+        public let schemaVersion: Int
         /// A positive immutable revision for update policy alone.
         public let revision: Int
         /// Explicit nil removes the baseline; missing data never establishes cancellation.
@@ -35,6 +37,7 @@ public extension MHRemoteUpdateSchedule {
                     }
                 }
             }
+            schemaVersion = 1
             self.revision = revision
             self.requirement = requirement
             self.scheduledRequirements = scheduledRequirements
@@ -43,6 +46,11 @@ public extension MHRemoteUpdateSchedule {
         /// Requires explicit cancellation and rejects publisher-controlled evidence expiry.
         public init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
+            let formatVersion = try container.contains(.schemaVersion)
+                ? container.decode(Int.self, forKey: .schemaVersion) : 1
+            guard formatVersion == 1 else {
+                throw Failure.unsupportedSchema
+            }
             guard container.contains(.requirement),
                   container.contains(.issuedAt) == false,
                   container.contains(.validUntil) == false else {
@@ -59,6 +67,7 @@ public extension MHRemoteUpdateSchedule {
         /// Retains explicit nil rather than omitting cancellation.
         public func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(schemaVersion, forKey: .schemaVersion)
             try container.encode(revision, forKey: .revision)
             try container.encode(requirement, forKey: .requirement)
             if scheduledRequirements.isEmpty == false {
@@ -79,23 +88,26 @@ public extension MHRemoteUpdateSchedule {
 
     /// Decodes only the update section of the shared app configuration envelope.
     static func decode(_ data: Data) throws -> Self {
-        let document = try MHRemoteConfigDocument<RemoteUpdateFeatures>.decode(data)
-        return try .init(bundleIdentifier: document.bundleIdentifier, feature: document.features.remoteUpdate.get())
+        try JSONDecoder().decode(Self.self, from: data)
     }
 
     /// Encodes an app configuration containing the update section.
     func encoded() throws -> Data {
+        try configuration().encoded()
+    }
+
+    internal func configuration() throws -> MHRemoteConfigDocument<RemoteUpdateFeatures> {
         try MHRemoteConfigDocument(
             bundleIdentifier: bundleIdentifier,
             features: RemoteUpdateFeatures(remoteUpdate: .value(.init(
                 revision: revision, requirement: requirement, scheduledRequirements: scheduledRequirements
             )))
-        ).encoded()
+        )
     }
 }
 
 private extension MHRemoteUpdateSchedule.Feature {
     enum CodingKeys: String, CodingKey {
-        case revision, requirement, scheduledRequirements, issuedAt, validUntil
+        case schemaVersion, revision, requirement, scheduledRequirements, issuedAt, validUntil
     }
 }

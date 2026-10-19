@@ -14,6 +14,19 @@ struct MHRemoteUpdateFeatureIsolationTests: Sendable {
     }
 
     @Test
+    func unsupportedUpdateFormatDoesNotInvalidateAReadableSibling() throws {
+        let document = try MHRemoteConfigDocument<Features>.decode(Data(#"""
+            {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
+            "remoteUpdate":{"schemaVersion":999,"revision":1,"requirement":null},
+            "companion":{"value":42}}}
+        """#.utf8))
+        #expect(try document.features.companion.get().value == 42)
+        #expect(throws: MHRemoteUpdateSchedule.Failure.unsupportedSchema) {
+            try document.features.remoteUpdate.get()
+        }
+    }
+
+    @Test
     func oneValidatedResponseKeepsUpdateProcessingIndependentOfAnInvalidSibling() async throws {
         let session = session()
         defer {

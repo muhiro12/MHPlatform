@@ -467,6 +467,28 @@ print("Update decision: \(evaluation.decision), reason: \(evaluation.reason.rawV
 This snapshot is diagnostic, not durable permission. Continue to call
 `checkOperationAllowed()` immediately before mutation and success effects.
 
+### Wire and Cache Formats
+
+`MHRemoteUpdateSchedule` uses the shared Config envelope for both standard
+`Codable` and `encoded()` / `decode(_:)`. Requirement dates always use ISO 8601,
+including with a default `JSONEncoder` or `JSONDecoder`. Snapshot persistence
+uses a private cache representation and still reads existing observation dates;
+restoration does not migrate freshness or establish a new fetch.
+
+`features.remoteUpdate.schemaVersion` describes this feature's format. It is
+independent of the envelope's `schemaVersion` and the policy's `revision`.
+The current feature format is 1; omission means 1 for existing documents.
+Unknown or malformed feature versions fail only the selected update section,
+so other typed sections remain readable. Policy edits increase `revision`,
+not either format version. An unrelated feature needs no envelope format bump.
+
+The earlier package's direct schedule `Codable` representation was a flat cache
+shape. Direct schedule encoding now produces the documented Config envelope;
+use snapshots for retained evidence. No app adoption or live policy change is
+implied by this serialization cleanup. Previously distributed readers cannot
+learn a new version check retroactively: deploy incompatible future formats on
+a new endpoint while retaining the old endpoint for those clients.
+
 ### Advanced Assembly
 
 The injectable initializer, explicit `restore()` / `refresh()`, and
