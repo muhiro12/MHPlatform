@@ -8,7 +8,8 @@ struct MHRemoteUpdateScheduleCodingTests {
     @Test
     func minimalStaticCancellationRoundTripsWithoutPublisherTimestamps() throws {
         let document = Data(#"""
-            {"schemaVersion":1,"bundleIdentifier":"example.app","revision":1,"requirement":null}
+            {"schemaVersion":1,"bundleIdentifier":"example.app",
+            "features":{"remoteUpdate":{"revision":1,"requirement":null}}}
         """#.utf8)
         let policy = try MHRemoteUpdateSchedule.decode(document)
         #expect(policy == (try makePolicy()))
@@ -16,7 +17,9 @@ struct MHRemoteUpdateScheduleCodingTests {
         let object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
         #expect(object["issuedAt"] == nil)
         #expect(object["validUntil"] == nil)
-        #expect(object["requirement"] is NSNull)
+        let features = try #require(object["features"] as? [String: Any])
+        let update = try #require(features["remoteUpdate"] as? [String: Any])
+        #expect(update["requirement"] is NSNull)
         #expect(try MHRemoteUpdateSchedule.decode(encoded) == policy)
     }
 
@@ -32,8 +35,18 @@ struct MHRemoteUpdateScheduleCodingTests {
         let replacement = try #require(JSONSerialization.jsonObject(
             with: Data("{\(fragment)}".utf8)
         ) as? [String: Any])
-        object.merge(replacement) { _, value in
-            value
+        if replacement["schemaVersion"] != nil || replacement["bundleIdentifier"] != nil {
+            object.merge(replacement) { _, value in
+                value
+            }
+        } else {
+            var features = try #require(object["features"] as? [String: Any])
+            var update = try #require(features["remoteUpdate"] as? [String: Any])
+            update.merge(replacement) { _, value in
+                value
+            }
+            features["remoteUpdate"] = update
+            object["features"] = features
         }
         #expect(throws: (any Error).self) {
             try MHRemoteUpdateSchedule.decode(JSONSerialization.data(withJSONObject: object))
@@ -42,8 +55,37 @@ struct MHRemoteUpdateScheduleCodingTests {
 
     @Test
     func missingRequirementIsNotCancellation() throws {
-        let document = Data(#"{"schemaVersion":1,"bundleIdentifier":"example.app","revision":1}"#.utf8)
+        let document = Data(#"""
+            {"schemaVersion":1,"bundleIdentifier":"example.app","features":{"remoteUpdate":{"revision":1}}}
+        """#.utf8)
         #expect(throws: MHRemoteUpdateSchedule.Failure.invalidDocument) {
+            try MHRemoteUpdateSchedule.decode(document)
+        }
+    }
+
+    @Test
+    func unrelatedFeatureChangesDoNotChangeUpdatePolicyOrRevision() throws {
+        let documents = [
+            #"""
+                {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
+                "remoteUpdate":{"revision":1,"requirement":null},"futureFeature":{"value":1}}}
+            """#,
+            #"""
+                {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
+                "remoteUpdate":{"revision":1,"requirement":null},"futureFeature":"invalid for its own type"}}
+            """#
+        ]
+        for document in documents {
+            #expect(try MHRemoteUpdateSchedule.decode(Data(document.utf8)) == makePolicy())
+        }
+    }
+
+    @Test(arguments: [#"{}"#, #"{"remoteUpdate":null}"#])
+    func absentOrNullUpdateSectionIsNotCancellation(_ features: String) throws {
+        let document = Data("""
+            {"schemaVersion":1,"bundleIdentifier":"example.app","features":\(features)}
+            """.utf8)
+        #expect(throws: (any Error).self) {
             try MHRemoteUpdateSchedule.decode(document)
         }
     }

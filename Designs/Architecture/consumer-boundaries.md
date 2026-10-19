@@ -39,7 +39,7 @@ Advanced composition surfaces:
   `MHAppRuntimeLicenses`
 - concrete core modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
-  `MHPreferences`, `MHRemoteUpdate`
+  `MHPreferences`, `MHRemoteConfig`, `MHRemoteUpdate`
 - surface adapter modules: `MHUserNotifications`, `MHNotificationDeepLinking`
 - optional UI bridges: `MHPreferencesUI`, `MHLoggingUI`
 - opt-in workflow shells: `MHMutationFlow`, `MHMutationLogging`,
@@ -89,13 +89,18 @@ advanced composition around one focused concern.
 
 `MHRemoteUpdate` is re-exported by both umbrellas and remains available as a
 standalone product. It needs no app-root runtime, UI, or ads. Standard App Store
-assembly needs only the policy URL and Store ID, with package-owned lookup,
+assembly needs only the app configuration URL and Store ID, with package-owned lookup,
 cache placement, lifetimes, preparation, and operation rules. Apps retain release
 policy, protected-operation classification, lifecycle hooks, UI, and logging;
 advanced overrides are available for concrete exceptions.
 Static policies need no publisher renewal; the package bounds offline reuse
 from validated fetches separately from activation and publication evidence.
 See [remote update adoption](remote-update.md).
+
+`MHRemoteConfig` is the Foundation-only transport and typed envelope beneath
+remote update processing. It is also re-exported by both umbrellas. Configuration
+hosting remains app-selected; feature-specific revisions, retained evidence, and
+failure behavior are not part of the common transport contract.
 
 ## What Stays App-Owned
 

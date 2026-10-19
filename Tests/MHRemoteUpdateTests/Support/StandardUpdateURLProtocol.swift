@@ -38,9 +38,13 @@ final class StandardUpdateURLProtocol: URLProtocol {
                 }
                 let document: [String: Any] = [
                     "schemaVersion": 1,
-                    "revision": 1,
                     "bundleIdentifier": "example.app",
-                    "requirement": ["minimumVersion": "2", "effectiveAt": "2001-01-01T00:00:00Z"]
+                    "features": [
+                        "remoteUpdate": [
+                            "revision": 1,
+                            "requirement": ["minimumVersion": "2", "effectiveAt": "2001-01-01T00:00:00Z"]
+                        ]
+                    ]
                 ]
                 data = try JSONSerialization.data(withJSONObject: document)
             }

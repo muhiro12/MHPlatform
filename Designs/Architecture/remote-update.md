@@ -152,16 +152,21 @@ handling, and presentation before adopting enforcement.
 
 ## Remote Policy and Retained Evidence
 
-`MHRemoteUpdateSchedule` is the single shared remote JSON contract. A policy
-is edited only when the release decision changes; it has no publisher renewal
-period. This minimal document confirms no update requirement:
+`MHRemoteConfigDocument<Features>` owns the shared app configuration envelope.
+`MHRemoteUpdateSchedule.Feature` owns the `features.remoteUpdate` section.
+Its policy is edited only when the release decision changes; it has no publisher
+renewal period. This minimal document confirms no update requirement:
 
 ```json
 {
   "schemaVersion": 1,
   "bundleIdentifier": "com.example.app",
-  "revision": 1,
-  "requirement": null
+  "features": {
+    "remoteUpdate": {
+      "revision": 1,
+      "requirement": null
+    }
+  }
 }
 ```
 
@@ -171,16 +176,20 @@ A planned release uses the same format with a requirement and a higher revision:
 {
   "schemaVersion": 1,
   "bundleIdentifier": "com.example.app",
-  "revision": 2,
-  "requirement": {
-    "minimumVersion": "6.0",
-    "effectiveAt": "2026-11-01T00:00:00Z"
+  "features": {
+    "remoteUpdate": {
+      "revision": 2,
+      "requirement": {
+        "minimumVersion": "6.0",
+        "effectiveAt": "2026-11-01T00:00:00Z"
+      }
+    }
   }
 }
 ```
 
 The values above are illustrative. `schemaVersion` describes the format; the
-positive `revision` identifies an immutable operational decision, independent
+positive `features.remoteUpdate.revision` identifies an immutable update decision, independent
 of app versions. Changes, postponement, and explicit cancellation require a
 higher revision. The same revision with different content and older revisions
 are rejected, including after retained evidence expires. Each document replaces
@@ -194,8 +203,42 @@ are rejected. `decode(_:)` and `encoded()` implement the shared wire format.
 Only explicit `requirement: null` cancels a requirement. Omission, malformed
 versions, invalid identity, invalid dates, unsupported schemas, HTTP errors, and
 missing data never mean cancellation or validated permission. Authored
-`issuedAt` and `validUntil` fields are not accepted: freshness belongs to the
+`issuedAt` and `validUntil` fields in the update section are not accepted: freshness belongs to the
 fetched evidence rather than to the release decision.
+
+### Shared Entry Point and Feature Boundaries
+
+`MHRemoteConfigClient` accepts the app's HTTPS URL, validates the response and
+app identity, and decodes a typed feature payload through the common envelope.
+No owner, repository, app directory, or deployment URL is built into the package.
+The standard update initializer uses this client through
+`MHRemoteUpdateScheduleLookup`; it does not implement a second HTTP stack.
+
+An app-wide configuration can later decode several selected feature sections in
+one request and distribute that response to their processors. The envelope and
+transport impose no update-specific revision, activation, expiry, or UI rules.
+Only update processing is implemented.
+
+The update-only decoder ignores unrelated feature sections, including values that
+would be invalid for those features. Missing or null `features.remoteUpdate`
+is an error, not cancellation. Changes to sibling sections do not change update
+policy equality or require a higher update revision. A future multi-feature
+decoder must isolate each feature's validation failure rather than throwing away
+all otherwise valid sections.
+
+`MHRemoteConfigResponse` carries the original network observation. Its `map`
+selects a feature without renewing that time. The update controller accepts
+`MHRemoteConfigResponse<MHRemoteUpdateSchedule>` and derives bounded evidence
+from that observation, never from the later time a shared value is selected or
+read from disk. Only validated update policy enters the update-specific store.
+Shared transport does not force unrelated features to use the update policy's
+30-day age limit or operation-blocking behavior.
+
+`MHRemoteUpdateSchedule.decode(_:)` and `encoded()` read and write the common
+remote envelope. Its `Codable` representation is the selected update model used
+inside retained snapshots; it does not retain or republish unrelated sections.
+Use an appropriate `MHRemoteConfigDocument<Features>` when publishing a complete
+multi-feature configuration.
 
 ### Separate Freshness from Activation
 
@@ -239,7 +282,7 @@ import MHPlatformCore
 
 let updates = try MHRemoteUpdateController(
     appStoreID: appStoreID,
-    policyURL: policyURL
+    configurationURL: configurationURL
 )
 let preparation = try await updates.prepare()
 ```
@@ -282,7 +325,7 @@ One process owns each cache file; App Group writer coordination is not automatic
 
 ### Advanced Assembly
 
-The existing injectable initializer, explicit `restore()` / `refresh()`, and
+The injectable initializer, explicit `restore()` / `refresh()`, and
 allow/block plus refresh flags remain for tests, legacy migration, or concrete
 exceptions. Standard apps do not need to assemble lookup closures, pick a cache
 filename, create directories, or choose evidence lifetimes. Advanced persistence

@@ -8,6 +8,7 @@
 - `MHAppRuntimeDefaults`
 - `MHAppRuntimeAds`
 - `MHAppRuntimeLicenses`
+- `MHRemoteConfig`
 - `MHRemoteUpdate`
 - `MHDeepLinking`
 - `MHNotificationPlans`
@@ -38,6 +39,7 @@ and explicit split-runtime-bundle composition.
 
 ## Public Modules
 
+- `MHRemoteConfig`
 - `MHRemoteUpdate`
 - `MHDeepLinking`
 - `MHLogging`
@@ -153,13 +155,22 @@ non-domain app infrastructure.
   `MHAppRuntime`
 - Uses `LicenseList` only where that dependency is available
 
+### `MHRemoteConfig`
+
+- Foundation-only HTTPS transport and typed app configuration envelope
+- Accepts an app-selected URL and validates HTTP success, schema, and app identity
+- Carries the original fetch time when one response is distributed to features
+- Leaves revisions, activation, persistence, and failure policy to each feature
+- Re-exported through both umbrellas and available as a standalone product
+
 ### `MHRemoteUpdate`
 
 - Standalone Foundation-only product for validated versions, bounded activation,
   explicit decisions, public-version lookup, and operation preconditions
 - Re-exported by both umbrellas while remaining independently adoptable; no
   app-root runtime or UI dependency
-- Offers a single static policy format, bounded retained evidence, and operation
+- Selects the update section of the shared configuration format and owns bounded
+  retained evidence and operation
   checks with one refresh when evidence is unavailable
 - Provides standard App Store assembly, persistence placement, evidence
   lifetimes, startup recovery, and confirmation-first operation checks

@@ -4,5 +4,6 @@
 @_exported import MHNotificationPlans
 @_exported import MHPersistenceMaintenance
 @_exported import MHPreferences
+@_exported import MHRemoteConfig
 @_exported import MHRemoteUpdate
 @_exported import MHRouteExecution

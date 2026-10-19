@@ -122,7 +122,9 @@ struct MHRemoteUpdatePersistenceTests: Sendable {
             store: store,
             currentVersion: { installedVersion },
             now: { clock.now() },
-            fetchSchedule: fetch,
+            fetchSchedule: {
+                .init(value: try await fetch(), fetchedAt: clock.now())
+            },
             publicVersion: publicVersion
         )
     }

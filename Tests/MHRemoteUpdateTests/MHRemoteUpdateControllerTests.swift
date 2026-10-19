@@ -200,7 +200,9 @@ struct MHRemoteUpdateControllerTests: Sendable {
             store: store,
             currentVersion: { "5" },
             now: { clock.now() },
-            fetchSchedule: fetch ?? { try schedule() },
+            fetchSchedule: {
+                .init(value: try await (fetch ?? { try schedule() })(), fetchedAt: clock.now())
+            },
             publicVersion: publicVersion
         )
     }

@@ -20,7 +20,7 @@ struct MHRemoteUpdateAppStoreIntegrationTests {
         }
         let updates = try MHRemoteUpdateController(
             appStoreID: 123,
-            policyURL: policyURL,
+            configurationURL: policyURL,
             storefront: storefront,
             bundle: bundle,
             storageDirectory: directory,
@@ -32,7 +32,7 @@ struct MHRemoteUpdateAppStoreIntegrationTests {
         #expect(result.decision == .updateRequired)
         let restarted = try MHRemoteUpdateController(
             appStoreID: 123,
-            policyURL: policyURL,
+            configurationURL: policyURL,
             storefront: storefront,
             bundle: bundle,
             storageDirectory: directory,
@@ -42,7 +42,7 @@ struct MHRemoteUpdateAppStoreIntegrationTests {
         #expect(await restarted.decision() == .updateRequired)
         let otherEndpoint = try MHRemoteUpdateController(
             appStoreID: 123,
-            policyURL: #require(URL(string: "https://example.com/another-policy.json")),
+            configurationURL: #require(URL(string: "https://example.com/another-policy.json")),
             storefront: storefront,
             bundle: bundle,
             storageDirectory: directory,
@@ -58,12 +58,12 @@ struct MHRemoteUpdateAppStoreIntegrationTests {
     func invalidStandardConfigurationFailsBeforeNetworkAccess() throws {
         #expect(throws: MHRemoteUpdateController.Failure.invalidConfiguration) {
             try MHRemoteUpdateController(
-                appStoreID: 0, policyURL: #require(URL(string: "https://example.com/policy.json"))
+                appStoreID: 0, configurationURL: #require(URL(string: "https://example.com/policy.json"))
             )
         }
         #expect(throws: MHRemoteUpdateController.Failure.invalidConfiguration) {
             try MHRemoteUpdateController(
-                appStoreID: 123, policyURL: #require(URL(string: "http://example.com/policy.json"))
+                appStoreID: 123, configurationURL: #require(URL(string: "http://example.com/policy.json"))
             )
         }
     }

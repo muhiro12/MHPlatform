@@ -54,8 +54,8 @@ enum SharedLibraryConsumer {
     }
 
     /// Existing core adopters need only the operational endpoint and Store identity.
-    static func makeUpdateController(appStoreID: Int, policyURL: URL) throws -> MHRemoteUpdateController {
-        try .init(appStoreID: appStoreID, policyURL: policyURL)
+    static func makeUpdateController(appStoreID: Int, configurationURL: URL) throws -> MHRemoteUpdateController {
+        try .init(appStoreID: appStoreID, configurationURL: configurationURL)
     }
 
     static func makeLogger() -> MHLogger {

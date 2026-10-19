@@ -6,6 +6,26 @@ import Testing
 struct MHRemoteUpdateFreshnessTests: Sendable {
     private typealias Fixture = RemoteUpdateTestSupport
 
+    @Test
+    func reusingASharedResponseNeverRenewsUpdateEvidence() async throws {
+        let clock = Fixture.Clock()
+        let response = MHRemoteConfigResponse(value: try makePolicy(), fetchedAt: Fixture.date(0))
+        let updates = try MHRemoteUpdateController(
+            bundleIdentifier: "example.app",
+            storefront: nil,
+            policyLifetime: 30 * Fixture.day,
+            publicationLifetime: Fixture.day,
+            store: nil,
+            currentVersion: { "1" },
+            now: { clock.now() },
+            fetchSchedule: { response },
+            publicVersion: { nil }
+        )
+        #expect(try await updates.refresh() == .notRequired)
+        clock.set(day: 30)
+        #expect(try await updates.refresh() == .unavailable)
+    }
+
     @Test(arguments: [nil, "1"])
     func unchangedPolicyCanBeFetchedBeyondThirtyDaysWithoutReissuingIt(_ minimum: String?) async throws {
         let clock = Fixture.Clock()
@@ -181,7 +201,9 @@ struct MHRemoteUpdateFreshnessTests: Sendable {
             store: store,
             currentVersion: { installedVersion },
             now: { clock.now() },
-            fetchSchedule: fetch,
+            fetchSchedule: {
+                .init(value: try await fetch(), fetchedAt: clock.now())
+            },
             publicVersion: publicVersion
         )
     }

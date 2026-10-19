@@ -175,10 +175,14 @@ app-root runtime surface.
 
 Remote updates are available through `MHPlatformCore` and `MHPlatform`, with a
 standalone `MHRemoteUpdate` product for focused consumers. Standard App Store
-adoption needs a policy URL and Store ID; the package assembles lookup, persistence,
+adoption needs an app configuration URL and Store ID; the package assembles
+lookup, persistence,
 lifetimes, and confirmation-first operation checks. The shared static policy
 needs no periodic publisher renewal; only validated fetches renew bounded offline
-evidence. See the
+evidence. `MHRemoteConfig` owns the shared HTTPS transport and typed app
+configuration envelope; update revisions and retained evidence remain in
+`MHRemoteUpdate`. The endpoint is app-selected, with no hosting account or
+repository embedded in the package. See the
 [remote update adoption guide](Designs/Architecture/remote-update.md).
 
 ## Public Products
@@ -201,6 +205,7 @@ Advanced runtime composition bundles:
 Granular core-safe products, optional UI bridges, and optional shells:
 
 - `MHRemoteUpdate`
+- `MHRemoteConfig`
 - `MHDeepLinking`
 - `MHLogging`
 - `MHLoggingUI`

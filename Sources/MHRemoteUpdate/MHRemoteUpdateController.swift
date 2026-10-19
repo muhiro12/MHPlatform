@@ -1,4 +1,5 @@
 import Foundation
+import MHRemoteConfig
 
 /// Retains scheduled policy and checks app-selected operations without owning UI or endpoints.
 ///
@@ -41,7 +42,7 @@ public actor MHRemoteUpdateController {
     private let store: MHRemoteUpdateStore?
     private let currentVersion: @Sendable () -> String?
     private let now: @Sendable () -> Date
-    private let fetchSchedule: @Sendable () async throws -> MHRemoteUpdateSchedule
+    private let fetchSchedule: @Sendable () async throws -> MHRemoteConfigResponse<MHRemoteUpdateSchedule>
     private let publicVersion: @Sendable () async throws -> MHAppVersion?
     private var evidence: MHRemoteUpdateSnapshot?
     private var refreshIdentifier: UUID?
@@ -49,8 +50,8 @@ public actor MHRemoteUpdateController {
 
     /// Creates a controller with explicit identity, evidence lifetimes, and validated providers.
     ///
-    /// `fetchSchedule` must perform a validated network fetch, bypassing local HTTP
-    /// cache; disk reads cannot establish new freshness. `publicVersion` must validate
+    /// `fetchSchedule` supplies validated policy with its original network observation;
+    /// shared responses and disk reads cannot establish new freshness. `publicVersion` must validate
     /// app ID, bundle ID, and storefront. Pass nil storage only for ephemeral use.
     @preconcurrency
     public init(
@@ -61,7 +62,7 @@ public actor MHRemoteUpdateController {
         store: MHRemoteUpdateStore?,
         currentVersion: @escaping @Sendable () -> String?,
         now: @escaping @Sendable () -> Date = Date.init,
-        fetchSchedule: @escaping @Sendable () async throws -> MHRemoteUpdateSchedule,
+        fetchSchedule: @escaping @Sendable () async throws -> MHRemoteConfigResponse<MHRemoteUpdateSchedule>,
         publicVersion: @escaping @Sendable () async throws -> MHAppVersion?
     ) throws {
         guard bundleIdentifier.isEmpty == false,
@@ -181,7 +182,8 @@ public actor MHRemoteUpdateController {
         let identifier = UUID()
         refreshIdentifier = identifier
         do {
-            let document = try await fetchSchedule()
+            let response = try await fetchSchedule()
+            let document = response.value
             try checkRefresh(identifier)
             guard document.bundleIdentifier == bundleIdentifier else {
                 throw Failure.identityMismatch
@@ -190,7 +192,7 @@ public actor MHRemoteUpdateController {
             let accepted = MHRemoteUpdateSnapshot(
                 schedule: document,
                 storefront: storefront,
-                observation: try observation(),
+                observation: try observation(fetchedAt: response.fetchedAt),
                 publication: evidence?.publication
             )
             try retain(accepted)
@@ -243,8 +245,7 @@ public actor MHRemoteUpdateController {
         try decision().checkOperationAllowed(whenUnavailable: behavior)
     }
 
-    private func observation() throws -> MHRemoteUpdateSnapshot.Observation {
-        let fetchedAt = now()
+    private func observation(fetchedAt: Date) throws -> MHRemoteUpdateSnapshot.Observation {
         let validUntil = fetchedAt.addingTimeInterval(policyLifetime)
         guard fetchedAt.timeIntervalSinceReferenceDate.isFinite,
               validUntil.timeIntervalSinceReferenceDate.isFinite,

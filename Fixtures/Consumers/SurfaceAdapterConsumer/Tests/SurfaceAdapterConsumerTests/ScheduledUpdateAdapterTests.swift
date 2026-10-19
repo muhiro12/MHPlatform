@@ -98,7 +98,9 @@ struct ScheduledUpdateAdapterTests: Sendable {
             store: nil,
             currentVersion: { "1" },
             now: { .init(timeIntervalSinceReferenceDate: 10) },
-            fetchSchedule: fetch,
+            fetchSchedule: {
+                .init(value: try await fetch(), fetchedAt: .init(timeIntervalSinceReferenceDate: 10))
+            },
             publicVersion: publicVersion
         )
     }

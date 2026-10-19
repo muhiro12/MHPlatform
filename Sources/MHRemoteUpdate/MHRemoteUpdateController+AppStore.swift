@@ -14,7 +14,7 @@ public extension MHRemoteUpdateController {
 
     /// Assembles lookups, version identity, storage, and standard lifetimes for an App Store app.
     ///
-    /// Only the policy endpoint and App Store ID are required in an app process.
+    /// Only the app configuration endpoint and App Store ID are required in an app process.
     /// Bundle.main supplies identity/version. Extensions must pass the containing
     /// app's bundle, or use the injectable initializer for app-owned identity providers.
     /// Storage is scoped by bundle, app ID, and storefront under Application Support;
@@ -22,14 +22,14 @@ public extension MHRemoteUpdateController {
     /// Call `prepare()` at startup/foreground to restore and refresh the policy.
     init(
         appStoreID: Int,
-        policyURL: URL,
+        configurationURL: URL,
         storefront: String? = nil,
         bundle: Bundle = .main,
         storageDirectory: URL? = nil,
         session: URLSession = .shared
     ) throws {
         guard appStoreID > 0,
-              policyURL.scheme == "https", policyURL.host?.isEmpty == false,
+              configurationURL.scheme == "https", configurationURL.host?.isEmpty == false,
               let bundleIdentifier = bundle.bundleIdentifier,
               bundleIdentifier.isEmpty == false,
               bundleIdentifier.contains("/") == false,
@@ -51,11 +51,11 @@ public extension MHRemoteUpdateController {
             storefront: storefront,
             policyLifetime: Defaults.policyLifetime,
             publicationLifetime: Defaults.publicationLifetime,
-            store: .init(fileURL: fileURL, sourceURL: policyURL),
+            store: .init(fileURL: fileURL, sourceURL: configurationURL),
             currentVersion: { installedVersion },
             now: Date.init,
             fetchSchedule: {
-                try await scheduleLookup.schedule(from: policyURL, bundleIdentifier: bundleIdentifier)
+                try await scheduleLookup.schedule(from: configurationURL, bundleIdentifier: bundleIdentifier)
             },
             publicVersion: {
                 try await versionLookup.version(

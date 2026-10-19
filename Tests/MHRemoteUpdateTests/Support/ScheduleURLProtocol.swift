@@ -44,11 +44,11 @@ final class ScheduleURLProtocol: URLProtocol {
         case "decode":
             body = "invalid json"
         case "unsupported":
-            body = #"{"schemaVersion":2,"bundleIdentifier":"example.app","revision":2,"requirement":null}"#
+            body = #"{"schemaVersion":2,"bundleIdentifier":"example.app","features":{}}"#
         default:
             body = #"""
-                {"schemaVersion":1,"bundleIdentifier":"example.app","revision":1,
-                "requirement":{"minimumVersion":"6.0","effectiveAt":"2026-11-01T00:00:00Z"}}
+                {"schemaVersion":1,"bundleIdentifier":"example.app","features":{"remoteUpdate":{"revision":1,
+                "requirement":{"minimumVersion":"6.0","effectiveAt":"2026-11-01T00:00:00Z"}}}}
             """#
         }
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)

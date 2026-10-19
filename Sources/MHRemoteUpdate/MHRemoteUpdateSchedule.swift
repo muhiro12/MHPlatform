@@ -85,13 +85,6 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         try validate()
     }
 
-    /// Decodes the shared wire format with ISO 8601 UTC activation dates.
-    public static func decode(_ data: Data) throws -> Self {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode(Self.self, from: data)
-    }
-
     private static func canonicalDate(_ date: Date) -> Date {
         .init(timeIntervalSinceReferenceDate: date.timeIntervalSinceReferenceDate.rounded(.down))
     }
@@ -105,33 +98,15 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         try container.encode(requirement, forKey: .requirement)
     }
 
-    /// Encodes the independently hosted static policy.
-    public func encoded() throws -> Data {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        return try encoder.encode(self)
-    }
-
     private func validate() throws {
         guard schemaVersion == Self.supportedSchemaVersion else {
             throw Failure.unsupportedSchema
         }
         guard bundleIdentifier.isEmpty == false,
-              bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines) == bundleIdentifier,
-              revision > 0 else {
+              bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines) == bundleIdentifier else {
             throw Failure.invalidDocument
         }
-        if let requirement {
-            guard requirement.effectiveAt.timeIntervalSinceReferenceDate.isFinite else {
-                throw Failure.invalidDocument
-            }
-            if let endsAt = requirement.endsAt {
-                guard endsAt.timeIntervalSinceReferenceDate.isFinite, endsAt > requirement.effectiveAt else {
-                    throw Failure.invalidDocument
-                }
-            }
-        }
+        _ = try Feature(revision: revision, requirement: requirement)
     }
 }
 
