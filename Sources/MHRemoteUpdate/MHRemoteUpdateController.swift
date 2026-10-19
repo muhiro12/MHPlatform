@@ -360,14 +360,15 @@ private extension MHRemoteUpdateController {
     }
 
     func retain(_ value: MHRemoteUpdateSnapshot) throws {
+        let accepted = try evidence?.merging(value) ?? value
         do {
-            evidence = try store?.retain(value) ?? value
+            evidence = try store?.retain(accepted) ?? accepted
             hasInitializedEvidence = true
         } catch {
             if error is Failure, let restored = try? store?.load() {
                 evidence = try evidence?.merging(restored) ?? restored
             } else {
-                evidence = value
+                evidence = accepted
                 hasInitializedEvidence = true
             }
             throw error

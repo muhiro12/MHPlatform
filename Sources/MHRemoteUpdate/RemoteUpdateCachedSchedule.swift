@@ -28,7 +28,8 @@ struct RemoteUpdateCachedSchedule: Codable {
     let scheduledRequirements: [Requirement]
 
     init(_ value: MHRemoteUpdateSchedule) {
-        schemaVersion = value.schemaVersion
+        // Cache compatibility can change independently of the shared Config envelope.
+        schemaVersion = 1
         bundleIdentifier = value.bundleIdentifier
         revision = value.revision
         requirement = value.requirement.map(Requirement.init)

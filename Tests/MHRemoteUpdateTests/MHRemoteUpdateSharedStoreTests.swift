@@ -3,6 +3,22 @@ import MHRemoteUpdate
 import Testing
 
 struct MHRemoteUpdateSharedStoreTests {
+    private actor PublicationGate {
+        private var continuation: CheckedContinuation<MHAppVersion?, Never>?
+
+        var hasRequest: Bool { continuation != nil }
+
+        func fetch() async -> MHAppVersion? {
+            await withCheckedContinuation { continuation in
+                self.continuation = continuation
+            }
+        }
+
+        func complete() {
+            continuation?.resume(returning: MHAppVersion("2"))
+            continuation = nil
+        }
+    }
     private enum Instant {
         static let earlier = Date(timeIntervalSinceReferenceDate: 10)
         static let later = Date(timeIntervalSinceReferenceDate: 20)
@@ -97,6 +113,43 @@ struct MHRemoteUpdateSharedStoreTests {
         let restarted = try controller(store: store, schedule: original.schedule)
         try await restarted.restore()
         #expect(await restarted.decision() == .unavailable)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func latePublicationCannotRollBackNewerMemoryEvenWhenTheStoreBecomesUnwritable() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let store = MHRemoteUpdateStore(fileURL: directory.appendingPathComponent("policy.json"))
+        let original = try snapshot(revision: 1, minimum: "2", fetchedAt: Instant.earlier)
+        let gate = PublicationGate()
+        let updates = try MHRemoteUpdateController(
+            bundleIdentifier: "example.app",
+            storefront: nil,
+            policyLifetime: 100,
+            publicationLifetime: 100,
+            store: store,
+            currentVersion: { "1" },
+            now: { Instant.later },
+            fetchSchedule: { .init(value: original.schedule, fetchedAt: Instant.earlier) },
+            publicVersion: { await gate.fetch() }
+        )
+        let refresh = Task { try await updates.refresh() }
+        while await gate.hasRequest == false {
+            await Task.yield()
+        }
+        let newer = try snapshot(revision: 2, minimum: "3", fetchedAt: Instant.later)
+        try store.save(newer)
+        try await updates.restore()
+        try FileManager.default.removeItem(at: directory)
+        try Data("not a directory".utf8).write(to: directory)
+        await gate.complete()
+        await #expect(throws: MHRemoteUpdateController.Failure.revisionConflict) {
+            try await refresh.value
+        }
+        #expect(await updates.evaluation().revision == 2)
+        #expect(await updates.evaluation().minimumVersion == MHAppVersion("3"))
     }
 
     private func snapshot(revision: Int, minimum: String?, fetchedAt: Date) throws -> MHRemoteUpdateSnapshot {
