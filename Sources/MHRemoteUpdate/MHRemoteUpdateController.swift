@@ -49,6 +49,8 @@ public actor MHRemoteUpdateController {
     private let publicVersion: @Sendable () async throws -> MHAppVersion?
     private var evidence: MHRemoteUpdateSnapshot?
     private var refreshIdentifier: UUID?
+    private var refreshTask: Task<Void, Never>?
+    private(set) var refreshWaiters: [UUID: CheckedContinuation<MHRemoteUpdateDecision, any Error>] = [:]
     private var hasInitializedEvidence = false
     private var lastRestorationError: (any Error)?
     private var lastRefreshError: (any Error)?
@@ -97,8 +99,8 @@ public actor MHRemoteUpdateController {
 
     /// Restores without network access; expired evidence remains unavailable on evaluation.
     ///
-    /// Corrupt or mismatched files throw without clearing in-memory evidence. Restore
-    /// before initial refresh; revision checks also prevent a late restore rolling it back.
+    /// Corrupt or mismatched files throw without clearing in-memory evidence;
+    /// revision checks prevent a late restore from rolling policy back.
     public func restore() throws {
         try Task.checkCancellation()
         do {
@@ -112,10 +114,9 @@ public actor MHRemoteUpdateController {
 
     /// Restores until evidence initializes, then refreshes on each startup/foreground call.
     ///
-    /// Failed cache reads are retried on the next call until restoration or refresh
-    /// initializes evidence. Cache errors do not prevent a network refresh or
-    /// low-impact offline use. Ordinary failures remain observable in the result;
-    /// cancellation throws and never becomes a preparation result. No observer or timer is installed.
+    /// Each call merges shared evidence before refreshing. Cache errors do not prevent
+    /// refresh or low-impact offline use. Ordinary failures remain observable;
+    /// cancellation throws. No observer or timer is installed.
     @discardableResult
     public func prepare() async throws -> Preparation {
         try Task.checkCancellation()
@@ -169,46 +170,22 @@ public actor MHRemoteUpdateController {
     ///
     /// A valid schedule is saved before publication lookup so offline failures cannot
     /// lose an announced plan. A save failure leaves new evidence in memory and throws.
-    /// Concurrent refreshes use the latest invocation; obsolete completions cannot
-    /// overwrite cancellation or postponement. Cancellation never becomes permission.
+    /// Overlapping callers share one request. Cancelling a caller releases only its
+    /// wait; the last cancelled waiter cancels the request and invalidates late responses.
+    /// Cancellation never becomes permission.
     @discardableResult
     public func refresh() async throws -> MHRemoteUpdateDecision {
         try Task.checkCancellation()
-        let identifier = UUID()
-        refreshIdentifier = identifier
-        do {
-            let response = try await fetchSchedule()
-            let document = response.value
-            try checkRefresh(identifier)
-            guard document.bundleIdentifier == bundleIdentifier else {
-                throw Failure.identityMismatch
+        let waiter = UUID()
+        let result = try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                enqueueRefresh(waiter: waiter, continuation: continuation)
             }
-            try validateRevision(document)
-            var accepted = MHRemoteUpdateSnapshot(
-                schedule: document,
-                storefront: storefront,
-                observation: try observation(fetchedAt: response.fetchedAt),
-                publication: evidence?.publication
-            )
-            accepted.publicationCheckedAt = evidence?.publicationCheckedAt
-            try retain(accepted)
-            if let installedVersion = currentVersion().flatMap(MHAppVersion.init),
-               document.needsPublication(currentVersion: installedVersion, at: now()) {
-                let version = try await publicVersion()
-                try checkRefresh(identifier)
-                try retainPublication(version, schedule: document, observation: accepted.observation)
-            }
-            lastRefreshError = nil
-            return decision()
-        } catch {
-            if error is CancellationError || Task.isCancelled || (error as? URLError)?.code == .cancelled {
-                throw CancellationError()
-            }
-            if refreshIdentifier == identifier {
-                lastRefreshError = error
-            }
-            throw error
+        } onCancel: {
+            Task { await self.cancelRefresh(waiter: waiter) }
         }
+        try Task.checkCancellation()
+        return result
     }
 
     /// Checks immediately before an app-owned operation and its success effects.
@@ -234,6 +211,90 @@ public actor MHRemoteUpdateController {
 }
 
 private extension MHRemoteUpdateController {
+    func enqueueRefresh(
+        waiter: UUID,
+        continuation: CheckedContinuation<MHRemoteUpdateDecision, any Error>
+    ) {
+        refreshWaiters[waiter] = continuation
+        guard refreshIdentifier == nil else {
+            return
+        }
+        let identifier = UUID()
+        refreshIdentifier = identifier
+        refreshTask = Task {
+            let result: Result<MHRemoteUpdateDecision, any Error>
+            do {
+                result = .success(try await performRefresh(identifier))
+            } catch {
+                result = .failure(error)
+            }
+            completeRefresh(identifier, result: result)
+        }
+    }
+
+    func cancelRefresh(waiter: UUID) {
+        refreshWaiters.removeValue(forKey: waiter)?.resume(throwing: CancellationError())
+        guard refreshWaiters.isEmpty else {
+            return
+        }
+        refreshTask?.cancel()
+        refreshTask = nil
+        refreshIdentifier = nil
+    }
+
+    func completeRefresh(_ identifier: UUID, result: Result<MHRemoteUpdateDecision, any Error>) {
+        guard refreshIdentifier == identifier else {
+            return
+        }
+        refreshIdentifier = nil
+        refreshTask = nil
+        let waiters = refreshWaiters.values
+        refreshWaiters.removeAll()
+        switch result {
+        case .success:
+            lastRefreshError = nil
+        case .failure(let error):
+            if error is CancellationError == false {
+                lastRefreshError = error
+            }
+        }
+        for waiter in waiters {
+            waiter.resume(with: result)
+        }
+    }
+
+    func performRefresh(_ identifier: UUID) async throws -> MHRemoteUpdateDecision {
+        do {
+            let response = try await fetchSchedule()
+            let document = response.value
+            try checkRefresh(identifier)
+            guard document.bundleIdentifier == bundleIdentifier else {
+                throw Failure.identityMismatch
+            }
+            try validateRevision(document)
+            var accepted = MHRemoteUpdateSnapshot(
+                schedule: document,
+                storefront: storefront,
+                observation: try observation(fetchedAt: response.fetchedAt),
+                publication: evidence?.publication
+            )
+            accepted.publicationCheckedAt = evidence?.publicationCheckedAt
+            try retain(accepted)
+            if let installedVersion = currentVersion().flatMap(MHAppVersion.init),
+               document.needsPublication(currentVersion: installedVersion, at: now()) {
+                let version = try await publicVersion()
+                try checkRefresh(identifier)
+                try retainPublication(version, schedule: document, observation: accepted.observation)
+            }
+            return decision()
+        } catch {
+            if error is CancellationError || Task.isCancelled || (error as? URLError)?.code == .cancelled {
+                throw CancellationError()
+            }
+            throw error
+        }
+    }
+
     func retainPublication(
         _ version: MHAppVersion?,
         schedule: MHRemoteUpdateSchedule,

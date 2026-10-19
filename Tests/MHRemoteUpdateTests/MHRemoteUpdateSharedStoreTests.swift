@@ -79,6 +79,26 @@ struct MHRemoteUpdateSharedStoreTests {
         #expect(try store.load() == newer)
     }
 
+    @Test
+    func stalePositivePublicationCannotUndoANewerEmptyLookup() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let store = MHRemoteUpdateStore(fileURL: directory.appendingPathComponent("policy.json"))
+        let original = try snapshot(revision: 1, minimum: "2", fetchedAt: Instant.earlier)
+        try store.save(original)
+        let updates = try controller(store: store, schedule: original.schedule, published: nil)
+        try await updates.restore()
+        #expect(try await updates.refresh() == .unavailable)
+        #expect(try store.load()?.publication == nil)
+        try store.save(original)
+        #expect(try store.load()?.publication == nil)
+        let restarted = try controller(store: store, schedule: original.schedule)
+        try await restarted.restore()
+        #expect(await restarted.decision() == .unavailable)
+    }
+
     private func snapshot(revision: Int, minimum: String?, fetchedAt: Date) throws -> MHRemoteUpdateSnapshot {
         let requirement = try minimum.map { value in
             try MHRemoteUpdateSchedule.Requirement(
@@ -97,7 +117,8 @@ struct MHRemoteUpdateSharedStoreTests {
 
     private func controller(
         store: MHRemoteUpdateStore,
-        schedule: MHRemoteUpdateSchedule
+        schedule: MHRemoteUpdateSchedule,
+        published: String? = "2"
     ) throws -> MHRemoteUpdateController {
         try .init(
             bundleIdentifier: "example.app",
@@ -108,7 +129,7 @@ struct MHRemoteUpdateSharedStoreTests {
             currentVersion: { "1" },
             now: { Instant.later },
             fetchSchedule: { .init(value: schedule, fetchedAt: Instant.earlier) },
-            publicVersion: { MHAppVersion("2") }
+            publicVersion: { published.flatMap(MHAppVersion.init) }
         )
     }
 }

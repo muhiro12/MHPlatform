@@ -1,5 +1,5 @@
 import Foundation
-import MHRemoteUpdate
+@testable import MHRemoteUpdate
 import Testing
 
 struct MHRemoteUpdateConcurrencyTests: Sendable {
@@ -52,24 +52,25 @@ struct MHRemoteUpdateConcurrencyTests: Sendable {
     }
 
     @Test
-    func lateResponseCannotResurrectCancelledSchedule() async throws {
+    func cancelledLastWaiterCannotResurrectAnObsoleteSchedule() async throws {
         let gate = SuspendedSchedule()
         let cancellation = try schedule(revision: 2, requirement: false)
         let responses = Responses(suspended: gate, cancellation: cancellation)
         let controller = try controller { await responses.fetch() }
         let first = Task { try await controller.refresh() }
         await gate.waitForRequest()
-        #expect(try await controller.refresh() == .notRequired)
-        await gate.complete(try schedule(revision: 1, requirement: true))
-        await #expect(throws: MHRemoteUpdateController.Failure.superseded) {
+        first.cancel()
+        await #expect(throws: CancellationError.self) {
             try await first.value
         }
+        #expect(try await controller.refresh() == .notRequired)
+        await gate.complete(try schedule(revision: 1, requirement: true))
         #expect(await controller.decision() == .notRequired)
         #expect(await controller.evaluation().refreshError == nil)
     }
 
     @Test
-    func concurrentFirstOperationRefreshesKeepRestoredEvidenceAndLatestInvocationOrdering() async throws {
+    func concurrentFirstOperationsShareOneRefreshWithoutSupersedingEachOther() async throws {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer {
             try? FileManager.default.removeItem(at: fileURL)
@@ -91,14 +92,43 @@ struct MHRemoteUpdateConcurrencyTests: Sendable {
         let first = Task { try await updates.checkOperationAllowed() }
         await gate.waitForRequest()
         #expect(await updates.evaluation().revision == 1)
-        try await updates.checkOperationAllowed()
-        await gate.complete(try schedule(revision: 1, requirement: true))
-        await #expect(throws: MHRemoteUpdateController.Failure.superseded) {
-            try await first.value
-        }
+        let second = Task { try await updates.checkOperationAllowed() }
+        await waitForParticipants(2, in: updates)
+        await gate.complete(cancellation)
+        try await first.value
+        try await second.value
+        #expect(await responses.calls == 1)
         #expect(await updates.decision() == .notRequired)
         #expect(await updates.evaluation().refreshError == nil)
         #expect(try store.load()?.schedule == cancellation)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func cancellingOneWaiterLeavesTheOtherOperationAndSharedFetchAlive() async throws {
+        let gate = SuspendedSchedule()
+        let permission = try schedule(revision: 1, requirement: false)
+        let responses = Responses(suspended: gate, cancellation: permission)
+        let updates = try controller { await responses.fetch() }
+        let first = Task { try await updates.checkOperationAllowed() }
+        await gate.waitForRequest()
+        let second = Task { try await updates.checkOperationAllowed() }
+        await waitForParticipants(2, in: updates)
+        first.cancel()
+        await #expect(throws: CancellationError.self) {
+            try await first.value
+        }
+        #expect(await updates.refreshWaiters.count == 1)
+        await gate.complete(permission)
+        try await second.value
+        #expect(await responses.calls == 1)
+        #expect(await updates.evaluation().refreshError == nil)
+    }
+
+    // Actor-state barriers make cancellation ordering deterministic without sleeps or public test hooks.
+    private func waitForParticipants(_ count: Int, in updates: MHRemoteUpdateController) async {
+        while await updates.refreshWaiters.count < count {
+            await Task.yield()
+        }
     }
 
     @Test
