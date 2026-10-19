@@ -97,8 +97,9 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
         guard schedule.bundleIdentifier == incoming.schedule.bundleIdentifier, storefront == incoming.storefront else {
             throw MHRemoteUpdateController.Failure.identityMismatch
         }
-        guard incoming.schedule.revision >= schedule.revision,
-              incoming.schedule.revision != schedule.revision || incoming.schedule == schedule else {
+        do {
+            try incoming.schedule.validateReplacement(of: schedule)
+        } catch {
             throw MHRemoteUpdateController.Failure.revisionConflict
         }
         let latestObservation = incoming.schedule.revision > schedule.revision

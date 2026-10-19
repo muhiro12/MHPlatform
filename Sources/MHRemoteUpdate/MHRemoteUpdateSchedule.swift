@@ -51,6 +51,8 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
         case invalidDocument
         /// The document belongs to another app.
         case identityMismatch
+        /// A policy revision moved backwards or changed immutable content.
+        case revisionConflict
     }
 
     private static let supportedSchemaVersion = 1
@@ -112,6 +114,19 @@ public struct MHRemoteUpdateSchedule: Codable, Equatable, Sendable {
     /// Encodes the shared envelope rather than a persistence-specific schedule shape.
     public func encode(to encoder: any Encoder) throws {
         try configuration().encode(to: encoder)
+    }
+
+    /// Validates an entire replacement using the same immutable revisions as retained evidence.
+    ///
+    /// Identical policy is allowed at the same revision. Cancellation, postponement,
+    /// and every other policy change require a higher revision for the same app.
+    public func validateReplacement(of previous: Self) throws {
+        guard bundleIdentifier == previous.bundleIdentifier else {
+            throw Failure.identityMismatch
+        }
+        guard revision >= previous.revision, revision != previous.revision || self == previous else {
+            throw Failure.revisionConflict
+        }
     }
 
     func minimumVersion(at date: Date) -> MHAppVersion? {

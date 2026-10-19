@@ -405,8 +405,10 @@ For retained repository rule checks:
 bash ci_scripts/tasks/check_repository_rules.sh
 ```
 
-This retained rule entry point runs SwiftLint, the models-directory consistency
-check, and consumer fixture checks.
+This retained rule entry point runs SwiftLint, consumer fixture checks, and the
+package-backed remote configuration publisher validator tests. The validator
+compiles only the owning configuration/update modules with Apple's Swift compiler;
+it adds no app product or third-party dependency.
 
 If you prefer to run SwiftLint directly through the repository wrapper:
 

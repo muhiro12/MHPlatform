@@ -490,6 +490,30 @@ implied by this serialization cleanup. Previously distributed readers cannot
 learn a new version check retroactively: deploy incompatible future formats on
 a new endpoint while retaining the old endpoint for those clients.
 
+### Publisher Validation
+
+Before publishing Config changes, build the publisher tool on macOS with the
+selected Xcode toolchain and validate the candidate against the previous policy:
+
+```sh
+bash ci_scripts/tasks/build_remote_config_validator.sh .build/remote-config-validator
+.build/remote-config-validator/mh-validate-remote-config candidate.json previous.json
+```
+
+The tool uses the same public decoder and `validateReplacement(of:)` rule as
+controllers and coordinated stores. It rejects wrong identity, unsupported
+format, invalid requirements, lower revisions, and changed immutable revisions.
+Unknown sibling features remain independent; this tool currently validates only
+the update section. It does not confirm App Store publication or activate policy.
+Compile and executable behavior checks are retained in repository rules.
+
+Configuration repositories can pin the validator source revision and run it
+against exact Git objects before pushing and in pull requests. A workflow that
+runs only after pushing a live branch cannot prevent that publication. Server
+enforcement requires a required pull-request check or a separate promotion step;
+neither is silently installed by the package. Restore or cancel policy using a
+higher revision, retaining the last valid published baseline for comparison.
+
 ### Advanced Assembly
 
 The injectable initializer, explicit `restore()` / `refresh()`, and

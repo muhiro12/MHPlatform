@@ -16,5 +16,6 @@ echo "Running MHPlatform retained repository rule checks."
 bash "$repository_root/ci_scripts/tasks/check_environment.sh" --profile rules
 CI_SKIP_ENV_CHECK=1 bash "$repository_root/ci_scripts/tasks/lint_swift.sh"
 bash "$repository_root/ci_scripts/tasks/test_consumer_fixtures.sh"
+bash "$repository_root/ci_scripts/tasks/test_remote_config_validator.sh"
 
 echo "Repository rules check passed."
