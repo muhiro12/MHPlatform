@@ -20,6 +20,8 @@ public extension MHRemoteUpdateController {
     /// Storage is scoped by bundle, app ID, and storefront under Application Support;
     /// supplying a directory supports App Groups, alternate environments, and tests.
     /// Call `prepare()` at startup/foreground to restore and refresh the policy.
+    /// Headless operations can call `checkOperationAllowed()` directly; its first
+    /// call initializes retained evidence without app-owned preparation flags.
     init(
         appStoreID: Int,
         configurationURL: URL,

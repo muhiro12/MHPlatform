@@ -119,18 +119,7 @@ public actor MHRemoteUpdateController {
     @discardableResult
     public func prepare() async throws -> Preparation {
         try Task.checkCancellation()
-        var restorationError: (any Error)?
-        if hasInitializedEvidence == false {
-            do {
-                try restore()
-            } catch {
-                try Task.checkCancellation()
-                if error is CancellationError {
-                    throw error
-                }
-                restorationError = error
-            }
-        }
+        let restorationError = try initializeEvidence()
         var refreshError: (any Error)?
         do {
             try await refresh()
@@ -238,6 +227,8 @@ public actor MHRemoteUpdateController {
 
     /// Checks immediately before an app-owned operation and its success effects.
     ///
+    /// First restores retained evidence if it has not initialized. Ordinary cache
+    /// failures remain observable through `evaluation()` and do not prevent refresh.
     /// With refresh enabled, unavailable evidence triggers one refresh. Fetch, save,
     /// and cancellation errors propagate; a still-unavailable result follows the
     /// explicit allow/block choice. Known required updates always block. This is a
@@ -247,6 +238,7 @@ public actor MHRemoteUpdateController {
         refreshIfUnavailable: Bool
     ) async throws {
         try Task.checkCancellation()
+        _ = try initializeEvidence()
         if decision() == .unavailable, refreshIfUnavailable {
             try await refresh()
         }
@@ -279,6 +271,23 @@ public actor MHRemoteUpdateController {
         }
         refreshIdentifier = nil
         evidence = restored
+    }
+
+    private func initializeEvidence() throws -> (any Error)? {
+        try Task.checkCancellation()
+        guard hasInitializedEvidence == false else {
+            return nil
+        }
+        do {
+            try restore()
+            return nil
+        } catch {
+            try Task.checkCancellation()
+            if error is CancellationError {
+                throw error
+            }
+            return error
+        }
     }
 
     private func validateRevision(_ document: MHRemoteUpdateSchedule) throws {

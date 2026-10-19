@@ -69,6 +69,39 @@ struct MHRemoteUpdateConcurrencyTests: Sendable {
     }
 
     @Test
+    func concurrentFirstOperationRefreshesKeepRestoredEvidenceAndLatestInvocationOrdering() async throws {
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+        let store = MHRemoteUpdateStore(fileURL: fileURL)
+        try store.save(.init(
+            schedule: schedule(revision: 1, requirement: true),
+            storefront: "jp",
+            observation: .init(
+                fetchedAt: .init(timeIntervalSinceReferenceDate: 0),
+                validUntil: .init(timeIntervalSinceReferenceDate: 100)
+            ),
+            publication: nil
+        ))
+        let gate = SuspendedSchedule()
+        let cancellation = try schedule(revision: 2, requirement: false)
+        let responses = Responses(suspended: gate, cancellation: cancellation)
+        let updates = try controller(store: store) { await responses.fetch() }
+        let first = Task { try await updates.checkOperationAllowed() }
+        await gate.waitForRequest()
+        #expect(await updates.evaluation().revision == 1)
+        try await updates.checkOperationAllowed()
+        await gate.complete(try schedule(revision: 1, requirement: true))
+        await #expect(throws: MHRemoteUpdateController.Failure.superseded) {
+            try await first.value
+        }
+        #expect(await updates.decision() == .notRequired)
+        #expect(await updates.evaluation().refreshError == nil)
+        #expect(try store.load()?.schedule == cancellation)
+    }
+
+    @Test
     func saveFailureRetainsCurrentEvidenceInMemoryAndRemainsObservable() async throws {
         let blockedParent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try Data("not a directory".utf8).write(to: blockedParent)

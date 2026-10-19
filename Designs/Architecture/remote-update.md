@@ -364,6 +364,7 @@ No timer, lifecycle observer, or UI presentation is installed automatically.
 | Persistence | Application Support / MHRemoteUpdate, scoped by bundle, Store ID, and country |
 | Directory preparation | Created automatically when saving |
 | Cache source identity | A different policy URL cannot reuse the cached evidence |
+| First operation check | Restore retained evidence automatically before evaluating the operation policy |
 | Normal operation check | Require confirmation, refreshing once if unavailable |
 | Low-impact offline operation | Explicit `.allowWhenUnavailable`, without networking |
 
@@ -391,6 +392,38 @@ let updates = try MHRemoteUpdateController(
 An optional `storageDirectory` supports shared containers, alternate environments,
 and tests. Use separate directories/controllers for different environments.
 One process owns each cache file; App Group writer coordination is not automatic.
+
+### Headless Operation Entry
+
+An App Intent, background task, or other non-UI entry point can call
+`checkOperationAllowed()` directly on its configured controller:
+
+```swift
+try await updates.checkOperationAllowed()
+// Perform the app-owned mutation and its success effects only after this check.
+```
+
+The first operation check initializes retained evidence synchronously inside the
+actor, then reevaluates it before deciding whether one refresh is needed. No
+app-owned preparation flag or prepare-before-check sequence is required. A valid
+retained permission works offline; a published active requirement blocks,
+including a timed plan that activated while the process was not running.
+Restoring never extends policy or publication freshness. Missing, expired,
+corrupt, or mismatched evidence cannot establish permission.
+
+Ordinary restoration failures remain available through `evaluation()` while the
+operation's refresh/allow/block policy still applies. Failed restoration is
+retried on later initialization attempts until restoration or refresh succeeds.
+Once initialized, checks use in-memory evidence rather than rereading the file.
+Cancellation, revision checks, save errors, and latest-invocation refresh ordering
+remain in force. Each operation check requests at most one refresh; concurrent
+checks retain the existing latest-invocation behavior rather than coalescing
+network requests.
+
+Keep `prepare()` at startup/foreground when an explicit refresh and preparation
+diagnostics are desired. Extensions still supply the containing app's identity
+and appropriate storage location; cross-process cache writer coordination is
+outside the controller.
 
 ### Read-Only Decision Diagnostics
 

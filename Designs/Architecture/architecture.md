@@ -177,6 +177,8 @@ non-domain app infrastructure.
   lifetimes, startup recovery, and confirmation-first operation checks
 - Evaluates baseline and additional timed requirements together, preserving
   currently enforced minimums when future plans are announced
+- Restores retained evidence on first operation checks without app-owned flags
+- Explains decisions through read-only evaluations sharing the same rules and instant
 - Keeps release policy, endpoint/Store ID, protected-operation classification,
   lifecycle entry points, presentation, and logging app-owned
 - See [remote update adoption](remote-update.md) for legacy migration and scheduled

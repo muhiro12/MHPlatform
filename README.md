@@ -193,6 +193,9 @@ An active update minimum can coexist with additional timed plans; the package
 selects the strictest active minimum without extra app-side selection logic.
 Typed `MHRemoteConfigSection` values isolate feature failures in a shared response.
 The standard endpoint/Store-ID initializer and operation checks remain unchanged.
+First operation checks restore retained evidence automatically, including outside
+a UI lifecycle. Read-only evaluations explain decisions and evidence freshness
+without fetching or renewing configuration.
 
 ## Public Products
 

@@ -38,7 +38,10 @@ struct MHRemoteUpdateAppStoreIntegrationTests {
             storageDirectory: directory,
             session: session
         )
-        try await restarted.restore()
+        session.invalidateAndCancel()
+        await #expect(throws: MHRemoteUpdateOperationError.updateRequired) {
+            try await restarted.checkOperationAllowed()
+        }
         #expect(await restarted.decision() == .updateRequired)
         let otherEndpoint = try MHRemoteUpdateController(
             appStoreID: 123,
