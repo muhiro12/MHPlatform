@@ -392,6 +392,45 @@ An optional `storageDirectory` supports shared containers, alternate environment
 and tests. Use separate directories/controllers for different environments.
 One process owns each cache file; App Group writer coordination is not automatic.
 
+### Read-Only Decision Diagnostics
+
+`await updates.evaluation()` returns an `MHRemoteUpdateEvaluation` from one
+clock observation. `decision()` delegates to this same evaluation; preparation
+also exposes `evaluation` alongside its existing `decision` property.
+
+The typed `reason` distinguishes invalid installed versions, missing/expired or
+invalid policy, absent/expired/invalid or insufficient publication, no active
+requirement, a compliant version, and a required update. Invalid installed
+version takes precedence, followed by policy freshness, then the active minimum
+and any required publication proof. `minimumVersion` selects the strictest active
+baseline/plan even when policy evidence has expired; that metadata cannot
+establish permission. Unknown versions, revisions, minimums, and evidence are
+explicitly nil or `missing`.
+
+`observation`, `publication`, and their freshness categories retain the original
+timestamps and apply the controller's current maximum ages. Invalid evidence
+includes non-finite dates, inconsistent intervals, and observations ahead of the
+local clock. A successful policy cancellation reports `noActiveRequirement`;
+compliant versions need no publication proof.
+
+Reading diagnostics does not restore disk state, fetch, save, or renew evidence.
+The result includes the most recent restoration and non-cancelled refresh
+errors. Successful attempts clear their respective error; later successful
+refreshes do not erase an earlier cache-read failure. Preparation's separate
+error fields still describe that preparation call. Obsolete refresh completions
+cannot overwrite newer diagnostic outcomes. Cancellation still throws from
+operation/preparation/refresh paths; diagnostic reads are side-effect-free.
+
+For a minimal operational log, with wording chosen by the app:
+
+```swift
+let evaluation = await updates.evaluation()
+print("Update decision: \(evaluation.decision), reason: \(evaluation.reason.rawValue)")
+```
+
+This snapshot is diagnostic, not durable permission. Continue to call
+`checkOperationAllowed()` immediately before mutation and success effects.
+
 ### Advanced Assembly
 
 The injectable initializer, explicit `restore()` / `refresh()`, and

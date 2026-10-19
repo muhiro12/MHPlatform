@@ -17,11 +17,13 @@ struct MHRemoteUpdatePreparationTests: Sendable {
         let updates = try controller(store: .init(fileURL: fileURL)) { try schedule() }
         let first = try await updates.prepare()
         #expect(first.restorationError != nil)
+        #expect(first.evaluation.restorationError != nil)
         #expect(first.refreshError == nil)
         #expect(first.decision == .notRequired)
         try Data("corrupt again".utf8).write(to: fileURL)
         let second = try await updates.prepare()
         #expect(second.restorationError == nil)
+        #expect(second.evaluation.restorationError != nil)
         #expect(second.decision == .notRequired)
     }
 

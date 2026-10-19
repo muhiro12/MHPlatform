@@ -19,4 +19,22 @@ struct SharedConfigIntegrationTests {
             try document.features.second.get()
         }
     }
+
+    @Test
+    func remoteUpdateDiagnosticsAreAvailableThroughTheCoreUmbrella() async throws {
+        let updates = try MHRemoteUpdateController(
+            bundleIdentifier: "example.app",
+            storefront: nil,
+            policyLifetime: MHRemoteUpdateController.Defaults.policyLifetime,
+            publicationLifetime: MHRemoteUpdateController.Defaults.publicationLifetime,
+            store: nil,
+            currentVersion: { "1" },
+            fetchSchedule: { throw URLError(.notConnectedToInternet) },
+            publicVersion: { nil }
+        )
+        let evaluation = await updates.evaluation()
+        #expect(evaluation.reason == .policyMissing)
+        #expect(evaluation.policyFreshness == .missing)
+        #expect(evaluation.decision == .unavailable)
+    }
 }

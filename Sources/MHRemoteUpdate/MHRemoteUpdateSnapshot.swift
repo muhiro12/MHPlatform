@@ -15,13 +15,8 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
             self.validUntil = validUntil
         }
 
-        func isValid(at date: Date, maximumAge: TimeInterval) -> Bool {
-            maximumAge.isFinite && maximumAge > 0
-                && fetchedAt.timeIntervalSinceReferenceDate.isFinite
-                && validUntil.timeIntervalSinceReferenceDate.isFinite
-                && date.timeIntervalSinceReferenceDate.isFinite
-                && fetchedAt <= date && date < validUntil
-                && date.timeIntervalSince(fetchedAt) < maximumAge
+        func freshness(at date: Date, maximumAge: TimeInterval) -> MHRemoteUpdateEvaluation.Freshness {
+            .evaluate(observedAt: fetchedAt, validUntil: validUntil, now: date, maximumAge: maximumAge)
         }
     }
 
@@ -41,12 +36,8 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
             self.validUntil = validUntil
         }
 
-        func isValid(at date: Date, maximumAge: TimeInterval) -> Bool {
-            maximumAge.isFinite && maximumAge > 0
-                && checkedAt.timeIntervalSinceReferenceDate.isFinite
-                && validUntil.timeIntervalSinceReferenceDate.isFinite
-                && checkedAt <= date && date < validUntil
-                && date.timeIntervalSince(checkedAt) < maximumAge
+        func freshness(at date: Date, maximumAge: TimeInterval) -> MHRemoteUpdateEvaluation.Freshness {
+            .evaluate(observedAt: checkedAt, validUntil: validUntil, now: date, maximumAge: maximumAge)
         }
     }
 
@@ -79,16 +70,29 @@ public struct MHRemoteUpdateSnapshot: Codable, Equatable, Sendable {
         maximumPolicyAge: TimeInterval,
         maximumPublicationAge: TimeInterval
     ) -> MHRemoteUpdateDecision {
-        guard observation.isValid(at: now, maximumAge: maximumPolicyAge) else {
-            return .unavailable
-        }
-        guard let minimumVersion = schedule.minimumVersion(at: now), currentVersion < minimumVersion else {
-            return .notRequired
-        }
-        guard let publication, publication.isValid(at: now, maximumAge: maximumPublicationAge),
-              publication.version >= minimumVersion else {
-            return .unavailable
-        }
-        return .updateRequired
+        evaluation(
+            currentVersion: currentVersion,
+            now: now,
+            maximumPolicyAge: maximumPolicyAge,
+            maximumPublicationAge: maximumPublicationAge
+        ).decision
+    }
+
+    /// Explains the same evaluation without fetching, restoring, saving, or renewing evidence.
+    public func evaluation(
+        currentVersion: MHAppVersion,
+        now: Date,
+        maximumPolicyAge: TimeInterval,
+        maximumPublicationAge: TimeInterval
+    ) -> MHRemoteUpdateEvaluation {
+        .init(
+            snapshot: self,
+            installedVersion: currentVersion,
+            now: now,
+            maximumPolicyAge: maximumPolicyAge,
+            maximumPublicationAge: maximumPublicationAge,
+            restorationError: nil,
+            refreshError: nil
+        )
     }
 }

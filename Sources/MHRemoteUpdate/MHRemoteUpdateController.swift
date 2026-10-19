@@ -22,11 +22,14 @@ public actor MHRemoteUpdateController {
     /// Startup/foreground evidence and diagnostics without app-owned recovery sequencing.
     public struct Preparation: Sendable {
         /// Re-evaluated evidence after restoration and the refresh attempt.
-        public let decision: MHRemoteUpdateDecision
+        public let evaluation: MHRemoteUpdateEvaluation
         /// A corrupt, incompatible, or unreadable cache; refresh is still attempted.
         public let restorationError: (any Error)?
         /// A fetch or save failure; still-valid retained evidence remains usable.
         public let refreshError: (any Error)?
+
+        /// The ordinary decision from the same instant as the diagnostic evaluation.
+        public var decision: MHRemoteUpdateDecision { evaluation.decision }
     }
 
     private enum Format {
@@ -47,6 +50,8 @@ public actor MHRemoteUpdateController {
     private var evidence: MHRemoteUpdateSnapshot?
     private var refreshIdentifier: UUID?
     private var hasInitializedEvidence = false
+    private var lastRestorationError: (any Error)?
+    private var lastRefreshError: (any Error)?
 
     /// Creates a controller with explicit identity, evidence lifetimes, and validated providers.
     ///
@@ -96,20 +101,13 @@ public actor MHRemoteUpdateController {
     /// before initial refresh; revision checks also prevent a late restore rolling it back.
     public func restore() throws {
         try Task.checkCancellation()
-        guard let restored = try store?.load() else {
-            hasInitializedEvidence = true
-            return
+        do {
+            try restoreEvidence()
+            lastRestorationError = nil
+        } catch {
+            lastRestorationError = error
+            throw error
         }
-        guard restored.schedule.bundleIdentifier == bundleIdentifier, restored.storefront == storefront else {
-            throw Failure.identityMismatch
-        }
-        try validateRevision(restored.schedule)
-        hasInitializedEvidence = true
-        guard evidence == nil || restored.schedule.revision > (evidence?.schedule.revision ?? 0) else {
-            return
-        }
-        refreshIdentifier = nil
-        evidence = restored
     }
 
     /// Restores until evidence initializes, then refreshes on each startup/foreground call.
@@ -144,7 +142,7 @@ public actor MHRemoteUpdateController {
             refreshError = error
         }
         try Task.checkCancellation()
-        return .init(decision: decision(), restorationError: restorationError, refreshError: refreshError)
+        return .init(evaluation: evaluation(), restorationError: restorationError, refreshError: refreshError)
     }
 
     /// Uses confirmation with one refresh by default; opt low-impact operations into offline use.
@@ -159,14 +157,22 @@ public actor MHRemoteUpdateController {
 
     /// Evaluates retained evidence against the current version and clock without networking.
     public func decision() -> MHRemoteUpdateDecision {
-        guard let evidence, let version = currentVersion().flatMap(MHAppVersion.init) else {
-            return .unavailable
-        }
-        return evidence.evaluate(
-            currentVersion: version,
+        evaluation().decision
+    }
+
+    /// Reads one diagnostic instant without restoring, fetching, saving, or renewing evidence.
+    ///
+    /// Error metadata describes the most recent attempts; a valid retained decision
+    /// can coexist with a failed refresh. Use operation checks before mutation.
+    public func evaluation() -> MHRemoteUpdateEvaluation {
+        .init(
+            snapshot: evidence,
+            installedVersion: currentVersion().flatMap(MHAppVersion.init),
             now: now(),
             maximumPolicyAge: policyLifetime,
-            maximumPublicationAge: publicationLifetime
+            maximumPublicationAge: publicationLifetime,
+            restorationError: lastRestorationError,
+            refreshError: lastRefreshError
         )
     }
 
@@ -217,10 +223,14 @@ public actor MHRemoteUpdateController {
                     publication: publication
                 ))
             }
+            lastRefreshError = nil
             return decision()
         } catch {
             if error is CancellationError || Task.isCancelled || (error as? URLError)?.code == .cancelled {
                 throw CancellationError()
+            }
+            if refreshIdentifier == identifier {
+                lastRefreshError = error
             }
             throw error
         }
@@ -252,6 +262,23 @@ public actor MHRemoteUpdateController {
             throw Failure.invalidConfiguration
         }
         return .init(fetchedAt: fetchedAt, validUntil: validUntil)
+    }
+
+    private func restoreEvidence() throws {
+        guard let restored = try store?.load() else {
+            hasInitializedEvidence = true
+            return
+        }
+        guard restored.schedule.bundleIdentifier == bundleIdentifier, restored.storefront == storefront else {
+            throw Failure.identityMismatch
+        }
+        try validateRevision(restored.schedule)
+        hasInitializedEvidence = true
+        guard evidence == nil || restored.schedule.revision > (evidence?.schedule.revision ?? 0) else {
+            return
+        }
+        refreshIdentifier = nil
+        evidence = restored
     }
 
     private func validateRevision(_ document: MHRemoteUpdateSchedule) throws {

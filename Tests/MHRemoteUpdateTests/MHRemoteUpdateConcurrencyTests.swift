@@ -65,6 +65,7 @@ struct MHRemoteUpdateConcurrencyTests: Sendable {
             try await first.value
         }
         #expect(await controller.decision() == .notRequired)
+        #expect(await controller.evaluation().refreshError == nil)
     }
 
     @Test
