@@ -42,10 +42,17 @@ public struct MHDeepLinkCodec<Route: MHDeepLinkRoute>: Sendable {
             return preferredURL
         }
 
-        return url(
+        let alternateURL = url(
             for: route,
             transport: alternateTransport(for: configuration.preferredTransport)
         )
+        if configuration.webLinkPolicy == .strict,
+           configuration.preferredTransport == .universalLink,
+           let alternateURL,
+           parse(alternateURL)?.deepLinkDescriptor != route.deepLinkDescriptor {
+            return nil
+        }
+        return alternateURL
     }
 
     /// Parses a deep-link URL into the app-defined route.
@@ -144,7 +151,16 @@ public struct MHDeepLinkCodec<Route: MHDeepLinkRoute>: Sendable {
         universalPathComponents.append(contentsOf: descriptor.pathComponents)
         components.path = "/" + universalPathComponents.joined(separator: "/")
 
-        return components.url
+        guard let url = components.url else {
+            return nil
+        }
+        if configuration.webLinkPolicy == .strict {
+            guard let host = url.host?.lowercased(), normalizedAllowedUniversalLinkHosts.contains(host),
+                  (try? strictWebPath(from: url)) == descriptor.pathComponents else {
+                return nil
+            }
+        }
+        return url
     }
 
     private func strictWebPath(from url: URL) throws -> [String] {

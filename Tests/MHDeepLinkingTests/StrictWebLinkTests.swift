@@ -36,6 +36,30 @@ struct StrictWebLinkTests {
     }
 
     @Test
+    func neverSharesAPathThatWouldIdentifyADifferentResource() {
+        let route = Route(deepLinkDescriptor: .init(pathComponents: ["item", "a/b"]))
+        #expect(codec.url(for: route, transport: .universalLink) == nil)
+        #expect(codec.preferredURL(for: route) == nil)
+    }
+
+    @Test
+    func unlistedSharingHostFallsBackToTheConfiguredScheme() throws {
+        let codec = MHDeepLinkCodec<Route>(configuration: .init(
+            customScheme: "journal",
+            preferredUniversalLinkHost: "other.example.org",
+            allowedUniversalLinkHosts: ["example.org"],
+            universalLinkPathPrefix: "Journal",
+            preferredTransport: .universalLink,
+            webLinkPolicy: .strict
+        ))
+        let route = Route(deepLinkDescriptor: .init(pathComponents: ["item", "abc"]))
+        #expect(codec.url(for: route, transport: .universalLink) == nil)
+        let url = try #require(codec.preferredURL(for: route))
+        #expect(url.absoluteString == "journal://item/abc")
+        #expect(codec.parse(url)?.deepLinkDescriptor == route.deepLinkDescriptor)
+    }
+
+    @Test
     func routesKeepPathAndQueryGrammarInBothTransports() throws {
         for descriptor in [
             MHDeepLinkDescriptor(pathComponents: ["item", "abc"]),

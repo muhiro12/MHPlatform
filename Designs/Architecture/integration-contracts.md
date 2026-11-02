@@ -838,6 +838,12 @@ and query, including identifiers. Custom schemes are unchanged. Existing
 initializers default to the compatible parser (HTTP and optional prefix);
 opt in only after checking previously shared URLs.
 
+Strict universal-link generation also requires an allowed sharing host and a
+path that round-trips to the supplied segments. For example, a single resource
+identifier containing a slash can travel in a query item. When a preferred
+universal link cannot be built, the codec returns a custom-scheme fallback
+only if it resolves to the same descriptor.
+
 For `https://example.org/Journal/item/abc`, use `applinks:example.org`
 in Associated Domains. In the host's apple-app-site-association file, use
 your signed application identifier in `appIDs` and a component such as
