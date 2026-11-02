@@ -48,7 +48,8 @@ enum SharedLibraryConsumer {
                 preferredUniversalLinkHost: Constants.host,
                 allowedUniversalLinkHosts: [Constants.host],
                 universalLinkPathPrefix: Constants.universalLinkPrefix,
-                preferredTransport: .customScheme
+                preferredTransport: .customScheme,
+                webLinkPolicy: .strict
             )
         )
     }

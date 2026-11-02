@@ -61,7 +61,15 @@ public struct MHDeepLinkCodec<Route: MHDeepLinkRoute>: Sendable {
                   normalizedAllowedUniversalLinkHosts.contains(host) else {
                 return nil
             }
-            parsedPathComponents = normalizedUniversalLinkPathComponents(from: url)
+            switch configuration.webLinkPolicy {
+            case .compatible:
+                parsedPathComponents = normalizedUniversalLinkPathComponents(from: url)
+            case .strict:
+                guard let segments = try? strictWebPath(from: url) else {
+                    return nil
+                }
+                parsedPathComponents = segments
+            }
         case configuration.customScheme.lowercased():
             parsedPathComponents = normalizedCustomSchemePathComponents(from: url)
         default:
@@ -137,6 +145,32 @@ public struct MHDeepLinkCodec<Route: MHDeepLinkRoute>: Sendable {
         components.path = "/" + universalPathComponents.joined(separator: "/")
 
         return components.url
+    }
+
+    private func strictWebPath(from url: URL) throws -> [String] {
+        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              parts.scheme?.lowercased() == "https", parts.user == nil, parts.password == nil,
+              let endOfHost = parts.rangeOfHost?.upperBound,
+              endOfHost == parts.rangeOfPath?.lowerBound else {
+            throw URLError(.badURL)
+        }
+        let path = parts.percentEncodedPath
+        var segments = [String]()
+        for raw in path.dropFirst().split(separator: "/", omittingEmptySubsequences: false) where !raw.isEmpty {
+            guard let segment = raw.removingPercentEncoding,
+                  segment != ".", segment != "..", !segment.contains("/"), !segment.contains("\\") else {
+                throw URLError(.badURL)
+            }
+            segments.append(segment)
+        }
+        let prefix = configuration.universalLinkPathPrefix
+        if !prefix.isEmpty {
+            guard !path.hasPrefix("//"), segments.first == prefix else {
+                throw URLError(.badURL)
+            }
+            segments.removeFirst()
+        }
+        return segments
     }
 
     private func normalizedCustomSchemePathComponents(from url: URL) -> [String] {

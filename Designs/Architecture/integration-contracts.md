@@ -827,3 +827,21 @@ For descriptor-first upgrades and startup ordering, read the
 - Deterministic planner outputs use `Plan`.
 - Handoff storage terms are `Inbox` / `Store` / `Queue`.
 - New APIs do not add terminal `Result` naming.
+
+## Universal links on a shared host
+
+Set `webLinkPolicy: .strict` in `MHDeepLinkConfiguration` for new apps.
+Scheme and host are case-insensitive. Only HTTPS is accepted, with an allowed
+host, no credentials or explicit port, and an exact case-sensitive first path
+segment when a prefix is configured. Route descriptors own the remaining path
+and query, including identifiers. Custom schemes are unchanged. Existing
+initializers default to the compatible parser (HTTP and optional prefix);
+opt in only after checking previously shared URLs.
+
+For `https://example.org/Journal/item/abc`, use `applinks:example.org`
+in Associated Domains. In the host's apple-app-site-association file, use
+your signed application identifier in `appIDs` and a component such as
+`{ "/": "/Journal/item/*" }`. A query-based item route may instead match
+`/Journal/item`; validate its query in the app. Test the codec round-trip,
+the deployed AASA response, and tapping the link on an installed device
+separately. Codec success does not verify signing, CDN freshness, or OS handoff.
