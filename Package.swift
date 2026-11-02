@@ -48,6 +48,10 @@ let package = Package(
             targets: ["MHRemoteUpdate"]
         ),
         .library(
+            name: "MHFilePackage",
+            targets: ["MHFilePackage"]
+        ),
+        .library(
             name: "MHDeepLinking",
             targets: ["MHDeepLinking"]
         ),
@@ -217,6 +221,7 @@ let package = Package(
                 )
             ]
         ),
+        .target(name: "MHFilePackage"),
         .target(
             name: "MHDeepLinking",
             dependencies: ["MHPreferences"]
@@ -352,6 +357,7 @@ let package = Package(
                 "MHRouteExecution"
             ]
         ),
+        .testTarget(name: "MHFilePackageTests", dependencies: ["MHFilePackage"]),
         .testTarget(
             name: "MHDeepLinkingTests",
             dependencies: [

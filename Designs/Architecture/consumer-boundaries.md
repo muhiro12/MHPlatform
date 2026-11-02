@@ -155,3 +155,19 @@ failure behavior are not part of the common transport contract.
   `Tests/MHReviewRequestingTests/`, `Tests/MHReviewFlowTests/`
 - Runtime split composition tests: `Tests/MHAppRuntimeTests/`
 - CI consumer fixture build task: `ci_scripts/tasks/test_consumer_fixtures.sh`
+
+## Native file packages
+
+Add the standalone `MHFilePackage` product only to a target that imports or
+exports directory packages. Neither umbrella depends on it. Single JSON formats
+need no changes. Supply per-manifest, per-file, aggregate file-byte and file-count
+limits. Use `manifest.json` and optional `assets/` for new formats, or configure
+the published manifest and directory names (for example `photos/`).
+
+Call `read(at:references:)` with an app decoder that checks supported versions
+and returns only the declared paths, expected byte counts and SHA-256 digests.
+Decode or version errors abort before any attachment read. Review the returned
+manifest and bytes after access ends. To export, pass the encoded manifest and
+files keyed by relative path to `fileWrapper(manifest:files:)` and hand the
+wrapper to the native document exporter. The app owns its content type, schema,
+identity checks, conflict choices and eventual database writes.

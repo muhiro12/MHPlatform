@@ -20,6 +20,7 @@ let kPackage = Package(
         .target(
             name: "SharedLibraryConsumer",
             dependencies: [
+                .product(name: "MHFilePackage", package: "MHPlatform"),
                 .product(
                     name: "MHPlatformCore",
                     package: "MHPlatform"
