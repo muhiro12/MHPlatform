@@ -44,7 +44,7 @@ struct StrictWebLinkTests {
 
     @Test
     func unlistedSharingHostFallsBackToTheConfiguredScheme() throws {
-        let codec = MHDeepLinkCodec<Route>(configuration: .init(
+        let fallbackCodec = MHDeepLinkCodec<Route>(configuration: .init(
             customScheme: "journal",
             preferredUniversalLinkHost: "other.example.org",
             allowedUniversalLinkHosts: ["example.org"],
@@ -53,10 +53,10 @@ struct StrictWebLinkTests {
             webLinkPolicy: .strict
         ))
         let route = Route(deepLinkDescriptor: .init(pathComponents: ["item", "abc"]))
-        #expect(codec.url(for: route, transport: .universalLink) == nil)
-        let url = try #require(codec.preferredURL(for: route))
+        #expect(fallbackCodec.url(for: route, transport: .universalLink) == nil)
+        let url = try #require(fallbackCodec.preferredURL(for: route))
         #expect(url.absoluteString == "journal://item/abc")
-        #expect(codec.parse(url)?.deepLinkDescriptor == route.deepLinkDescriptor)
+        #expect(fallbackCodec.parse(url)?.deepLinkDescriptor == route.deepLinkDescriptor)
     }
 
     @Test
