@@ -110,6 +110,12 @@ public actor MHRemoteUpdateController {
         return .init(evaluation: evaluation(), restorationError: restorationError, refreshError: refreshError)
     }
 
+    /// Merges retained evidence and samples the clock at the write boundary without fetching.
+    func retainedEvaluation() throws -> MHRemoteUpdateEvaluation {
+        _ = try initializeEvidence()
+        return evaluation()
+    }
+
     /// Uses confirmation with one refresh by default; opt low-impact operations into offline use.
     public func checkOperationAllowed(
         for policy: MHRemoteUpdateOperationPolicy = .requireConfirmation

@@ -676,3 +676,21 @@ implementation. Each adoption requires its own operational endpoint and Store ID
 classification, lifecycle/UI connection, and app verification. Standard lifetimes,
 lookup assembly, cache placement, and recovery sequencing are package-owned;
 override them only for a concrete app-specific requirement.
+
+## Observable state and guarded synchronous writes
+
+Keep one `MHRemoteUpdateAdapter(controller:)` in the process's shared app
+operations. Bind UI to its last `evaluation`. Call `prepare()` at startup,
+on foreground entry, and for an explicit retry; retain the returned diagnostics
+if the UI needs to explain a failure. An intent process can construct its own
+adapter with the same configured evidence store.
+
+Immediately before saving, call `perform(policy:)` with the synchronous
+mutation. It merges local evidence, samples the current clock and checks
+cancellation without fetching. A confirmed update blocks either policy.
+With missing or expired evidence, choose `.allowWhenUnavailable` for an
+offline-capable operation or `.requireConfirmation` to block until preparation
+succeeds. This differs from the controller's direct confirmation check, which
+may refresh on demand. Run success effects only after the guarded write returns.
+Use `.preview()` for an explicitly isolated environment.
+See the [consumer operations](../../Fixtures/Consumers/SurfaceAdapterConsumer/Sources/SurfaceAdapterConsumer/JournalWriteOperations.swift).
