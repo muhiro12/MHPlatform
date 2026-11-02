@@ -107,3 +107,24 @@ Keep preview assembly shape close to production:
   app factory
 - use `View.mhAppRuntimeEnvironment(_:)` when the preview only needs runtime
   environment without lifecycle start
+
+## One SwiftData store for the app family
+
+Start with the [buildable assembly](../../Fixtures/Consumers/SharedLibraryConsumer/Sources/SharedLibraryConsumer/SharedStoreAssembly.swift)
+and its [disk tests](../../Fixtures/Consumers/SharedLibraryConsumer/Tests/SharedLibraryConsumerTests/SharedStoreTests.swift).
+Declare the schema, optional migration plan, relative store location, App Group,
+and private CloudKit container once in the shared app library. Each process
+creates its own context. Only the host creates directories, migrates, and
+enables cloud mirroring. The extension opens the existing store read-only;
+if the store is missing or needs migration, ask the user to open the host.
+Propagate errors instead of trying a different database. Previews and tests
+explicitly select an isolated memory store. Existing apps retain their own
+store paths, migration plans, cloud subscriptions, and account policies.
+
+Both signed targets need the same App Group entitlement and provisioning.
+The syncing host also needs iCloud with CloudKit and the configured container,
+push notifications, and background remote notifications. Verify the signed
+entitlements and production schema in the intended deployment environment.
+On devices, check extension-first launch, account sign-out/change with edits
+pending, and create/edit/delete convergence on two devices. The local disk
+tests exercise store ownership; they do not establish any of those cloud results.
