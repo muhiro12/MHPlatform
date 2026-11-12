@@ -128,3 +128,8 @@ entitlements and production schema in the intended deployment environment.
 On devices, check extension-first launch, account sign-out/change with edits
 pending, and create/edit/delete convergence on two devices. The local disk
 tests exercise store ownership; they do not establish any of those cloud results.
+
+For ordinary DEBUG runs, use the [isolated development-store recipe](development-store.md)
+to keep editable sample data across launches without opening the user store.
+It also covers manual sample insertion and the boundary between distributed
+diagnostics and development-only controls.
