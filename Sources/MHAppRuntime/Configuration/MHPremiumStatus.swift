@@ -1,4 +1,4 @@
-/// Current premium subscription status resolved by runtime startup.
+/// Current premium subscription status resolved by startup and subsequent entitlement updates.
 public enum MHPremiumStatus: String, Sendable, CaseIterable {
     /// Status has not been resolved yet.
     case unknown

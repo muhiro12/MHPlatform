@@ -42,6 +42,37 @@ For package umbrella compile evidence:
 - Scheme: `MHPlatform`
 - Destination: a discovered compatible iOS or watchOS Simulator
 
+## StoreKit Integration Evidence
+
+Use the example app's shared `MHPlatformExample` scheme and its local
+`Configuration/Products.storekit` launch configuration to exercise the standard
+runtime and subscription section. Open the `MHAppRuntime` demo and observe
+`Premium Status` before and after each action, without restarting the app.
+Keep the default StoreKit view completion handling and avoid app-owned
+entitlement readers or injected purchase callbacks in this verification path.
+
+- With no active test subscription, confirm inactive status. Cancel a purchase
+  and confirm it stays inactive, then complete a purchase and confirm active
+  status and premium ad suppression in the same process.
+- Exercise Restore Purchases. Distinguish an already-active no-op restore from
+  a restore that actually recovers access. If the environment cannot produce
+  missing local entitlement information, record the latter as unverified.
+- When supported by the StoreKit test environment, exercise failed purchases,
+  pending approval and subsequent approval, expiration, and revocation. Check
+  that pending or failed attempts do not falsely grant access or revoke existing
+  verified access. Record unavailable scenarios rather than inferring success.
+- Keep runtime callback tests separate: they cover initial and subsequent
+  snapshots, configured product matching, and isolation from a released or
+  replaced runtime. They do not establish transaction verification, StoreKit view
+  delivery, refresh ordering inside StoreKitWrapper, or App Store restoration.
+
+Retain the source revision and working diff, resolved MHPlatform/StoreKitWrapper
+revisions, Xcode version, OS destination, StoreKit configuration, initial purchase
+state, observed transitions, screenshots, and runtime logs with the run artifacts.
+Local StoreKit results do not replace Sandbox/device qualification of a consumer.
+Follow the [subscription contract](../Architecture/integration-contracts.md#subscription-entitlement-propagation)
+when deciding whether an app-owned refresh workaround can be removed.
+
 ## Retained Shell Checks
 
 Run retained repository rules with:

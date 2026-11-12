@@ -9,6 +9,10 @@ import SwiftUI
 @Observable
 public final class MHAppRuntime {
     /// Main-actor startup bridge that reports the current purchased product identifiers.
+    ///
+    /// Report complete verified snapshots, including an empty set for confirmed
+    /// inactivity. Pending, cancelled, failed, or unverified purchases are not
+    /// empty snapshots. The callback can deliver later changes after startup.
     public typealias StartStore = @MainActor (
         @escaping @MainActor (Set<String>) -> Void
     ) -> Void
@@ -24,7 +28,8 @@ public final class MHAppRuntime {
     /// Indicates whether startup side effects have already been triggered.
     public private(set) var hasStarted = false
 
-    /// Current premium subscription status.
+    /// Current premium subscription state, not a new-purchase event.
+    /// Existing purchases can resolve this to active during startup or restoration.
     public private(set) var premiumStatus: MHPremiumStatus = .unknown
 
     /// Current ads availability computed from configuration and premium status.

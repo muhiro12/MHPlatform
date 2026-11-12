@@ -139,6 +139,48 @@ This document is normative for integration design.
 - Apps own AdMob Privacy & messaging setup, regional policy, the under-age tag,
   ATT, presentation copy for the privacy options control, and disclosures.
 
+### Subscription Entitlement Propagation
+
+The standard `MHAppRuntime(configuration:)` initializer from `MHPlatform`
+composes one `MHAppRuntimeDefaultsBundle`. Its startup callback and subscription section
+share the same StoreKitWrapper `Store` instance:
+
+1. `Store.open` loads current entitlements and starts transaction observation.
+2. `subscriptionSectionView()` presents that store's `SubscriptionStoreView`.
+3. StoreKitWrapper reads verified current entitlements and reports product IDs.
+4. `MHAppRuntime` matches the IDs against `subscriptionProductIDs` and updates
+   `premiumStatus` on the main actor, including changes after startup.
+
+StoreKitWrapper owns verification, transaction finishing, expiration refresh,
+and observation cancellation. MHPlatform owns composition and runtime state.
+Keep any required StoreKit refresh in the existing StoreKitWrapper authority;
+do not add a second entitlement reader or cache to the runtime defaults.
+
+Apple's [purchase completion documentation][purchase-completion] specifies that
+successful StoreKit view purchases emit through `Transaction.updates` by default.
+The standard section uses this behavior. Adding `onInAppPurchaseCompletion`
+overrides the default handling; do not add it merely to dismiss a screen while
+assuming the existing notification path remains unchanged.
+
+`premiumStatus` is entitlement state, not evidence of a new purchase. It can
+become active from an existing subscription at startup, a restore, or an external
+transaction. Apps decide whether the currently displayed purchase destination
+should finish. Navigation, saved iCloud preferences, model-container replacement,
+and domain permissions remain app-owned.
+
+Custom `StartStore` bridges report complete verified snapshots. An empty set
+means confirmed inactivity; cancellation, pending approval, errors, or failed
+verification must not be mapped to an empty set. A callback belongs to the runtime
+that registered it, does not retain that runtime, and cannot update a replacement
+runtime. A custom bridge still owns ordering and cancellation of its asynchronous
+reads; the runtime cannot detect stale snapshots from the product IDs alone.
+
+Before removing an app-owned refresh workaround, follow the
+[standard-path verification procedure](../Overviews/verification-history.md#storekit-integration-evidence).
+Callback-injection tests establish runtime behavior, not StoreKit UI delivery.
+
+[purchase-completion]: https://developer.apple.com/documentation/swiftui/view/oninapppurchasecompletion%28perform%3A%29
+
 ### Intended Call Sites
 
 - App roots that intentionally import `MHAppRuntime` for runtime-only or
