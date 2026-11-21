@@ -47,16 +47,20 @@ extension MHLogConsoleView {
                     await refreshEvents()
                 }
             }
+            #if os(iOS) || os(macOS)
             Button("Copy JSONL") {
                 Task {
                     await copyJSONL()
                 }
             }
+            #endif
+            #if !os(watchOS)
             Button("Export JSONL") {
                 Task {
                     await exportJSONL()
                 }
             }
+            #endif
             Button("Clear", role: .destructive) {
                 isClearConfirmationPresented = true
             }

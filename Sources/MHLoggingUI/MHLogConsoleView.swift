@@ -112,7 +112,11 @@ public struct MHLogConsoleView: View {
                 isPresentingClearConfirmation = false
             }
         } message: {
-            Text("This removes the visible diagnostic log history for the selected store.")
+            if logging?.hasPreviousSession == true {
+                Text("This clears all logs from the current and previous sessions, including filtered-out events.")
+            } else {
+                Text("This clears all current session logs, including filtered-out events.")
+            }
         }
     }
 

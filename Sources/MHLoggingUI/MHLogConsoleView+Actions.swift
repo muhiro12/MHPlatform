@@ -39,6 +39,7 @@ extension MHLogConsoleView {
         }
     }
 
+    #if os(iOS) || os(macOS)
     func copyJSONL() async {
         let jsonLines: String
         if let logging {
@@ -54,11 +55,23 @@ extension MHLogConsoleView {
             if copied {
                 consoleStatusMessage = "Copied \(jsonLines.utf8.count) bytes as JSONL"
             } else {
-                consoleStatusMessage = "Clipboard is not supported on this platform"
+                consoleStatusMessage = "Could not copy logs to the clipboard"
             }
         }
     }
 
+    func copyToClipboard(_ value: String) -> Bool {
+        #if os(iOS)
+        UIPasteboard.general.string = value
+        return true
+        #else
+        NSPasteboard.general.clearContents()
+        return NSPasteboard.general.setString(value, forType: .string)
+        #endif
+    }
+    #endif
+
+    #if !os(watchOS)
     func exportJSONL() async {
         let jsonLines: String
         if let logging {
@@ -70,20 +83,14 @@ extension MHLogConsoleView {
             jsonLines = await store.exportJSONLines(matching: activeQuery)
         }
 
-        #if !os(watchOS)
         await MainActor.run {
             preparedExportDocument = .init(jsonLines: jsonLines)
             preparedExportFilename = makeExportFilename()
             isExporterPresented = true
             consoleStatusMessage = "Prepared \(jsonLines.utf8.count) bytes for export"
         }
-        #else
-        _ = jsonLines
-        await MainActor.run {
-            consoleStatusMessage = "Export is not supported on this platform"
-        }
-        #endif
     }
+    #endif
 
     func clearLogs() async {
         if let logging {
@@ -103,19 +110,6 @@ extension MHLogConsoleView {
                 consoleStatusMessage = "Cleared current and previous session snapshots"
             }
         }
-    }
-
-    func copyToClipboard(_ value: String) -> Bool {
-        #if os(iOS)
-        UIPasteboard.general.string = value
-        return true
-        #elseif os(macOS)
-        NSPasteboard.general.clearContents()
-        return NSPasteboard.general.setString(value, forType: .string)
-        #else
-        _ = value
-        return false
-        #endif
     }
 
     package func makeExportFilename() -> String {
