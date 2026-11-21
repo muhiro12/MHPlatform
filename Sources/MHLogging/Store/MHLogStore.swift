@@ -15,16 +15,14 @@ public actor MHLogStore {
         sinks: [any MHLogSink] = [],
         initialEvents: [MHLogEvent] = []
     ) {
-        var trimmedEvents = initialEvents
-        let overflow = trimmedEvents.count - policy.maximumInMemoryEvents
-        if overflow > 0 {
-            trimmedEvents.removeFirst(overflow)
+        let chronologicalEvents = initialEvents.sorted { lhs, rhs in
+            lhs.timestamp < rhs.timestamp
         }
 
         self.policy = policy
         self.runtimeState = runtimeState
         self.sinks = sinks
-        self.bufferedEvents = trimmedEvents
+        self.bufferedEvents = Array(chronologicalEvents.suffix(policy.maximumInMemoryEvents))
     }
 
     /// Records an event into the ring buffer and forwards it to configured sinks.

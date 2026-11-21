@@ -23,6 +23,19 @@ struct MHLogStoreTests {
     }
 
     @Test
+    func initialEventsKeepNewestTimestampsWithinCapacity() async {
+        let store = MHLogStore(
+            policy: .init(minimumLevel: .debug, maximumInMemoryEvents: 2),
+            initialEvents: [3, 2, 1].map { index in
+                makeEvent(index: index, level: .info)
+            }
+        )
+
+        #expect(await store.events().map(\.message) == ["message-2", "message-3"])
+        #expect(await store.events(matching: .init(limit: 1)).first?.message == "message-3")
+    }
+
+    @Test
     func filters_by_level_category_search_and_limit() async {
         let policy = MHLogPolicy(
             minimumLevel: .debug,

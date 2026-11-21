@@ -36,6 +36,38 @@ struct MHLoggingBootstrapTests {
     }
 
     @Test
+    func previousSessionQueriesKeepTheNewestMatchingEvent() async throws {
+        let suite = "MHLoggingTests." + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = MHPreferenceStore(userDefaults: defaults)
+        let descriptors = makeSnapshotStorageDescriptors(baseStorageKey: "test")
+        let first = makeBootstrap(
+            snapshotStorageDescriptors: descriptors,
+            snapshotStore: store,
+            sessionIdentifier: UUID()
+        )
+        for index in [2, 1] {
+            await first.store.record(.init(
+                level: .warning,
+                subsystem: "test",
+                category: "test",
+                message: String(index),
+                source: .init(file: #fileID, function: #function, line: #line),
+                timestamp: .init(timeIntervalSince1970: Double(index))
+            ))
+        }
+
+        let second = makeBootstrap(
+            snapshotStorageDescriptors: descriptors,
+            snapshotStore: store,
+            sessionIdentifier: UUID()
+        )
+        let latest = await second.events(in: .previous, matching: .init(limit: 1))
+        #expect(latest.map(\.message) == ["2"])
+    }
+
+    @Test
     func bootstrap_same_session_restores_current_snapshot_without_promoting_previous() async throws {
         let suiteName = "MHLoggingBootstrapTests.restore.\(UUID().uuidString)"
         let userDefaults = try #require(UserDefaults(suiteName: suiteName))

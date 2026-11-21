@@ -114,7 +114,9 @@ public final class MHLoggingBootstrap {
 
         self.runtimeState = resolvedRuntimeState
         self.captureLevel = resolvedCaptureLevel
-        self.previousSessionEvents = snapshotSeed?.previousEvents ?? []
+        self.previousSessionEvents = snapshotSeed?.previousEvents.sorted { lhs, rhs in
+            lhs.timestamp < rhs.timestamp
+        } ?? []
         self.hasPreviousSession = previousSessionEvents.isEmpty == false
         self.snapshotSink = resolvedSnapshotSink
         self.store = resolvedStore
