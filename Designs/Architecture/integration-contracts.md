@@ -686,8 +686,17 @@ For descriptor-first upgrades and startup ordering, read the
 ### Ownership Rules (Normative)
 
 - Validation logic belongs to client app.
-- When validation throws after copy:
-  - copied current-store files are rolled back by the relocation service.
+- Run relocation and cleanup with exclusive access to closed stores. Staged
+  files use the destination basename, including sidecars. The validation
+  callback and relocation outcome report destination filenames.
+- During installation, the service keeps replaced files in the destination
+  directory until validation succeeds. A thrown installation or validation
+  error triggers restoration of the previous files. If restoration itself
+  fails, the hidden relocation directory retains the remaining backup files.
+  The multi-file operation does not provide crash recovery.
+- Equivalent file locations skip both operations. Overlapping store names
+  in the same directory and non-regular store files are rejected. Matching
+  directories belong to the caller and are preserved.
 - The package only relocates caller-addressed store files and matching sibling
   sidecars; it does not infer app schema, container startup, or cleanup timing.
 - Legacy cleanup timing remains app-owned.
