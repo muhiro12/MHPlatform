@@ -125,11 +125,11 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/muhiro12/StoreKitWrapper",
-            "1.4.0"..<"2.0.0"
+            "1.5.0"..<"2.0.0"
         ),
         .package(
             url: "https://github.com/muhiro12/GoogleMobileAdsWrapper",
-            "2.0.0"..<"3.0.0"
+            "2.1.0"..<"3.0.0"
         ),
         .package(
             url: "https://github.com/cybozu/LicenseList",
