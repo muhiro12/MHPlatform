@@ -699,7 +699,10 @@ For descriptor-first upgrades and startup ordering, read the
   directories belong to the caller and are preserved.
 - The package only relocates caller-addressed store files and matching sibling
   sidecars; it does not infer app schema, container startup, or cleanup timing.
-- Legacy cleanup timing remains app-owned.
+- Invoke legacy cleanup after validating the destination. Cleanup removes the
+  legacy main file before its sidecars so a sidecar removal failure leaves the
+  validated destination eligible for the next startup. The failure still
+  propagates and may leave a legacy sidecar. Cleanup timing remains app-owned.
 
 ## MHReviewPolicy
 

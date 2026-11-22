@@ -106,8 +106,8 @@ public enum MHStoreRelocationService {
         guard names.contains(legacy.lastPathComponent) else {
             return .skipped(.missingLegacyStore)
         }
-        // Keep the main file until last so a failed sidecar removal can be retried.
-        for name in names.reversed() {
+        // Callers use the legacy main file to detect pending relocation at startup.
+        for name in names {
             try fileManager.removeItem(at: legacy.deletingLastPathComponent().appending(path: name))
         }
         return .removed(fileNames: names)

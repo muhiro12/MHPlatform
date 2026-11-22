@@ -101,24 +101,37 @@ struct MHStoreRelocationRecoveryTests {
     }
 
     @Test
-    func cleanupCanRetryAfterSidecarRemovalFails() throws {
+    func sidecarCleanupFailureLeavesTheValidatedStoreReadyForNextStartup() throws {
         let fixture = try Fixture()
         defer { try? fixture.remove() }
         let plan = fixture.plan
-        let wal = fixture.sidecar(plan.legacyStoreURL, "-wal")
-        try fixture.newBytes.write(to: wal)
+        let legacyWal = fixture.sidecar(plan.legacyStoreURL, "-wal")
+        let currentWal = fixture.sidecar(plan.currentStoreURL, "-wal")
         let manager = FileManager.default
-        try manager.setAttributes([.immutable: true], ofItemAtPath: wal.path)
-        defer { try? manager.setAttributes([.immutable: false], ofItemAtPath: wal.path) }
+        try manager.removeItem(at: plan.currentStoreURL)
+        try fixture.newBytes.write(to: legacyWal)
 
+        let relocation = try MHStoreRelocationService.relocateIfNeeded(plan: plan) { url, _ in
+            guard try Data(contentsOf: url) == fixture.newBytes else {
+                throw ValidationError.rejected
+            }
+        }
+        #expect(relocation == .relocated(
+            copiedFileNames: ["Demo.store", "Demo.store-wal"],
+            removedCurrentFileNames: []
+        ))
+
+        try manager.setAttributes([.immutable: true], ofItemAtPath: legacyWal.path)
+        defer { try? manager.setAttributes([.immutable: false], ofItemAtPath: legacyWal.path) }
         #expect(throws: (any Error).self) {
             try MHStoreRelocationService.removeLegacyStoreFilesIfNeeded(plan: plan)
         }
-        #expect(try Data(contentsOf: plan.legacyStoreURL) == fixture.newBytes)
-        try manager.setAttributes([.immutable: false], ofItemAtPath: wal.path)
-        #expect(try MHStoreRelocationService.removeLegacyStoreFilesIfNeeded(plan: plan)
-                    == .removed(fileNames: ["Demo.store", "Demo.store-wal"]))
-        #expect(try Data(contentsOf: plan.currentStoreURL) == fixture.oldBytes)
+
+        #expect(!manager.fileExists(atPath: plan.legacyStoreURL.path))
+        #expect(manager.fileExists(atPath: legacyWal.path))
+        #expect(try MHStoreRelocationService.relocateIfNeeded(plan: plan) == .skipped(.missingLegacyStore))
+        #expect(try Data(contentsOf: plan.currentStoreURL) == fixture.newBytes)
+        #expect(try Data(contentsOf: currentWal) == fixture.newBytes)
     }
 
     @Test
