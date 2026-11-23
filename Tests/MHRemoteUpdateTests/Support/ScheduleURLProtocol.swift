@@ -59,13 +59,19 @@ private extension ScheduleURLProtocol {
         case "invalid-companion":
             return #"""
                 {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
-                "remoteUpdate":{"revision":1,"requirement":{"minimumVersion":"6","effectiveAt":"2001-01-01T00:00:00Z"}},
+                "remoteUpdate":{"schemaVersion":1,"revision":1,
+                "requirement":{"minimumVersion":"6","effectiveAt":"2001-01-01T00:00:00Z"}},
                 "companion":"invalid"}}
+            """#
+        case "missing-version":
+            return #"""
+                {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
+                "remoteUpdate":{"revision":2,"requirement":null},"companion":{"value":42}}}
             """#
         case "invalid-update":
             return #"""
                 {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
-                "remoteUpdate":{"revision":2,"requirement":null,"scheduledRequirements":null},
+                "remoteUpdate":{"schemaVersion":1,"revision":2,"requirement":null,"scheduledRequirements":null},
                 "companion":{"value":42}}}
             """#
         case "missing-update":
@@ -74,7 +80,8 @@ private extension ScheduleURLProtocol {
             """#
         default:
             return #"""
-                {"schemaVersion":1,"bundleIdentifier":"example.app","features":{"remoteUpdate":{"revision":1,
+                {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
+                "remoteUpdate":{"schemaVersion":1,"revision":1,
                 "requirement":{"minimumVersion":"6.0","effectiveAt":"2026-11-01T00:00:00Z"}}}}
             """#
         }

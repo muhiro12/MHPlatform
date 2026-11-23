@@ -53,7 +53,8 @@ final class StandardUpdateURLProtocol: URLProtocol {
     private func configuration(for scenario: String) throws -> Data {
         var features: [String: Any] = [
             "remoteUpdate": [
-                "revision": 1, "requirement": ["minimumVersion": "2", "effectiveAt": "2001-01-01T00:00:00Z"]
+                "schemaVersion": 1, "revision": 1,
+                "requirement": ["minimumVersion": "2", "effectiveAt": "2001-01-01T00:00:00Z"]
             ]
         ]
         switch scenario {

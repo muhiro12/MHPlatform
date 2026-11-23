@@ -45,11 +45,16 @@ public extension MHRemoteUpdateSchedule {
 
         /// Requires explicit cancellation and rejects publisher-controlled evidence expiry.
         public init(from decoder: any Decoder) throws {
+            try self.init(from: decoder, allowingImplicitSchemaVersion: false)
+        }
+
+        // Published history can predate the explicit feature version.
+        package init(from decoder: any Decoder, allowingImplicitSchemaVersion: Bool) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            let formatVersion = try container.contains(.schemaVersion)
-                ? container.decode(Int.self, forKey: .schemaVersion) : 1
-            guard formatVersion == 1 else {
-                throw Failure.unsupportedSchema
+            if container.contains(.schemaVersion) || !allowingImplicitSchemaVersion {
+                guard try container.decode(Int.self, forKey: .schemaVersion) == 1 else {
+                    throw Failure.unsupportedSchema
+                }
             }
             guard container.contains(.requirement),
                   container.contains(.issuedAt) == false,

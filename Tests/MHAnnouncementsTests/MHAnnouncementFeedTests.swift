@@ -97,7 +97,7 @@ struct MHAnnouncementFeedTests {
     private func decode(items: [String], schema: Int = 1) throws -> MHRemoteConfigDocument<MHRemoteAppFeatures> {
         try .decode(Data(#"""
             {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
-            "remoteUpdate":{"revision":1,"requirement":null},
+            "remoteUpdate":{"schemaVersion":1,"revision":1,"requirement":null},
             "announcements":{"schemaVersion":\#(schema),"defaultLanguage":"en","items":[
             \#(items.joined(separator: ","))]}}}
         """#.utf8))

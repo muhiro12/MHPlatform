@@ -39,6 +39,11 @@ scheduled remote-update API, wire format, and retained cache before operational
 adoption. See the [1.17.0 migration notes](Designs/Architecture/remote-update.md#migrating-from-1170)
 before upgrading an experimental scheduled-update integration.
 
+Version 1.24.0 is an explicit minor-release exception for remote update
+configuration. Publish `features.remoteUpdate.schemaVersion: 1` at each
+endpoint before upgrading. Adding the key preserves the update policy revision.
+See the [wire and cache formats](Designs/Architecture/remote-update.md#wire-and-cache-formats).
+
 ### Migrating Native Ads to 1.14.0
 
 Replace `MHNativeAdSize.small` / `.medium` with

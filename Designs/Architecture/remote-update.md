@@ -163,6 +163,7 @@ renewal period. This minimal document confirms no update requirement:
   "bundleIdentifier": "com.example.app",
   "features": {
     "remoteUpdate": {
+      "schemaVersion": 1,
       "revision": 1,
       "requirement": null
     }
@@ -178,6 +179,7 @@ A planned release uses the same format with a requirement and a higher revision:
   "bundleIdentifier": "com.example.app",
   "features": {
     "remoteUpdate": {
+      "schemaVersion": 1,
       "revision": 2,
       "requirement": {
         "minimumVersion": "6.0",
@@ -204,6 +206,7 @@ To retain an active minimum while announcing another, add `scheduledRequirements
   "bundleIdentifier": "com.example.app",
   "features": {
     "remoteUpdate": {
+      "schemaVersion": 1,
       "revision": 3,
       "requirement": {
         "minimumVersion": "6.0",
@@ -477,8 +480,10 @@ restoration does not migrate freshness or establish a new fetch.
 
 `features.remoteUpdate.schemaVersion` describes this feature's format. It is
 independent of the envelope's `schemaVersion` and the policy's `revision`.
-The current feature format is 1; omission means 1 for existing documents.
-Unknown or malformed feature versions fail only the selected update section,
+Starting in 1.24.0, every live update section must declare `"schemaVersion": 1`.
+Publish this key before upgrading readers. Adding it to a formerly implicit
+version 1 policy preserves the policy revision and the private cache format.
+Missing, unknown, or malformed feature versions fail only the selected update section,
 so other typed sections remain readable. Policy edits increase `revision`,
 not either format version. An unrelated feature needs no envelope format bump.
 
@@ -502,6 +507,10 @@ bash ci_scripts/tasks/build_remote_config_validator.sh .build/remote-config-vali
 The tool uses the same public decoder and `validateReplacement(of:)` rule as
 controllers and coordinated stores. It rejects wrong identity, unsupported
 format, invalid requirements, lower revisions, and changed immutable revisions.
+Candidates require the explicit feature version. The previous-file argument
+accepts a historical omission as version 1. When checking whether an old policy
+is readable before comparing revisions, run `mh-validate-remote-config
+--historical previous.json`. Use the strict default mode for every candidate.
 This invocation validates only update policy. Use the separate
 `--announcements candidate.json` invocation to validate announcement content.
 Validation does not confirm App Store publication or activate policy.

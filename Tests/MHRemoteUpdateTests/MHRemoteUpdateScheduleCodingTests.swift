@@ -20,7 +20,7 @@ struct MHRemoteUpdateScheduleCodingTests {
         #expect(try decoder.decode(MHRemoteUpdateSchedule.self, from: standard) == policy)
     }
 
-    @Test(arguments: [#""schemaVersion":2,"#, #""schemaVersion":null,"#, #""schemaVersion":"1","#])
+    @Test(arguments: ["", #""schemaVersion":2,"#, #""schemaVersion":null,"#, #""schemaVersion":"1","#])
     func unsupportedOrInvalidFeatureFormatIsRejectedIndependently(_ field: String) {
         let document = Data("""
             {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
@@ -58,7 +58,7 @@ struct MHRemoteUpdateScheduleCodingTests {
     func minimalStaticCancellationRoundTripsWithoutPublisherTimestamps() throws {
         let document = Data(#"""
             {"schemaVersion":1,"bundleIdentifier":"example.app",
-            "features":{"remoteUpdate":{"revision":1,"requirement":null}}}
+            "features":{"remoteUpdate":{"schemaVersion":1,"revision":1,"requirement":null}}}
         """#.utf8)
         let policy = try MHRemoteUpdateSchedule.decode(document)
         #expect(policy == (try makePolicy()))
@@ -105,7 +105,8 @@ struct MHRemoteUpdateScheduleCodingTests {
     @Test
     func missingRequirementIsNotCancellation() throws {
         let document = Data(#"""
-            {"schemaVersion":1,"bundleIdentifier":"example.app","features":{"remoteUpdate":{"revision":1}}}
+            {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
+            "remoteUpdate":{"schemaVersion":1,"revision":1}}}
         """#.utf8)
         #expect(throws: MHRemoteUpdateSchedule.Failure.invalidDocument) {
             try MHRemoteUpdateSchedule.decode(document)
@@ -128,11 +129,12 @@ struct MHRemoteUpdateScheduleCodingTests {
         let documents = [
             #"""
                 {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
-                "remoteUpdate":{"revision":1,"requirement":null},"futureFeature":{"value":1}}}
+                "remoteUpdate":{"schemaVersion":1,"revision":1,"requirement":null},"futureFeature":{"value":1}}}
             """#,
             #"""
                 {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
-                "remoteUpdate":{"revision":1,"requirement":null},"futureFeature":"invalid for its own type"}}
+                "remoteUpdate":{"schemaVersion":1,"revision":1,"requirement":null},
+                "futureFeature":"invalid for its own type"}}
             """#
         ]
         for document in documents {

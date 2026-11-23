@@ -19,13 +19,15 @@ class RemoteConfigValidatorTests(unittest.TestCase):
         self.previous = {
             "schemaVersion": 1,
             "bundleIdentifier": "example.app",
-            "features": {"remoteUpdate": {"revision": 2, "requirement": None}},
+            "features": {"remoteUpdate": {"schemaVersion": 1, "revision": 2, "requirement": None}},
         }
 
-    def validate(self, candidate, previous=None, announcements=False):
+    def validate(self, candidate, previous=None, announcements=False, historical=False):
         arguments = [str(VALIDATOR)]
         if announcements:
             arguments.append("--announcements")
+        if historical:
+            arguments.append("--historical")
         for name, document in [("candidate", candidate), ("previous", previous)]:
             if document is not None:
                 path = Path(self.directory.name, name + ".json")
@@ -35,6 +37,18 @@ class RemoteConfigValidatorTests(unittest.TestCase):
 
     def test_existing_document_and_unchanged_revision_are_accepted(self):
         self.assertEqual(self.validate(self.previous, self.previous).returncode, 0)
+
+    def test_implicit_version_is_accepted_only_for_historical_comparisons(self):
+        legacy = copy.deepcopy(self.previous)
+        del legacy["features"]["remoteUpdate"]["schemaVersion"]
+        self.assertNotEqual(self.validate(legacy).returncode, 0)
+        self.assertEqual(self.validate(legacy, historical=True).returncode, 0)
+        self.assertEqual(self.validate(self.previous, legacy).returncode, 0)
+        legacy["features"]["remoteUpdate"]["revision"] += 1
+        self.assertNotEqual(self.validate(self.previous, legacy).returncode, 0)
+        for version in [None, 2, "1"]:
+            legacy["features"]["remoteUpdate"]["schemaVersion"] = version
+            self.assertNotEqual(self.validate(legacy, historical=True).returncode, 0)
 
     def test_baseline_and_future_plan_can_be_published_together(self):
         candidate = copy.deepcopy(self.previous)

@@ -51,7 +51,7 @@ struct MHRemoteUpdateFeatureIsolationTests: Sendable {
         #expect(standardLookup.value == selected.value)
     }
 
-    @Test(arguments: ["invalid-update", "missing-update"])
+    @Test(arguments: ["invalid-update", "missing-update", "missing-version"])
     func failedUpdateDoesNotDiscardTheSiblingOrRenewRetainedUpdateEvidence(_ scenario: String) async throws {
         let session = session()
         defer {

@@ -147,7 +147,7 @@ struct MHRemoteUpdateScheduledRequirementsTests: Sendable {
     func malformedPlansNeverBecomeCancellation(_ plans: String) throws {
         let data = Data("""
             {"schemaVersion":1,"bundleIdentifier":"example.app","features":{"remoteUpdate":{
-            "revision":1,"requirement":null,"scheduledRequirements":\(plans)}}}
+            "schemaVersion":1,"revision":1,"requirement":null,"scheduledRequirements":\(plans)}}}
             """.utf8)
         #expect(throws: (any Error).self) {
             try MHRemoteUpdateSchedule.decode(data)
@@ -160,7 +160,7 @@ struct MHRemoteUpdateScheduledRequirementsTests: Sendable {
         #expect(try MHRemoteUpdateSchedule.decode(schedule.encoded()) == schedule)
         let oldDocument = Data(#"""
             {"schemaVersion":1,"bundleIdentifier":"example.app","features":{
-            "remoteUpdate":{"revision":1,"requirement":null}}}
+            "remoteUpdate":{"schemaVersion":1,"revision":1,"requirement":null}}}
         """#.utf8)
         let oldSchedule = try MHRemoteUpdateSchedule.decode(oldDocument)
         #expect(oldSchedule.scheduledRequirements.isEmpty)
