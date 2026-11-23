@@ -1,3 +1,4 @@
+@_exported import MHAnnouncements
 @_exported import MHDeepLinking
 @_exported import MHLogging
 @_exported import MHNotificationPayloads

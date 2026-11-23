@@ -257,15 +257,15 @@ No owner, repository, app directory, or deployment URL is built into the package
 The standard update initializer uses this client through
 `MHRemoteUpdateScheduleLookup`; it does not implement a second HTTP stack.
 
-An app-wide configuration can later decode several selected feature sections in
+An app-wide configuration can decode several selected feature sections in
 one request and distribute that response to their processors. The envelope and
 transport impose no update-specific revision, activation, expiry, or UI rules.
-Only update processing is implemented.
+[In-app announcements](announcements.md) use this shared response.
 
 The update-only decoder ignores unrelated feature sections, including values that
 would be invalid for those features. Missing or null `features.remoteUpdate`
 is an error, not cancellation. Changes to sibling sections do not change update
-policy equality or require a higher update revision. A future multi-feature
+policy equality or require a higher update revision. A multi-feature
 decoder uses `MHRemoteConfigSection<Value>` for each selected feature. Its
 `value`, `missing`, and `invalid` cases preserve independent outcomes in one
 decoded response. Calling `get()` returns the valid feature or throws its
@@ -281,8 +281,7 @@ Feature isolation applies to well-formed JSON values, not to broken JSON syntax.
 
 Feature implementations own their selected payload types and use this package
 primitive. Standard app initialization, lifecycle hooks, and operation checks
-do not change. No extra per-feature requests, app-owned recovery registry, or
-announcement feature is introduced.
+do not change. The optional announcement handoff reuses the update refresh request.
 
 `MHRemoteConfigResponse` carries the original network observation. Its `map`
 selects a feature without renewing that time. The update controller accepts
@@ -503,8 +502,9 @@ bash ci_scripts/tasks/build_remote_config_validator.sh .build/remote-config-vali
 The tool uses the same public decoder and `validateReplacement(of:)` rule as
 controllers and coordinated stores. It rejects wrong identity, unsupported
 format, invalid requirements, lower revisions, and changed immutable revisions.
-Unknown sibling features remain independent; this tool currently validates only
-the update section. It does not confirm App Store publication or activate policy.
+This invocation validates only update policy. Use the separate
+`--announcements candidate.json` invocation to validate announcement content.
+Validation does not confirm App Store publication or activate policy.
 Compile and executable behavior checks are retained in repository rules.
 
 Configuration repositories can pin the validator source revision and run it

@@ -197,6 +197,11 @@ First operation checks restore retained evidence automatically, including outsid
 a UI lifecycle. Read-only evaluations explain decisions and evidence freshness
 without fetching or renewing configuration.
 
+In-app announcements use the same app configuration. The optional
+`MHAnnouncements` product selects localized, currently visible notices by date
+and installed version. App Store update adopters can receive both sections in
+one refresh. See [In-app announcements](Designs/Architecture/announcements.md).
+
 ## Public Products
 
 Default adoption pillars:
@@ -216,6 +221,7 @@ Advanced runtime composition bundles:
 
 Granular core-safe products, optional UI bridges, and optional shells:
 
+- `MHAnnouncements`
 - `MHRemoteUpdate`
 - `MHRemoteConfig`
 - `MHDeepLinking`
@@ -407,7 +413,7 @@ bash ci_scripts/tasks/check_repository_rules.sh
 
 This retained rule entry point runs SwiftLint, consumer fixture checks, and the
 package-backed remote configuration publisher validator tests. The validator
-compiles only the owning configuration/update modules with Apple's Swift compiler;
+compiles only the owning configuration, update, and announcement modules with Apple's Swift compiler;
 it adds no app product or third-party dependency.
 
 If you prefer to run SwiftLint directly through the repository wrapper:

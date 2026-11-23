@@ -22,8 +22,10 @@ class RemoteConfigValidatorTests(unittest.TestCase):
             "features": {"remoteUpdate": {"revision": 2, "requirement": None}},
         }
 
-    def validate(self, candidate, previous=None):
+    def validate(self, candidate, previous=None, announcements=False):
         arguments = [str(VALIDATOR)]
+        if announcements:
+            arguments.append("--announcements")
         for name, document in [("candidate", candidate), ("previous", previous)]:
             if document is not None:
                 path = Path(self.directory.name, name + ".json")
@@ -76,6 +78,15 @@ class RemoteConfigValidatorTests(unittest.TestCase):
                 self.assertNotEqual(self.validate(candidate).returncode, 0)
         del candidate["features"]["remoteUpdate"]["requirement"]
         self.assertNotEqual(self.validate(candidate).returncode, 0)
+
+    def test_announcements_have_an_independent_candidate_check(self):
+        candidate = copy.deepcopy(self.previous)
+        self.assertEqual(self.validate(candidate, announcements=True).returncode, 0)
+        candidate["features"]["announcements"] = {"schemaVersion": 1, "defaultLanguage": "en", "items": []}
+        self.assertEqual(self.validate(candidate, announcements=True).returncode, 0)
+        candidate["features"]["announcements"] = None
+        self.assertNotEqual(self.validate(candidate, announcements=True).returncode, 0)
+        self.assertEqual(self.validate(candidate, self.previous).returncode, 0)
 
     def test_unrelated_sections_do_not_change_update_revisions(self):
         candidate = copy.deepcopy(self.previous)

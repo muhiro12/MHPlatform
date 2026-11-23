@@ -39,6 +39,7 @@ let package = Package(
         ),
 
         // Advanced concrete modules and optional shells.
+        .library(name: "MHAnnouncements", targets: ["MHAnnouncements"]),
         .library(
             name: "MHRemoteConfig",
             targets: ["MHRemoteConfig"]
@@ -166,6 +167,7 @@ let package = Package(
         .target(
             name: "MHPlatformCore",
             dependencies: [
+                "MHAnnouncements",
                 "MHDeepLinking",
                 "MHLogging",
                 "MHNotificationPlans",
@@ -243,6 +245,7 @@ let package = Package(
                 "MHUserNotifications"
             ]
         ),
+        .target(name: "MHAnnouncements", dependencies: ["MHRemoteUpdate"]),
         .target(
             name: "MHRemoteConfig"
         ),
@@ -336,13 +339,14 @@ let package = Package(
         ),
 
         // Runtime and module behavior tests.
+        .testTarget(name: "MHAnnouncementsTests", dependencies: ["MHAnnouncements"]),
         .testTarget(
             name: "MHRemoteConfigTests",
             dependencies: ["MHRemoteConfig"]
         ),
         .testTarget(
             name: "MHRemoteUpdateTests",
-            dependencies: ["MHRemoteUpdate"]
+            dependencies: ["MHAnnouncements", "MHRemoteUpdate"]
         ),
         .testTarget(
             name: "MHAppRuntimeTests",

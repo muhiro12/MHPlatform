@@ -12,9 +12,9 @@ mkdir -p "$1"
 output_directory=$(cd "$1" && pwd)
 sdk_path=$(xcrun --sdk macosx --show-sdk-path)
 target="$(uname -m)-apple-macosx15.0"
-compiler_options=(-sdk "$sdk_path" -target "$target" -swift-version 6 -warnings-as-errors -parse-as-library)
+compiler_options=(-sdk "$sdk_path" -target "$target" -swift-version 6 -package-name MHPlatform -warnings-as-errors -parse-as-library)
 
-# Compile only the two owning modules; publisher tooling needs no app/advertising dependencies.
+# Compile only the owning modules; publisher tooling needs no app/advertising dependencies.
 xcrun swiftc "${compiler_options[@]}" -emit-module -emit-library \
   -module-name MHRemoteConfig -emit-module-path "$output_directory/MHRemoteConfig.swiftmodule" \
   "$repository_root"/Sources/MHRemoteConfig/*.swift -o "$output_directory/libMHRemoteConfig.dylib"
@@ -23,6 +23,11 @@ xcrun swiftc "${compiler_options[@]}" -emit-module -emit-library \
   -I "$output_directory" -L "$output_directory" -lMHRemoteConfig \
   -Xlinker -rpath -Xlinker @loader_path \
   "$repository_root"/Sources/MHRemoteUpdate/*.swift -o "$output_directory/libMHRemoteUpdate.dylib"
+xcrun swiftc "${compiler_options[@]}" -emit-module -emit-library \
+  -module-name MHAnnouncements -emit-module-path "$output_directory/MHAnnouncements.swiftmodule" \
+  -I "$output_directory" -L "$output_directory" -lMHRemoteConfig -lMHRemoteUpdate \
+  -Xlinker -rpath -Xlinker @loader_path \
+  "$repository_root"/Sources/MHAnnouncements/*.swift -o "$output_directory/libMHAnnouncements.dylib"
 xcrun swiftc "${compiler_options[@]}" -I "$output_directory" -L "$output_directory" \
-  -lMHRemoteConfig -lMHRemoteUpdate -Xlinker -rpath -Xlinker @executable_path \
+  -lMHRemoteConfig -lMHRemoteUpdate -lMHAnnouncements -Xlinker -rpath -Xlinker @executable_path \
   "$repository_root/Tools/RemoteConfigValidator.swift" -o "$output_directory/mh-validate-remote-config"

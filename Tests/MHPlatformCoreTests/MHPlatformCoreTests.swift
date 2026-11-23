@@ -5,6 +5,7 @@ struct MHPlatformCoreTests {
     @Test
     func shared_package_umbrella_matches_core_safe_surface() {
         let exportedCoreSafeTypes: [Any.Type] = [
+            MHAnnouncementFeed.self,
             MHDeepLinkConfiguration.self,
             MHRemoteConfigClient.self,
             MHRemoteUpdateController.self,
@@ -37,6 +38,6 @@ struct MHPlatformCoreTests {
             MHLoggingBootstrap.self
         ]
 
-        #expect(exportedCoreSafeTypes.count == 30)
+        #expect(exportedCoreSafeTypes.count == 31)
     }
 }

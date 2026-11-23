@@ -8,6 +8,7 @@
 - `MHAppRuntimeDefaults`
 - `MHAppRuntimeAds`
 - `MHAppRuntimeLicenses`
+- `MHAnnouncements`
 - `MHRemoteConfig`
 - `MHRemoteUpdate`
 - `MHDeepLinking`
@@ -39,6 +40,7 @@ and explicit split-runtime-bundle composition.
 
 ## Public Modules
 
+- `MHAnnouncements`
 - `MHRemoteConfig`
 - `MHRemoteUpdate`
 - `MHDeepLinking`
@@ -154,6 +156,12 @@ non-domain app infrastructure.
 - Exposes `licensesFactory` for explicit composition into
   `MHAppRuntime`
 - Uses `LicenseList` only where that dependency is available
+
+### `MHAnnouncements`
+
+Reads and validates localized in-app announcements from remote configuration,
+selects visible notices, and supports a shared fetch with remote updates.
+See [In-app announcements](announcements.md).
 
 ### `MHRemoteConfig`
 

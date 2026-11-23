@@ -36,17 +36,7 @@ final class StandardUpdateURLProtocol: URLProtocol {
                 guard request.cachePolicy == .reloadIgnoringLocalCacheData else {
                     throw URLError(.badURL)
                 }
-                let document: [String: Any] = [
-                    "schemaVersion": 1,
-                    "bundleIdentifier": "example.app",
-                    "features": [
-                        "remoteUpdate": [
-                            "revision": 1,
-                            "requirement": ["minimumVersion": "2", "effectiveAt": "2001-01-01T00:00:00Z"]
-                        ]
-                    ]
-                ]
-                data = try JSONSerialization.data(withJSONObject: document)
+                data = try configuration(for: url.lastPathComponent)
             }
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: data)
@@ -58,5 +48,33 @@ final class StandardUpdateURLProtocol: URLProtocol {
 
     override func stopLoading() {
         // Every stub completes synchronously.
+    }
+
+    private func configuration(for scenario: String) throws -> Data {
+        var features: [String: Any] = [
+            "remoteUpdate": [
+                "revision": 1, "requirement": ["minimumVersion": "2", "effectiveAt": "2001-01-01T00:00:00Z"]
+            ]
+        ]
+        switch scenario {
+        case "offline":
+            throw URLError(.notConnectedToInternet)
+        case "bad-announcements":
+            features["announcements"] = NSNull()
+        case "valid", "bad-update":
+            features["announcements"] = [
+                "schemaVersion": 1, "defaultLanguage": "ja",
+                "items": [["id": "news", "localizations": ["ja": ["title": "更新", "body": "詳細"]]]]
+            ]
+            if scenario == "bad-update" {
+                features["remoteUpdate"] = NSNull()
+            }
+        default:
+            break
+        }
+        return try JSONSerialization.data(withJSONObject: [
+            "schemaVersion": 1, "bundleIdentifier": scenario == "wrong-app" ? "other.app" : "example.app",
+            "features": features
+        ])
     }
 }

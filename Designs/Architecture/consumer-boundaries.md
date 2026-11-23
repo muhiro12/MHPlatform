@@ -39,7 +39,7 @@ Advanced composition surfaces:
   `MHAppRuntimeLicenses`
 - concrete core modules: `MHDeepLinking`, `MHLogging`, `MHNotificationPlans`,
   `MHNotificationPayloads`, `MHRouteExecution`, `MHPersistenceMaintenance`,
-  `MHPreferences`, `MHRemoteConfig`, `MHRemoteUpdate`
+  `MHPreferences`, `MHRemoteConfig`, `MHRemoteUpdate`, `MHAnnouncements`
 - surface adapter modules: `MHUserNotifications`, `MHNotificationDeepLinking`
 - optional UI bridges: `MHPreferencesUI`, `MHLoggingUI`
 - opt-in workflow shells: `MHMutationFlow`, `MHMutationLogging`,
@@ -101,6 +101,11 @@ See [remote update adoption](remote-update.md).
 remote update processing. It is also re-exported by both umbrellas. Configuration
 hosting remains app-selected; feature-specific revisions, retained evidence, and
 failure behavior are not part of the common transport contract.
+
+`MHAnnouncements` is a core-safe product re-exported by both umbrellas. It uses
+the shared app version and remote-update integration for a single configuration
+fetch. Apps own notice copy, display surfaces, and read state.
+See [In-app announcements](announcements.md).
 
 ## What Stays App-Owned
 

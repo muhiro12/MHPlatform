@@ -30,6 +30,28 @@ public extension MHRemoteUpdateController {
         storageDirectory: URL? = nil,
         session: URLSession = .shared
     ) throws {
+        let lookup = MHRemoteUpdateScheduleLookup(session: session)
+        try self.init(
+            appStoreID: appStoreID,
+            configurationURL: configurationURL,
+            storefront: storefront,
+            bundle: bundle,
+            storageDirectory: storageDirectory,
+            session: session
+        ) { url, identifier in
+            try await lookup.schedule(from: url, bundleIdentifier: identifier)
+        }
+    }
+
+    package init(
+        appStoreID: Int,
+        configurationURL: URL,
+        storefront: String?,
+        bundle: Bundle,
+        storageDirectory: URL?,
+        session: URLSession,
+        fetchSchedule: @escaping @Sendable (URL, String) async throws -> MHRemoteConfigResponse<MHRemoteUpdateSchedule>
+    ) throws {
         guard appStoreID > 0,
               configurationURL.scheme == "https", configurationURL.host?.isEmpty == false,
               let bundleIdentifier = bundle.bundleIdentifier,
@@ -45,7 +67,6 @@ public extension MHRemoteUpdateController {
             .appendingPathComponent(String(appStoreID), isDirectory: true)
             .appendingPathComponent(storefront?.lowercased() ?? "default", isDirectory: true)
             .appendingPathComponent("snapshot.json")
-        let scheduleLookup = MHRemoteUpdateScheduleLookup(session: session)
         let versionLookup = MHAppStoreVersionLookup(session: session)
         let installedVersion = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         try self.init(
@@ -57,7 +78,7 @@ public extension MHRemoteUpdateController {
             currentVersion: { installedVersion },
             now: Date.init,
             fetchSchedule: {
-                try await scheduleLookup.schedule(from: configurationURL, bundleIdentifier: bundleIdentifier)
+                try await fetchSchedule(configurationURL, bundleIdentifier)
             },
             publicVersion: {
                 try await versionLookup.version(
